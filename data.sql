@@ -1,0 +1,1 @@
+INSERT INTO feeds (feed_id, title, url, rss_url) VALUES (1, 'Rakhims blog', 'https://rakhim.org/', 'https://rakhim.org/index.xml');

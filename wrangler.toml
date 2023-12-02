@@ -1,6 +1,11 @@
 name = "minifeed"
 compatibility_date = "2023-01-01"
 
+main = "src/index.ts"
+
+[site]
+bucket = "./assets"
+
 [[d1_databases]]
 binding = "DB" # available in your Worker on env.DB
 database_name = "minifeed"
