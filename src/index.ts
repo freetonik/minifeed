@@ -4,7 +4,10 @@ import { html, raw } from 'hono/html'
 import { XMLParser } from 'fast-xml-parser'
 import { renderHTML } from './htmltools';
 import { serveStatic } from 'hono/cloudflare-workers'
-import Sqids from 'sqids'
+
+import { itemsAll, itemsMy, itemsMySubs, itemsMyFollows, itemsSingle } from './items'
+import { feedsAll, feedsSingle, feedsSubscribe, feedsUnsubscribe } from './feeds'
+import { usersAll, usersSingle, usersFollow, usersUnfollow } from './users'
 
 type Bindings = {
 	DB: D1Database;
@@ -27,197 +30,24 @@ async function authMiddleware(c, next) {
 app.use('*', authMiddleware)
 app.get('/static/*', serveStatic({ root: './' }))
 
-app.get('/all', async (c) => {
-	// const user = c.get('USER_ID')
-	// return c.text(`User: ${user}`)
-	const { results } = await c.env.DB
-		.prepare("SELECT items.item_id, items.title AS item_title, items.url AS item_url, feeds.title AS feed_title FROM items JOIN feeds ON items.feed_id = feeds.feed_id")
-		.run();
+// APP ROUTES
+app.get('/all', itemsAll) // all posts
 
-	let list = `<h1>All items</h1>`
-	results.forEach((item: any) => {
-		list += `<li><a href="${item.item_url}">${item.item_title}</a> (${item.feed_title})</li>`
-	})
-	return c.html(renderHTML("All items", html`${raw(list)}`))
-})
+app.get('/my', itemsMy)
+app.get('/my/subs', itemsMySubs)
+app.get('/my/follows', itemsMyFollows)
 
-app.get('/my', async (c) => {
-	const userId = c.get('USER_ID')
-	const { results } = await c.env.DB
-		.prepare(`
-			SELECT items.item_id, items.title, items.url
-			FROM items
-			JOIN subscriptions ON items.feed_id = subscriptions.feed_id
-			WHERE subscriptions.user_id = ?
+app.get('/feeds', feedsAll)
+app.get('/feeds/:feed_sqid', feedsSingle)
+app.post('/feeds/:feed_sqid/subscribe', feedsSubscribe)
+app.post('/feeds/:feed_sqid/unsubscribe', feedsUnsubscribe)
 
-			UNION
+app.get('/users', usersAll)
+app.get('/users/:username', usersSingle)
+app.post('/users/:username/follow', usersFollow)
+app.post('/users/:username/unfollow', usersUnfollow)
 
-      SELECT items.item_id, items.title, items.url
-      FROM items
-      JOIN subscriptions ON items.feed_id = subscriptions.feed_id
-      JOIN followings ON subscriptions.user_id = followings.followed_user_id
-      WHERE followings.follower_user_id = ?
-
-			`)
-		.bind(userId, userId)
-		.all();
-
-	console.log(results)
-	let list = `<h1>All items</h1>`
-	results.forEach((item: any) => {
-		list += `<li><a href="${item.url}">${item.title}</a> (${item.feed_title})</li>`
-	})
-	return c.html(renderHTML("All items", html`${raw(list)}`))
-})
-
-
-app.get('/feeds', async (c) => {
-	// const user = c.get('USER_ID')
-	// return c.text(`User: ${user}`)
-	const { results } = await c.env.DB
-		.prepare("SELECT * from feeds")
-		.run();
-
-	let list = `<h1>All feeds</h1>`
-	results.forEach((feed: any) => {
-		const sqid = idToSqid(feed.feed_id)
-		list += `<li><a href="/feeds/${sqid}">${feed.title}</a> (<a href="${feed.url}">Site</a> / <a href="${feed.rss_url}">RSS</a>)</li>`
-	})
-	return c.html(renderHTML("All items", html`${raw(list)}`))
-})
-
-
-app.get('/feeds/:feed_sqid', async (c) => {
-	// TODO: we're assuming that feed always has items; if feed has 0 items, this will return 404, but maybe we want to
-	// show the feed still as "processing"; use https://developers.cloudflare.com/d1/platform/client-api/#batch-statements
-	const feedSqid = c.req.param('feed_sqid')
-	const feedId = sqidToId(feedSqid);
-	const userId = c.get('USER_ID') || "0";
-	const { results } = await c.env.DB
-		.prepare(`
-			SELECT items.item_id, items.title AS item_title, items.pub_date, items.url AS item_url, feeds.title AS feed_title, feeds.url AS feed_url, feeds.feed_id, subscriptions.subscription_id
-			FROM items 
-			JOIN feeds ON items.feed_id = feeds.feed_id 
-			LEFT JOIN subscriptions ON feeds.feed_id = subscriptions.feed_id
-			WHERE (subscriptions.user_id = ? OR subscriptions.user_id IS NULL)
-				AND feeds.feed_id = ? 
-			ORDER BY items.pub_date DESC`)
-		.bind(userId, feedId)
-		.all();
-
-	LOG(results)
-	if (results.length === 0) return c.notFound();
-	const tmp = results[0];
-	const feedTitle = tmp['feed_title']
-	const feedUrl = tmp['feed_url']
-	const dateFormatOptions = {year: 'numeric', month: 'short', day: 'numeric', };
-	const subscriptionButtonText = tmp['subscription_id'] ? "unsubscribe" : "subscribe";
-
-	let list = `<h1>${feedTitle}</h1><p><a href="${feedUrl}">${feedUrl}</a></p>
-	<span id="subscription">
-		<button hx-post="/feeds/${feedSqid}/${subscriptionButtonText}"
-	    hx-trigger="click"
-	    hx-target="#subscription"
-	    hx-swap="outerHTML">
-	    ${subscriptionButtonText}
-		</button>
-	</span>
-	`
-	results.forEach((item: any) => {
-	  const postDate = new Date(item.pub_date).toLocaleDateString('en-UK', dateFormatOptions)
-	  const postSqid = idToSqid(item.item_id, 10)
-		list += `<li><a href="${item.item_url}">${item.item_title}</a> / <a href="/posts/${postSqid}">read</a> <time>${postDate}</time></li>`
-	})
-	return c.html(renderHTML("All items", html`${raw(list)}`))
-})
-
-
-app.post('/feeds/:feed_sqid/subscribe', async (c) => {
-	if (!c.get('USER_ID')) return c.redirect('/login');
-	const userId = c.get('USER_ID');
-	const feedSqid = c.req.param('feed_sqid')
-	const feedId = sqidToId(feedSqid);
-	let result
-
-	try {
-		result = await c.env.DB.prepare("INSERT INTO subscriptions (user_id, feed_id) values (?, ?)").bind(userId, feedId).run()
-	} catch (err) {
-		c.status(400);
-		return c.body('bad request');
-	}
-	console.log(result);
-	if (result.success) {
-		c.status(201);
-		return c.html(`
-			<span id="subscription">
-				<button hx-post="/feeds/${feedSqid}/unsubscribe"
-			    hx-trigger="click"
-			    hx-target="#subscription"
-			    hx-swap="outerHTML">
-			    unsubscribe
-				</button>
-			</span>
-		`);
-	}
-	return c.html(`
-			<span id="subscription">
-				"Error"
-			</span>
-		`);
-})
-
-app.post('/feeds/:feed_sqid/unsubscribe', async (c) => {
-	if (!c.get('USER_ID')) return c.redirect('/login');
-	const userId = c.get('USER_ID');
-	const feedSqid = c.req.param('feed_sqid')
-	const feedId = sqidToId(feedSqid);
-
-	try {
-		await c.env.DB.prepare("DELETE FROM subscriptions WHERE user_id = ? AND feed_id = ?").bind(userId, feedId).all()
-	} catch (err) {
-		c.status(400);
-		return c.html(`
-			<span id="subscription">
-				"Error"
-			</span>
-		`);
-	}
-	c.status(201);
-	return c.html(`
-			<span id="subscription">
-				<button hx-post="/feeds/${feedSqid}/subscribe"
-			    hx-trigger="click"
-			    hx-target="#subscription"
-			    hx-swap="outerHTML">
-			    subscribe
-				</button>
-			</span>
-		`);
-})
-
-app.get('/posts/:item_sqid', async (c) => {
-	const item_id = parseInt(sqidToId(c.req.param('item_sqid'), 10), 10);
-	const { results } = await c.env.DB
-		.prepare(`
-			SELECT items.item_id, items.title AS item_title, items.content, items.pub_date, items.url AS item_url, feeds.title AS feed_title, feeds.feed_id FROM items 
-			JOIN feeds ON items.feed_id = feeds.feed_id 
-			WHERE items.item_id = ? 
-			ORDER BY items.pub_date DESC`
-		)
-		.bind(item_id)
-		.run();
-
-	if (results.length === 0) return c.notFound();
-	const item = results[0];
-	const dateFormatOptions = {year: 'numeric', month: 'short', day: 'numeric', };
-
-  const postDate = new Date(item.pub_date).toLocaleDateString('en-UK', dateFormatOptions)
-
-	let list = `<h1>${item.item_title}</h1><p><time>${postDate}</time></p>`
-	list += `<a href="${item.item_url}">${item.item_title}</a> / <a href="/i/${item.item_id}">read</a> </li><div class="post-content">${item.content}</div>`
-
-	return c.html(renderHTML("All items", html`${raw(list)}`))
-})
+app.get('/items/:item_sqid', itemsSingle)
 
 app.get('/c/f/add', async (c) => {
 	if (!c.get('USER_ID')) return c.redirect('/login')
@@ -250,10 +80,6 @@ app.post('/c/f/add', async (c) => {
 });
 
 
-// app.get('/login', async (c) => {
-// 	const new_uuid = crypto.randomUUID();
-// });
-//
 app.post('/login', async (c) => {
 	const body = await c.req.parseBody();
 	// todo: check KV, create user, set cookie
@@ -354,17 +180,5 @@ async function fetchFeed(c, feedId: Number) {
 	return 200
 }
 
-function idToSqid(id:number, length:number = 5): string {
-	const sqids = new Sqids({minLength: length, alphabet: 'UV8E4hOJwLiXMpYBsWyQ7rNoeDgm9TGxbFI5aknAztjC2K3uZ6cldSqRv1PfH0',})
-	return sqids.encode(id.toString().split('').map(char => parseInt(char, 10)))
-}
-
-function sqidToId(sqid:string, length:number = 5): number {
-	const sqids = new Sqids({minLength: length, alphabet: 'UV8E4hOJwLiXMpYBsWyQ7rNoeDgm9TGxbFI5aknAztjC2K3uZ6cldSqRv1PfH0',})
-	if(sqid.length != length) return 0;
-	return parseInt(sqids.decode(sqid).join(), 10)
-}
-
-const LOG = (a) => console.log(a)
 
 export default app

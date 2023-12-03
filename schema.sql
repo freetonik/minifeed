@@ -6,6 +6,12 @@ DROP TABLE IF EXISTS followings;
 
 CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, token TEXT, username TEXT);
 INSERT INTO users (user_id, token, username) VALUES (1, '8ca444e4-c26a-4f03-bfce-73139b128f1b', 'rakhim');
+INSERT INTO users (user_id, token, username) VALUES (2, '8ca444e4-c26a-4f03-bfce-73139b128f1c', 'rakhim2');
+INSERT INTO users (user_id, token, username) VALUES (3, '8ca444e4-c26a-4f03-bfce-73139b128f1d', 'rakhim3');
+INSERT INTO users (user_id, token, username) VALUES (4, '8ca444e4-c26a-4f03-bfce-73139b128f1e', 'rakhim4');
+INSERT INTO users (user_id, token, username) VALUES (5, '8ca444e4-c26a-4f03-bfce-73139b128f1f', 'rakhim5');
+INSERT INTO users (user_id, token, username) VALUES (6, '8ca444e4-c26a-4f03-bfce-73139b128f1g', 'rakhim6');
+INSERT INTO users (user_id, token, username) VALUES (7, '8ca444e4-c26a-4f03-bfce-73139b128f1h', 'rakhim7');
 
 CREATE TABLE IF NOT EXISTS feeds (
     feed_id INTEGER PRIMARY KEY, 
@@ -33,6 +39,8 @@ CREATE TABLE subscriptions (
     UNIQUE (user_id, feed_id)
 );
 
+INSERT INTO subscriptions (user_id, feed_id) VALUES (2, 1);
+
 CREATE TABLE followings (
     following_id INTEGER PRIMARY KEY,
     follower_user_id INTEGER,
@@ -41,3 +49,8 @@ CREATE TABLE followings (
     FOREIGN KEY (followed_user_id) REFERENCES users(user_id),
     UNIQUE (follower_user_id, followed_user_id)
 );
+
+INSERT INTO followings (follower_user_id, followed_user_id) VALUES (1, 2);
+
+
+CREATE INDEX IF NOT EXISTS idx_users_on_username ON users(username);
