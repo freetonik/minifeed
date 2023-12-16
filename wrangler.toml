@@ -24,6 +24,13 @@ queue = "feed-update"
 max_batch_size = 1 # optional: defaults to 10
 max_batch_timeout = 5 # optional: defaults to 5 seconds
 
+[triggers]
+# Schedule cron triggers:
+# - At every 3rd minute
+# - At 3PM on first day of the month
+# - At 11:59PM on the last weekday of the month
+crons = [ "*/30 * * * *" ]
+
 # [vars]
 # MY_VARIABLE = "production_value"
 

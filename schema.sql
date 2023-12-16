@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS feeds (
     url TEXT UNIQUE NOT NULL, 
     rss_url Text UNIQUE NOT NULL
 );
+INSERT INTO feeds (feed_id, title, url, rss_url) VALUES (1, 'Rakhim blog', 'https://rakhim.org', 'https://rakhim.org/index.xml');
 
 CREATE TABLE IF NOT EXISTS items (
 	item_id INTEGER PRIMARY KEY,
@@ -29,6 +30,7 @@ CREATE TABLE IF NOT EXISTS items (
     pub_date TIMESTAMP,
 	FOREIGN KEY(feed_id) REFERENCES feeds(feed_id)
 );
+INSERT INTO items (feed_id, title, content, url) VALUES (1, "Test", "Very test", 'https://rakhim.org/test');
 
 CREATE TABLE subscriptions (
     subscription_id INTEGER PRIMARY KEY,

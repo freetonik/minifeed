@@ -1,5 +1,5 @@
-import { Hono } from 'hono'
-import { getCookie, getSignedCookie, setCookie, setSignedCookie, deleteCookie } from 'hono/cookie'
+import { Context, Hono } from 'hono'
+import { getCookie } from 'hono/cookie'
 import { html, raw } from 'hono/html'
 import { XMLParser } from 'fast-xml-parser'
 import { renderHTML } from './htmltools';
@@ -8,7 +8,7 @@ import { serveStatic } from 'hono/cloudflare-workers'
 import { itemsAll, itemsMy, itemsMySubs, itemsMyFollows, itemsSingle } from './items'
 import { feedsAll, feedsSingle, feedsSubscribe, feedsUnsubscribe } from './feeds'
 import { usersAll, usersSingle, usersFollow, usersUnfollow } from './users'
-import { idToSqid, sqidToId } from './utils'
+import { idToSqid } from './utils'
 
 type Bindings = {
 	DB: D1Database;
@@ -17,7 +17,7 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-async function authMiddleware(c, next) {
+async function authMiddleware(c: Context<any, any, {}>, next: () => any) {
 	const userToken = getCookie(c, 'minifeed_user_token')
 	if (userToken) {
 		const { results } = await c.env.DB.prepare("SELECT * FROM users WHERE token = ?")
@@ -31,6 +31,11 @@ async function authMiddleware(c, next) {
 
 app.use('*', authMiddleware)
 app.get('/static/*', serveStatic({ root: './' }))
+
+app.get('/test', async (c) => {
+	await fetchAllFeeds(c.env)
+	return c.text('ok')
+})
 
 // APP ROUTES
 app.get('/', (c) => {return c.redirect('/all', 301) })
@@ -94,23 +99,13 @@ app.post('/login', async (c) => {
 
 
 
-// INTERNAL SERVICE ENDPOINTS
-app.get('/service/fetch_feed/:feed_id', async (c) => {
-	const feedId = c.req.param('feed_id');
-	const r = await fetchFeed(c, feedId);
-	if (r === 201) return c.text("New items added")
-	else if (r === 200) return c.text("No new items added")
-	else return c.text("Error")
-});
-
-
 // INTERNAL FUNCTIONS
-async function getFeedIdByRSSUrl(c, rssUrl) {
+async function getFeedIdByRSSUrl(c: Context, rssUrl: string) {
 	const { results } = await c.env.DB.prepare("SELECT feed_id FROM feeds where rss_url = ?").bind(rssUrl).all()
 	return results[0]['feed_id']
 }
 
-async function addFeed(c, url, rssUrl) {
+async function addFeed(c, url:string, rssUrl:string) {
 	let req;
 	try {
 		req = await fetch(rssUrl);
@@ -136,28 +131,42 @@ async function addFeed(c, url, rssUrl) {
 	return await c.env.DB.prepare("INSERT INTO feeds (title, url, rss_url) values (?, ?, ?)").bind(title, url, rssUrl).all()
 }
 
+async function fetchAllFeeds(env:Bindings) {
+	const { results: feeds } = await env.DB.prepare("SELECT feed_id, rss_url FROM feeds").all();
+	for (const feed of feeds) {
+		console.log(`Initiating feed update job for feed: ${feed['feed_id']} (${feed['rss_url']})`)
+		await env.FEED_UPDATE_QUEUE.send(feed['feed_id']);
+	}
+}
+
 async function fetchFeed(env:Bindings, feedId: Number) {
 	const parser = new XMLParser();
 
+	// get RSS url of feed
 	const { results: feeds } = await env.DB.prepare("SELECT * FROM feeds WHERE feed_id = ?").bind(feedId).all();
 	const url = feeds[0]['rss_url']
+
+	// fetch RSS content
 	const req = await fetch(url);
 	const rssText = await req.text();
 	const rssJson = parser.parse(rssText, true);
+
 	let items;
 	if (rssJson.rss && rssJson.rss.channel) items = rssJson.rss.channel.item;
 	else if (rssJson.feed) items = rssJson.feed.entry;
 
+	// get URLs of existing items from DB
 	const { results: existingItems } = await env.DB.prepare( "SELECT url FROM items WHERE feed_id = ?").bind(feedId).all();
 	const existingUrls = existingItems.map(obj => obj.url);
 
+	// try getting new items
 	let newItemsToBeAdded = 0;
 	if (items.length > 0) {
 		let binds: any[] = [];
 		const stmt = env.DB.prepare("INSERT INTO items (feed_id, title, url, pub_date, content) values (?, ?, ?, ?, ?)");
 
+		// each item of RSS feed...
 		items.forEach((item: any) => {
-			console.log(item)
 			let pubDate;
 			if (item.pubDate) pubDate = new Date(item.pubDate).toISOString();
 			else if (item.published) pubDate = new Date(item.published).toISOString();
@@ -171,7 +180,7 @@ async function fetchFeed(env:Bindings, feedId: Number) {
 			else if (item.description) content = item.description
 			else if (item.content) content = item.content
 
-
+			// only if does not exist in DB
 			if (!existingUrls.includes(link)) {
 				newItemsToBeAdded += 1;
 				binds.push(stmt.bind(feedId, item.title, link, pubDate, content));
@@ -180,24 +189,32 @@ async function fetchFeed(env:Bindings, feedId: Number) {
 
 		if (newItemsToBeAdded > 0) {
 			await env.DB.batch(binds);
-			return 201
-		} else return 200
+		}
+
+		console.log(`Updated feed ${feedId} (${url}), fetched items: ${items.length}, of which new items added: ${newItemsToBeAdded}`) 
 	}
-	return 200
+	return
 }
 
 
 export default {
   fetch: app.fetch,
+
+  // consumer of queue
   async queue(batch: MessageBatch<any>, env: Bindings) {
     let messages = JSON.stringify(batch.messages);
-    console.log(`consumed from our queue: ${messages}`);
+    console.log(`Started processing job: ${messages}`);
 
     for (const message of batch.messages) {
       const feedId = message.body;
 	    await fetchFeed(env, feedId)
     }
 
+  },
+
+  // cron
+  async scheduled(event, env, ctx) {
+    await fetchAllFeeds(env)
   },
 };
 
