@@ -8,9 +8,11 @@ import { serveStatic } from 'hono/cloudflare-workers'
 import { itemsAll, itemsMy, itemsMySubs, itemsMyFollows, itemsSingle } from './items'
 import { feedsAll, feedsSingle, feedsSubscribe, feedsUnsubscribe } from './feeds'
 import { usersAll, usersSingle, usersFollow, usersUnfollow } from './users'
+import { idToSqid, sqidToId } from './utils'
 
 type Bindings = {
 	DB: D1Database;
+	FEED_UPDATE_QUEUE: Queue;
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -31,6 +33,7 @@ app.use('*', authMiddleware)
 app.get('/static/*', serveStatic({ root: './' }))
 
 // APP ROUTES
+app.get('/', (c) => {return c.redirect('/all', 301) })
 app.get('/all', itemsAll) // all posts
 
 app.get('/my', itemsMy)
@@ -73,8 +76,10 @@ app.post('/c/f/add', async (c) => {
 	if (f['success'] === true) {
 		const feedId = await getFeedIdByRSSUrl(c, rssUrl)
 		console.log(feedId)
-		await fetchFeed(c, feedId)
-		return c.redirect(`/feeds/${feedId}`, 301)
+		// await fetchFeed(c, feedId)
+		await c.env.FEED_UPDATE_QUEUE.send(feedId);
+		const sqid = idToSqid(feedId)
+		return c.redirect(`/feeds/${sqid}`, 301)
 	}
 	return c.text("Something went wrong")
 });
@@ -87,7 +92,8 @@ app.post('/login', async (c) => {
 	const new_token = body['token'];
 });
 
-//
+
+
 // INTERNAL SERVICE ENDPOINTS
 app.get('/service/fetch_feed/:feed_id', async (c) => {
 	const feedId = c.req.param('feed_id');
@@ -97,8 +103,8 @@ app.get('/service/fetch_feed/:feed_id', async (c) => {
 	else return c.text("Error")
 });
 
-// INTERNAL FUNCTIONS
 
+// INTERNAL FUNCTIONS
 async function getFeedIdByRSSUrl(c, rssUrl) {
 	const { results } = await c.env.DB.prepare("SELECT feed_id FROM feeds where rss_url = ?").bind(rssUrl).all()
 	return results[0]['feed_id']
@@ -121,7 +127,7 @@ async function addFeed(c, url, rssUrl) {
 		return
 	}
 
-	console.log(rssJson)
+	// console.log(rssJson)
 
 	let title;
 	if (rssJson.rss && rssJson.rss.channel) {title = rssJson.rss.channel.title}
@@ -130,10 +136,10 @@ async function addFeed(c, url, rssUrl) {
 	return await c.env.DB.prepare("INSERT INTO feeds (title, url, rss_url) values (?, ?, ?)").bind(title, url, rssUrl).all()
 }
 
-async function fetchFeed(c, feedId: Number) {
+async function fetchFeed(env:Bindings, feedId: Number) {
 	const parser = new XMLParser();
 
-	const { results: feeds } = await c.env.DB.prepare("SELECT * FROM feeds WHERE feed_id = ?").bind(feedId).all();
+	const { results: feeds } = await env.DB.prepare("SELECT * FROM feeds WHERE feed_id = ?").bind(feedId).all();
 	const url = feeds[0]['rss_url']
 	const req = await fetch(url);
 	const rssText = await req.text();
@@ -142,13 +148,13 @@ async function fetchFeed(c, feedId: Number) {
 	if (rssJson.rss && rssJson.rss.channel) items = rssJson.rss.channel.item;
 	else if (rssJson.feed) items = rssJson.feed.entry;
 
-	const { results: existingItems } = await c.env.DB.prepare( "SELECT url FROM items WHERE feed_id = ?").bind(feedId).all();
+	const { results: existingItems } = await env.DB.prepare( "SELECT url FROM items WHERE feed_id = ?").bind(feedId).all();
 	const existingUrls = existingItems.map(obj => obj.url);
 
 	let newItemsToBeAdded = 0;
 	if (items.length > 0) {
 		let binds: any[] = [];
-		const stmt = c.env.DB.prepare("INSERT INTO items (feed_id, title, url, pub_date, content) values (?, ?, ?, ?, ?)");
+		const stmt = env.DB.prepare("INSERT INTO items (feed_id, title, url, pub_date, content) values (?, ?, ?, ?, ?)");
 
 		items.forEach((item: any) => {
 			console.log(item)
@@ -173,7 +179,7 @@ async function fetchFeed(c, feedId: Number) {
 		});
 
 		if (newItemsToBeAdded > 0) {
-			await c.env.DB.batch(binds);
+			await env.DB.batch(binds);
 			return 201
 		} else return 200
 	}
@@ -181,4 +187,19 @@ async function fetchFeed(c, feedId: Number) {
 }
 
 
-export default app
+export default {
+  fetch: app.fetch,
+  async queue(batch: MessageBatch<any>, env: Bindings) {
+    let messages = JSON.stringify(batch.messages);
+    console.log(`consumed from our queue: ${messages}`);
+
+    for (const message of batch.messages) {
+      const feedId = message.body;
+	    await fetchFeed(env, feedId)
+    }
+
+  },
+};
+
+
+// export default app

@@ -1,8 +1,8 @@
-DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS followings;
+DROP TABLE IF EXISTS subscriptions;
 DROP TABLE IF EXISTS items;
 DROP TABLE IF EXISTS feeds;
-DROP TABLE IF EXISTS subscriptions;
-DROP TABLE IF EXISTS followings;
+DROP TABLE IF EXISTS users;
 
 CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, token TEXT, username TEXT);
 INSERT INTO users (user_id, token, username) VALUES (1, '8ca444e4-c26a-4f03-bfce-73139b128f1b', 'rakhim');
@@ -39,7 +39,6 @@ CREATE TABLE subscriptions (
     UNIQUE (user_id, feed_id)
 );
 
-INSERT INTO subscriptions (user_id, feed_id) VALUES (2, 1);
 
 CREATE TABLE followings (
     following_id INTEGER PRIMARY KEY,

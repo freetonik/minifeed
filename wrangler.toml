@@ -1,6 +1,10 @@
 name = "minifeed"
 compatibility_date = "2023-01-01"
 
+workers_dev = false
+
+route = { pattern = "minifeed.net", custom_domain = true }
+
 main = "src/index.ts"
 
 [site]
@@ -10,6 +14,16 @@ bucket = "./assets"
 binding = "DB" # available in your Worker on env.DB
 database_name = "minifeed"
 database_id = "d059129a-d855-4e39-ae1f-64e92b9c40a1"
+
+[[queues.producers]]
+queue = "feed-update"
+binding = "FEED_UPDATE_QUEUE"
+
+[[queues.consumers]]
+queue = "feed-update"
+max_batch_size = 1 # optional: defaults to 10
+max_batch_timeout = 5 # optional: defaults to 5 seconds
+
 # [vars]
 # MY_VARIABLE = "production_value"
 
