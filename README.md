@@ -9,11 +9,11 @@ npm run deploy
 
 ### TODO
 - [ ] properly parse atom vs rss2.0
-- [ ] show origin of item in listing (from my subs vs. from followings), see 'origin of item' below
 - [x] queues
 - [x] cron jobs to refresh feeds
 - [ ] auto tagging of items
 - [ ] feed tags from item tags
+- [ ] show origin of item in listing (from my subs vs. from followings), see 'origin of item' below
 
 #### Origin of item
 ```

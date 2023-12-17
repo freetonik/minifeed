@@ -4,6 +4,8 @@ import { html, raw } from 'hono/html'
 import { XMLParser } from 'fast-xml-parser'
 import { renderHTML } from './htmltools';
 import { serveStatic } from 'hono/cloudflare-workers'
+import { getRssUrlsFromHtmlBody } from 'rss-url-finder'
+import { extract } from '@extractus/feed-extractor'
 
 import { itemsAll, itemsMy, itemsMySubs, itemsMyFollows, itemsSingle } from './items'
 import { feedsAll, feedsSingle, feedsSubscribe, feedsUnsubscribe } from './feeds'
@@ -32,11 +34,6 @@ async function authMiddleware(c: Context<any, any, {}>, next: () => any) {
 app.use('*', authMiddleware)
 app.get('/static/*', serveStatic({ root: './' }))
 
-app.get('/test', async (c) => {
-	await fetchAllFeeds(c.env)
-	return c.text('ok')
-})
-
 // APP ROUTES
 app.get('/', (c) => {return c.redirect('/all', 301) })
 app.get('/all', itemsAll) // all posts
@@ -57,32 +54,31 @@ app.post('/users/:username/unfollow', usersUnfollow)
 
 app.get('/items/:item_sqid', itemsSingle)
 
+app.get('/test', async (c) => {
+	if (!c.get('USER_ID')) return c.redirect('/login')
+	// await fetchAllFeeds(c.env)
+	return c.text('ok')
+})
+
 app.get('/c/f/add', async (c) => {
 	if (!c.get('USER_ID')) return c.redirect('/login')
 	const inner = `
 	<h1>New feed</h1>
 	<form action="/c/f/add" method="POST">
-		<label for="url">Blog URL:</label><br>
+		<label for="url">Blog URL (or direct RSS URL):</label><br>
 	  <input type="text" id="url" name="url" value=""><br>
-	  <label for="url">Feed URL:</label><br>
-	  <input type="text" id="rssUrl" name="rssUrl" value=""><br>
 	  <input type="submit" value="Submit">
 	</form>` 
-	return c.html(renderHTML("All items", html`${raw(inner)}`))
+	return c.html(renderHTML("Add new feed", html`${raw(inner)}`))
 });
 
 app.post('/c/f/add', async (c) => {
-	// const r = fetchFeed(c)
 	const body = await c.req.parseBody();
 	const url = body['url'].toString();
-	const rssUrl = body['rssUrl'].toString();
-	const f = await addFeed(c, url, rssUrl)
-	console.log(f)
-	if (f['success'] === true) {
+	const rssUrl = await addFeed(c, url)
+	if (rssUrl) {
 		const feedId = await getFeedIdByRSSUrl(c, rssUrl)
-		console.log(feedId)
-		// await fetchFeed(c, feedId)
-		await c.env.FEED_UPDATE_QUEUE.send(feedId);
+		// await c.env.FEED_UPDATE_QUEUE.send(feedId);
 		const sqid = idToSqid(feedId)
 		return c.redirect(`/feeds/${sqid}`, 301)
 	}
@@ -100,35 +96,54 @@ app.post('/login', async (c) => {
 
 
 // INTERNAL FUNCTIONS
+async function getRSSLinkFromUrl(url:string) {
+	let req;
+	try {
+		req = await fetch(url);
+	} catch (err) {
+		return ''
+	}
+	const pageContent = await req.text();
+
+	// the content of the page is HTML, try to find RSS link
+	if (pageContent.includes('<html') || pageContent.includes('<!DOCTYPE html>')) {
+		const rssUrlObj = getRssUrlsFromHtmlBody(pageContent)
+		let foundRSSLink = rssUrlObj[0]['url']
+		// the found rss link may be relative or absolute; handle both cases here
+		if (foundRSSLink.substring(0, 4) != "http") {
+			if (url.substring(url.length - 1) != "/") foundRSSLink = url + '/' + foundRSSLink;
+			else foundRSSLink = url + foundRSSLink;
+		}
+		return foundRSSLink
+	}
+
+	// otherwise assume the url is direct RSS url, so just return it
+	return url
+}
+
 async function getFeedIdByRSSUrl(c: Context, rssUrl: string) {
 	const { results } = await c.env.DB.prepare("SELECT feed_id FROM feeds where rss_url = ?").bind(rssUrl).all()
 	return results[0]['feed_id']
 }
 
-async function addFeed(c, url:string, rssUrl:string) {
+async function addFeed(c, url:string) {
 	let req;
-	try {
-		req = await fetch(rssUrl);
-	} catch (err) {
-		return
+	const rssUrl = await getRSSLinkFromUrl(url)
+	console.log(rssUrl)
+	const r = await extract(rssUrl)
+
+	const dbQueryResult = await c.env.DB.prepare("INSERT INTO feeds (title, url, rss_url) values (?, ?, ?)").bind(r.title, r.link, rssUrl).all()
+
+	if (dbQueryResult['success'] === true) {
+		// if (r.entries) {
+		// 	const feedId = await getFeedIdByRSSUrl(c, rssUrl)
+		// 	addItemsToFeed(c.env, r.entries, feedId)
+		// }
+		const feedId = await getFeedIdByRSSUrl(c, rssUrl)
+		await c.env.FEED_UPDATE_QUEUE.send(feedId);
+		return rssUrl
 	}
-	const rssText = await req.text();
-	const parser = new XMLParser();
-
-	let rssJson;
-	try {
-		rssJson = parser.parse(rssText, true);
-	} catch (err) {
-		return
-	}
-
-	// console.log(rssJson)
-
-	let title;
-	if (rssJson.rss && rssJson.rss.channel) {title = rssJson.rss.channel.title}
-	else if (rssJson.feed) {title = rssJson.feed.title}
-
-	return await c.env.DB.prepare("INSERT INTO feeds (title, url, rss_url) values (?, ?, ?)").bind(title, url, rssUrl).all()
+	return
 }
 
 async function fetchAllFeeds(env:Bindings) {
@@ -144,56 +159,34 @@ async function fetchFeed(env:Bindings, feedId: Number) {
 
 	// get RSS url of feed
 	const { results: feeds } = await env.DB.prepare("SELECT * FROM feeds WHERE feed_id = ?").bind(feedId).all();
-	const url = feeds[0]['rss_url']
+	const rssURL = feeds[0]['rss_url']
 
 	// fetch RSS content
-	const req = await fetch(url);
-	const rssText = await req.text();
-	const rssJson = parser.parse(rssText, true);
-
-	let items;
-	if (rssJson.rss && rssJson.rss.channel) items = rssJson.rss.channel.item;
-	else if (rssJson.feed) items = rssJson.feed.entry;
+	const r = await extract(rssURL)
 
 	// get URLs of existing items from DB
 	const { results: existingItems } = await env.DB.prepare( "SELECT url FROM items WHERE feed_id = ?").bind(feedId).all();
 	const existingUrls = existingItems.map(obj => obj.url);
 
-	// try getting new items
-	let newItemsToBeAdded = 0;
-	if (items.length > 0) {
-		let binds: any[] = [];
-		const stmt = env.DB.prepare("INSERT INTO items (feed_id, title, url, pub_date, content) values (?, ?, ?, ?, ?)");
-
-		// each item of RSS feed...
-		items.forEach((item: any) => {
-			let pubDate;
-			if (item.pubDate) pubDate = new Date(item.pubDate).toISOString();
-			else if (item.published) pubDate = new Date(item.published).toISOString();
-			
-			let link;
-			if (item.link) link = item.link;
-			else if (item.id) link = item.id;
-
-			let content;
-			if (item['content:encoded']) content = item['content:encoded']
-			else if (item.description) content = item.description
-			else if (item.content) content = item.content
-
-			// only if does not exist in DB
-			if (!existingUrls.includes(link)) {
-				newItemsToBeAdded += 1;
-				binds.push(stmt.bind(feedId, item.title, link, pubDate, content));
-			}
-		});
-
-		if (newItemsToBeAdded > 0) {
-			await env.DB.batch(binds);
-		}
-
-		console.log(`Updated feed ${feedId} (${url}), fetched items: ${items.length}, of which new items added: ${newItemsToBeAdded}`) 
+	// if RSS entries exist
+	if (r.entries) {
+		// filter out existing ones
+		const newItemsToBeAdded = r.entries.filter(entry => !existingUrls.includes(entry.link));
+		if (newItemsToBeAdded.length > 0) await addItemsToFeed(env, newItemsToBeAdded, feedId)
+		console.log(`Updated feed ${feedId} (${rssURL}), fetched items: ${r.entries.length}, of which new items added: ${newItemsToBeAdded.length}`)
+		return
 	}
-	return
+	console.log(`Updated feed ${feedId} (${rssURL}), no items fetched`)
+}
+
+async function addItemsToFeed(env:Bindings, items:Array<any>, feedId: Number) {
+	if (items.length < 1) return
+	const stmt = env.DB.prepare("INSERT INTO items (feed_id, title, url, pub_date, content) values (?, ?, ?, ?, ?)");
+	let binds: any[] = [];
+	items.forEach((item: any) => {
+		binds.push(stmt.bind(feedId, item.title, item.link, item.published, item.description));
+	});
+	await env.DB.batch(binds);
 }
 
 
@@ -213,10 +206,7 @@ export default {
   },
 
   // cron
-  async scheduled(event, env, ctx) {
+  async scheduled(event: any, env: Bindings, ctx: any) {
     await fetchAllFeeds(env)
   },
 };
-
-
-// export default app

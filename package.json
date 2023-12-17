@@ -9,7 +9,9 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230914.0",
+    "@extractus/feed-extractor": "^7.0.8",
     "fast-xml-parser": "^4.3.2",
+    "rss-url-finder": "^0.0.5-1",
     "sqids": "^0.3.0",
     "wrangler": "^3.15.0"
   }
