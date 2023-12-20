@@ -1,6 +1,7 @@
 ```
 npm install
 npm run dev
+npm run dev-remote
 ```
 
 ```
@@ -8,11 +9,18 @@ npm run deploy
 ```
 
 ### TODO
-- [ ] properly parse atom vs rss2.0
+- [x] properly parse atom vs rss2.0
 - [x] queues
 - [x] cron jobs to refresh feeds
 - [ ] auto tagging of items
 - [ ] feed tags from item tags
+- [ ] favorite items
+- [ ] pagination
+- [ ] user sign up
+- [ ] youtube channels
+- 
+
+### Maybe
 - [ ] show origin of item in listing (from my subs vs. from followings), see 'origin of item' below
 
 #### Origin of item

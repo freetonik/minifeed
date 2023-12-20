@@ -39,13 +39,12 @@ export const feedsSingle = async (c) => {
   ]);
 
   // batch[0] is feed with subscription status; 0 means no feed foudn in DB
-  if (batch[0].results.length === 0) return c.notFound();
+  if (!batch[0].results.length) return c.notFound();
   const feedTitle = batch[0].results[0]['title']
   const feedUrl = batch[0].results[0]['url']
   const rssUrl = batch[0].results[0]['rss_url']
   const subscriptionButtonText = batch[0].results[0]['subscription_id'] ? "unsubscribe" : "subscribe";
 
-  const dateFormatOptions = {year: 'numeric', month: 'short', day: 'numeric', };
   let list = `<h1>${feedTitle}</h1><p><a href="${feedUrl}">${feedUrl}</a></p>
   <span id="subscription">
     <button hx-post="/feeds/${feedSqid}/${subscriptionButtonText}"
@@ -58,12 +57,16 @@ export const feedsSingle = async (c) => {
   `
 
   // batch[1] is items
-  batch[1].results.forEach((item: any) => {
-    const postDate = new Date(item.pub_date).toLocaleDateString('en-UK', dateFormatOptions)
-    const postSqid = idToSqid(item.item_id, 10)
-    list += `<li><a href="${item.item_url}">${item.item_title}</a> / <a href="/items/${postSqid}">read</a> <time>${postDate}</time></li>`
-  })
-  return c.html(renderHTML("All items", html`${raw(list)}`))
+
+
+  if (!batch[1].results.length) list += `<p>Feed is being updated, come back later...</p>`; 
+  else {
+      batch[1].results.forEach((item: any) => {
+      list += renderItemShort(item.item_id, item.item_title, item.item_url, item.feed_title, item.feed_id, item.pub_date)
+    })
+  }
+
+  return c.html(renderHTML(`${feedTitle} | Minifeed`, html`${raw(list)}`))
 }
 
 export const feedsSubscribe = async (c) => {

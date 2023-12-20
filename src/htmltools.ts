@@ -41,14 +41,33 @@ export const renderHTML = (title, inner) => {
 </body></html>`
 }
 
-// <link rel="stylesheet" href="/static/sp.css">
+const dateFormatOptions = {year: 'numeric', month: 'short', day: 'numeric', };
 
-export const renderItemShort = (title, url, feed_title, feed_id) => {
-  const sqid = idToSqid(feed_id)
+export const renderItemShort = (item_id, title, url, feed_title, feed_id, pub_date='') => {
+  const postDate = new Date(pub_date).toLocaleDateString('en-UK', dateFormatOptions)
+  const feedSqid = idToSqid(feed_id)
+  const itemSqid = idToSqid(item_id, 10)
   return `
   <div style="margin-bottom: 0.5em">
     <a href="${url}">${title}</a> 
-    <br><small><a style="color:inherit; text-decoration: none;" href="/feeds/${sqid}">${feed_title}</a></small>
+    <small>(<a style="color:inherit; text-decoration: none;" href="/feeds/${feedSqid}">${feed_title}</a>)</small>
+    <br>
+    <small>
+    <a style="color:inherit; text-decoration: none;" href="/items/${itemSqid}">permalink</a> | 
+    <time>${postDate}</time>
+    </small>
   </div>
+  `
+}
+
+export const renderAddFeedForm = (url:string = '', flash:string = '') => {
+  return `
+  <h1>New feed</h1>
+  <form action="/c/f/add" method="POST">
+    <label for="url">Blog URL (or direct RSS URL):</label><br>
+    <input type="text" id="url" name="url" value="${url}" style="width: 100%;"><br>
+    <input type="submit" value="Submit">
+  </form> 
+  <div>${flash}</div>
   `
 }

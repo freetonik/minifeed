@@ -1,7 +1,10 @@
 DROP TABLE IF EXISTS followings;
 DROP TABLE IF EXISTS subscriptions;
+DROP TABLE IF EXISTS favorites;
+
 DROP TABLE IF EXISTS items;
 DROP TABLE IF EXISTS feeds;
+
 DROP TABLE IF EXISTS users;
 
 CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, token TEXT, username TEXT);
@@ -20,6 +23,7 @@ CREATE TABLE IF NOT EXISTS feeds (
     rss_url Text UNIQUE NOT NULL
 );
 INSERT INTO feeds (feed_id, title, url, rss_url) VALUES (1, 'Rakhim blog', 'https://rakhim.org', 'https://rakhim.org/index.xml');
+INSERT INTO feeds (feed_id, title, url, rss_url) VALUES (2, 'Kevin Quirk', 'https://kevquirk.com', 'https://kevquirk.com/feed');
 
 CREATE TABLE IF NOT EXISTS items (
 	item_id INTEGER PRIMARY KEY,
@@ -30,7 +34,20 @@ CREATE TABLE IF NOT EXISTS items (
     pub_date TIMESTAMP,
 	FOREIGN KEY(feed_id) REFERENCES feeds(feed_id)
 );
-INSERT INTO items (feed_id, title, content, url) VALUES (1, "Test", "Very test", 'https://rakhim.org/test');
+INSERT INTO items (feed_id, title, content, url) VALUES (1, "Test 1", "Very test 1", 'https://rakhim.org/test1');
+INSERT INTO items (feed_id, title, content, url) VALUES (1, "Test 2", "Very test 2", 'https://rakhim.org/test2');
+INSERT INTO items (feed_id, title, content, url) VALUES (2, "KevQuirk 3", "Very KevQuirk 3", 'https://kevquirk.com/KevQuirk3');
+INSERT INTO items (feed_id, title, content, url) VALUES (2, "KevQuirk 4", "Very KevQuirk 4", 'https://kevquirk.com/KevQuirk4');
+
+CREATE TABLE IF NOT EXISTS favorites (
+    favorite_id INTEGER PRIMARY KEY,
+    user_id INTEGER,
+    item_id INTEGER,
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (item_id) REFERENCES items(item_id),
+    UNIQUE (user_id, item_id)
+);
+INSERT INTO favorites (user_id, item_id) VALUES (1, 1);
 
 CREATE TABLE subscriptions (
     subscription_id INTEGER PRIMARY KEY,
