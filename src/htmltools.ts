@@ -1,7 +1,7 @@
 import { html, raw } from 'hono/html'
 import { idToSqid, sqidToId } from './utils'
 
-export const renderHTML = (title, inner) => {
+export const renderHTML = (title, inner, username = '?') => {
   return html`
 <!DOCTYPE html>
 <html>
@@ -32,6 +32,7 @@ export const renderHTML = (title, inner) => {
       <li><a href="/my/follows">My follows</a></li>
       <li><a href="/feeds">Feeds</a></li>
       <li><a href="/users">Users</a></li>
+      <li><a href="/users">${username}</a></li>
     </ul>
   </nav>
 </header>

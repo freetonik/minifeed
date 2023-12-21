@@ -11,6 +11,7 @@ export const itemsAll = async (c) => {
       SELECT items.item_id, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title 
       FROM items 
       JOIN feeds ON items.feed_id = feeds.feed_id
+      ORDER BY items.pub_date DESC
       LIMIT ? OFFSET ?`)
     .bind(itemsPerPage, offset)
     .run();
@@ -22,7 +23,7 @@ export const itemsAll = async (c) => {
     list += renderItemShort(item.item_id, item.item_title, item.item_url, item.feed_title, item.feed_id, item.pub_date)
   })
   list += `<p><a href="?p=${page+1}">More</a></p>`
-  return c.html(renderHTML("All items", html`${raw(list)}`))
+  return c.html(renderHTML("All items", html`${raw(list)}`, c.get('USERNAME')))
 }
 
 // // MY HOME FEED: subs + follows
@@ -34,7 +35,7 @@ export const itemsMy = async (c) => {
   const userId = c.get('USER_ID')
   const { results } = await c.env.DB
     .prepare(`
-      SELECT items.item_id, items.title, items.url, feeds.title AS feed_title, feeds.feed_id as feed_id 
+      SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id 
       FROM items
       JOIN subscriptions ON items.feed_id = subscriptions.feed_id
       JOIN feeds ON items.feed_id = feeds.feed_id
@@ -42,12 +43,14 @@ export const itemsMy = async (c) => {
 
       UNION
 
-      SELECT items.item_id, items.title, items.url, feeds.title AS feed_title, feeds.feed_id as feed_id  
+      SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id  
       FROM items
       JOIN subscriptions ON items.feed_id = subscriptions.feed_id
       JOIN feeds ON items.feed_id = feeds.feed_id
       JOIN followings ON subscriptions.user_id = followings.followed_user_id
       WHERE followings.follower_user_id = ?
+
+      ORDER BY items.pub_date DESC
 
       LIMIT ? OFFSET ?
       `)
@@ -70,11 +73,12 @@ export const itemsMySubs = async (c) => {
   const userId = c.get('USER_ID')
   const { results } = await c.env.DB
     .prepare(`
-      SELECT items.item_id, items.title, items.url, feeds.title AS feed_title, feeds.feed_id as feed_id  
+      SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id  
       FROM items
       JOIN subscriptions ON items.feed_id = subscriptions.feed_id
       JOIN feeds ON items.feed_id = feeds.feed_id
       WHERE subscriptions.user_id = ?
+      ORDER BY items.pub_date DESC
       LIMIT ? OFFSET ?
       `)
     .bind(userId, itemsPerPage, offset)
@@ -82,7 +86,7 @@ export const itemsMySubs = async (c) => {
 
   let list = `<h1>From my subscriptions</h1>`
   results.forEach((item: any) => {
-    list += renderItemShort(item.item_id, item.title, item.url, item.feed_title, item.feed_id)
+    list += renderItemShort(item.item_id, item.title, item.url, item.feed_title, item.feed_id, item.pub_date)
   })
   list += `<p><a href="?p=${page+1}">More</a></p>`
   return c.html(renderHTML("From my subscriptions", html`${raw(list)}`))
@@ -92,12 +96,13 @@ export const itemsMyFollows = async (c) => {
   const userId = c.get('USER_ID')
   const { results } = await c.env.DB
     .prepare(`
-      SELECT items.item_id, items.title, items.url, feeds.title AS feed_title
+      SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title
       FROM items
       JOIN subscriptions ON items.feed_id = subscriptions.feed_id
       JOIN feeds ON items.feed_id = feeds.feed_id
       JOIN followings ON subscriptions.user_id = followings.followed_user_id
       WHERE followings.follower_user_id = ?
+      ORDER BY items.pub_date DESC
       `)
     .bind(userId)
     .all();
