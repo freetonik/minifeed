@@ -10,7 +10,7 @@ import { extract } from '@extractus/feed-extractor'
 import { itemsAll, itemsMy, itemsMySubs, itemsMyFollows, itemsSingle } from './items'
 import { feedsAll, feedsSingle, feedsSubscribe, feedsUnsubscribe } from './feeds'
 import { usersAll, usersSingle, usersFollow, usersUnfollow } from './users'
-import { loginOrCreateAccount, loginPost } from './account'
+import { loginOrCreateAccount, loginPost, accountMy, logout, signupPost } from './account'
 import { idToSqid } from './utils'
 
 type Bindings = {
@@ -45,10 +45,13 @@ app.get('/static/*', serveStatic({ root: './' }))
 app.get('/', (c) => {return c.redirect('/all', 301) })
 app.get('/all', itemsAll) // all posts
 
-app.get('/login', loginOrCreateAccount)
-app.post('/login', loginPost)
+app.get('/login', loginOrCreateAccount);
+app.get('/logout', logout);
+app.post('/signup', signupPost);
+app.post('/login', loginPost);
 
 app.get('/my', itemsMy)
+app.get('/my/account', accountMy)
 app.get('/my/subs', itemsMySubs)
 app.get('/my/follows', itemsMyFollows)
 

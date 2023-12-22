@@ -18,23 +18,30 @@ export const renderHTML = (title, inner, username = '?') => {
   />
 
   
-  <link rel="stylesheet" href="https://unpkg.com/missing.css@1.1.1">
+  <link rel="stylesheet" href="/static/minifeed.css">
   <script src="/static/htmx.min.js"></script>
 </head>
 
 <body>
-  <header class="navbar">
-  <p><a href="/" class="allcaps bold">Minifeed</a></p>
-  <nav aria-label="Site sections">
-    <ul role="list">
-      <li><a href="/my">My all</a></li>
-      <li><a href="/my/subs">My subs</a></li>
-      <li><a href="/my/follows">My follows</a></li>
-      <li><a href="/feeds">Feeds</a></li>
-      <li><a href="/users">Users</a></li>
-      <li><a href="/users">${username}</a></li>
-    </ul>
-  </nav>
+  <header>
+    <nav aria-label="Site sections">
+      <div>
+        <a href="/" class="logo bold">⨕</a>
+        
+        <a href="/my" class="bold">My stuff</a>
+        (<a href="/my/subs">from subs</a> /
+        <a href="/my/follows">from follows</a>)
+        
+        <a href="/all" class="bold" style="margin-left: 0.5em">Global stuff</a>
+        <a href="/feeds" class="bold" style="margin-left: 0.5em">Feeds</a>
+        <a href="/users" class="bold" style="margin-left: 0.5em">Users</a>
+      </div>
+      <div>
+        <a href="/users" class="bold">${username}</a>
+      </div>
+    </nav>
+
+    </nav>
 </header>
 
   <main>${inner}</main>
