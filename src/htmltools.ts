@@ -56,11 +56,9 @@ export const renderItemShort = (item_id, title, url, feed_title, feed_id, pub_da
   const feedSqid = idToSqid(feed_id)
   const itemSqid = idToSqid(item_id, 10)
   return `
-  <div style="margin-bottom: 0.5em">
-    <a href="${url}">${title}</a> 
-    <small>(<a style="color:inherit; text-decoration: none;" href="/feeds/${feedSqid}">${feed_title}</a>)</small>
-    <br>
-    <small>
+  <div class="item-short">
+    <a href="${url}" class="item-short-title">${title}</a> <br>
+    <small>from <a style="color:inherit; text-decoration: none;" href="/feeds/${feedSqid}">${feed_title}</a> | 
     <a style="color:inherit; text-decoration: none;" href="/items/${itemSqid}">permalink</a> | 
     <time>${postDate}</time>
     </small>

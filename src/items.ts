@@ -18,12 +18,12 @@ export const itemsAll = async (c) => {
 
   if (!results.length) return c.notFound();
 
-  let list = `<h1>All items (page ${page})</h1>`
+  let list = `<h1>Global stuff</h1>`
   results.forEach((item: any) => {
     list += renderItemShort(item.item_id, item.item_title, item.item_url, item.feed_title, item.feed_id, item.pub_date)
   })
-  list += `<p><a href="?p=${page+1}">More</a></p>`
-  return c.html(renderHTML("All items", html`${raw(list)}`, c.get('USERNAME')))
+  list += `<p>page ${page} / <a href="?p=${page+1}">More</a></p>`
+  return c.html(renderHTML("Global stuff | minifeed", html`${raw(list)}`, c.get('USERNAME')))
 }
 
 // // MY HOME FEED: subs + follows
@@ -57,12 +57,12 @@ export const itemsMy = async (c) => {
     .bind(userId, userId, itemsPerPage, offset)
     .all();
 
-  let list = `<h1>All my items</h1>`
+  let list = ``
   results.forEach((item: any) => {
     list += renderItemShort(item.item_id, item.title, item.url, item.feed_title, item.feed_id)
   })
   list += `<p><a href="?p=${page+1}">More</a></p>`
-  return c.html(renderHTML("All items", html`${raw(list)}`))
+  return c.html(renderHTML("My stuff | minifeed", html`${raw(list)}`))
 }
 
 export const itemsMySubs = async (c) => {
