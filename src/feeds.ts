@@ -9,12 +9,16 @@ export const feedsAll = async (c) => {
     .prepare("SELECT * from feeds")
     .run();
 
-  let list = `<h1>All feeds</h1>`
+  let list = `<div class="main">`
   results.forEach((feed: any) => {
     const sqid = idToSqid(feed.feed_id)
-    list += `<li><a href="/feeds/${sqid}">${feed.title}</a> (<a href="${feed.url}">Site</a> / <a href="${feed.rss_url}">RSS</a>)</li>`
+    list += `
+    <div>
+      <a href="/feeds/${sqid}">${feed.title}</a>
+    </div>`
   })
-  return c.html(renderHTML("All items", html`${raw(list)}`))
+  list += "</div>"
+  return c.html(renderHTML("All feeds | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'feeds'))
 }
 
 export const feedsSingle = async (c) => {
@@ -45,7 +49,12 @@ export const feedsSingle = async (c) => {
   const rssUrl = batch[0].results[0]['rss_url']
   const subscriptionButtonText = batch[0].results[0]['subscription_id'] ? "unsubscribe" : "subscribe";
 
-  let list = `<h1>${feedTitle}</h1><p><a href="${feedUrl}">${feedUrl}</a></p>
+  let list = `
+  <h1>${feedTitle}</h1>
+  <p>
+    <a href="${feedUrl}">${feedUrl}</a> (<a href="${rssUrl}">RSS</a>)
+  </p>
+  <p>
   <span id="subscription">
     <button hx-post="/feeds/${feedSqid}/${subscriptionButtonText}"
       hx-trigger="click"
@@ -54,16 +63,18 @@ export const feedsSingle = async (c) => {
       ${subscriptionButtonText}
     </button>
   </span>
+  </p>
+  <hr style="margin:2em 0;">
   `
 
   // batch[1] is items
-
-
   if (!batch[1].results.length) list += `<p>Feed is being updated, come back later...</p>`; 
   else {
+    list += `<div>`
       batch[1].results.forEach((item: any) => {
-      list += renderItemShort(item.item_id, item.item_title, item.item_url, item.feed_title, item.feed_id, item.pub_date)
+      list += renderItemShort(item.item_id, item.item_title, item.item_url, '', item.feed_id, item.pub_date)
     })
+    list += `</div>`
   }
 
   return c.html(renderHTML(`${feedTitle} | Minifeed`, html`${raw(list)}`))

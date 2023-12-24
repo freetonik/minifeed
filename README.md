@@ -15,10 +15,12 @@ npm run deploy
 - [ ] auto tagging of items
 - [ ] feed tags from item tags
 - [ ] favorite items
-- [ ] pagination
+- [x] pagination
 - [ ] user sign up
 - [ ] youtube channels
-- 
+- [ ] adding custom missing pages
+- [ ] click to add note
+- [ ] full-text search
 
 ### Maybe
 - [ ] show origin of item in listing (from my subs vs. from followings), see 'origin of item' below

@@ -18,12 +18,14 @@ export const itemsAll = async (c) => {
 
   if (!results.length) return c.notFound();
 
-  let list = `<h1>Global stuff</h1>`
+  let list = `<p></p>`
   results.forEach((item: any) => {
     list += renderItemShort(item.item_id, item.item_title, item.item_url, item.feed_title, item.feed_id, item.pub_date)
   })
-  list += `<p>page ${page} / <a href="?p=${page+1}">More</a></p>`
-  return c.html(renderHTML("Global stuff | minifeed", html`${raw(list)}`, c.get('USERNAME')))
+  list += `<a href="?p=${page + 1}">More</a></p>`
+  return c.html(
+    renderHTML("Everything | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'all')
+  )
 }
 
 // // MY HOME FEED: subs + follows
@@ -57,12 +59,19 @@ export const itemsMy = async (c) => {
     .bind(userId, userId, itemsPerPage, offset)
     .all();
 
-  let list = ``
-  results.forEach((item: any) => {
-    list += renderItemShort(item.item_id, item.title, item.url, item.feed_title, item.feed_id)
-  })
-  list += `<p><a href="?p=${page+1}">More</a></p>`
-  return c.html(renderHTML("My stuff | minifeed", html`${raw(list)}`))
+  let list = `<nav class="my-menu"><small><a href="/my" class="active">all</a> / <a href="/my/subs">from subscriptions</a> / <a href="/my/follows">from follows</a></small></nav>
+    <div class="main">`
+  if (results.length) {
+
+    results.forEach((item: any) => {
+      list += renderItemShort(item.item_id, item.title, item.url, item.feed_title, item.feed_id)
+    })
+    list += `<p><a href="?p=${page + 1}">More</a></p></div>`
+  } else {
+    list += `Nothing</div>`
+  }
+
+  return c.html(renderHTML("My stuff | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'my'))
 }
 
 export const itemsMySubs = async (c) => {
@@ -84,15 +93,24 @@ export const itemsMySubs = async (c) => {
     .bind(userId, itemsPerPage, offset)
     .all();
 
-  let list = `<h1>From my subscriptions</h1>`
-  results.forEach((item: any) => {
-    list += renderItemShort(item.item_id, item.title, item.url, item.feed_title, item.feed_id, item.pub_date)
-  })
-  list += `<p><a href="?p=${page+1}">More</a></p>`
+  let list = `<nav class="my-menu"><small><a href="/my">all</a> / <a class="active" href="/my/subs">from subscriptions</a> / <a href="/my/follows">from follows</a></small></nav>
+    <div class="main">`
+  if (results.length) {
+    results.forEach((item: any) => {
+      list += renderItemShort(item.item_id, item.title, item.url, item.feed_title, item.feed_id, item.pub_date)
+    })
+    list += `<p><a href="?p=${page + 1}">More</a></p></div>`
+  } else {
+    list += `Nothing</div>`
+  }
   return c.html(renderHTML("From my subscriptions", html`${raw(list)}`))
 }
 
 export const itemsMyFollows = async (c) => {
+  const itemsPerPage = 10
+  const page = Number(c.req.query('p')) || 1
+  const offset = (page * itemsPerPage) - itemsPerPage
+
   const userId = c.get('USER_ID')
   const { results } = await c.env.DB
     .prepare(`
@@ -107,10 +125,17 @@ export const itemsMyFollows = async (c) => {
     .bind(userId)
     .all();
 
-  let list = `<h1>From my follows</h1>`
-  results.forEach((item: any) => {
-    list += `<li><a href="${item.url}">${item.title}</a> (${item.feed_title})</li>`
-  })
+  let list = `<nav class="my-menu"><small><a href="/my">all</a> / <a href="/my/subs">from subscriptions</a> / <a class="active" href="/my/follows">from follows</a></small></nav>
+    <div class="main">`
+  if (results.length) {
+    results.forEach((item: any) => {
+      list += `<li><a href="${item.url}">${item.title}</a> (${item.feed_title})</li>`
+    })
+    list += `<p><a href="?p=${page + 1}">More</a></p></div>`
+  } else {
+    list += `Nothing</div>`
+  }
+
   return c.html(renderHTML("From my follows", html`${raw(list)}`))
 }
 
@@ -129,7 +154,7 @@ export const itemsSingle = async (c) => {
   if (!results.length) return c.notFound();
 
   const item = results[0];
-  const dateFormatOptions = {year: 'numeric', month: 'short', day: 'numeric', };
+  const dateFormatOptions = { year: 'numeric', month: 'short', day: 'numeric', };
   const postDate = new Date(item.pub_date).toLocaleDateString('en-UK', dateFormatOptions)
   const feedSqid = idToSqid(item.feed_id)
   let list = `<h1>${item.item_title}</h1><p><time>${postDate}</time></p>`

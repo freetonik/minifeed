@@ -1,11 +1,11 @@
 import { html, raw } from 'hono/html'
 import { idToSqid, sqidToId } from './utils'
 
-export const renderHTML = (title, inner, username = '?') => {
+export const renderHTML = (title, inner, username = '?', active = 'all') => {
+
   return html`
 <!DOCTYPE html>
 <html>
-
 <head>
   <meta charset="utf-8">
   <title>${title}</title>
@@ -16,37 +16,28 @@ export const renderHTML = (title, inner, username = '?') => {
     rel="icon"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>"
   />
-
-  
   <link rel="stylesheet" href="/static/minifeed.css">
   <script src="/static/htmx.min.js"></script>
 </head>
 
-<body>
-  <header>
-    <nav aria-label="Site sections">
-      <div>
-        <a href="/" class="logo bold">⨕</a>
-        
-        <a href="/my" class="bold">My stuff</a>
-        (<a href="/my/subs">from subs</a> /
-        <a href="/my/follows">from follows</a>)
-        
-        <a href="/all" class="bold" style="margin-left: 0.5em">Global stuff</a>
-        <a href="/feeds" class="bold" style="margin-left: 0.5em">Feeds</a>
-        <a href="/users" class="bold" style="margin-left: 0.5em">Users</a>
+  <body>
+    <header>
+      <div class="logo">
+        <a href="/"><span>⬤</span> <span class="bold" style="margin-left: 0.2em;">minifeed</span>.net</a>
       </div>
-      <div>
-        <a href="/users" class="bold">${username}</a>
-      </div>
-    </nav>
+      <nav aria-label="Site sections">
+          <a href="/my" class="${active==='my' ? 'active' : ''}">Home</a>
+          <a href="/all" class="${active==='all' ? 'active' : ''}" style="margin-left: 0.5em">Everything</a>
+          <a href="/feeds" class="${active==='feeds' ? 'active' : ''}" style="margin-left: 0.5em">Feeds</a>
+          <a href="/users" class="${active==='users' ? 'active' : ''}" style="margin-left: 0.5em">Users</a>
+      </nav>
+    </header>
 
-    </nav>
-</header>
+    <main>${inner}</main>
 
-  <main>${inner}</main>
-  <footer> Minifeed.net </footer>
-</body></html>`
+    <footer><div><a href="/my/account" class="bold">My account</a> / Minifeed.net </div></footer>
+  </body>
+</html>`
 }
 
 const dateFormatOptions = {year: 'numeric', month: 'short', day: 'numeric', };
@@ -55,12 +46,15 @@ export const renderItemShort = (item_id, title, url, feed_title, feed_id, pub_da
   const postDate = new Date(pub_date).toLocaleDateString('en-UK', dateFormatOptions)
   const feedSqid = idToSqid(feed_id)
   const itemSqid = idToSqid(item_id, 10)
+
+  const feedLink = feed_title ? `<a href="/feeds/${feedSqid}">${feed_title}</a>` : ''
   return `
   <div class="item-short">
     <a href="${url}" class="item-short-title">${title}</a> <br>
-    <small>from <a style="color:inherit; text-decoration: none;" href="/feeds/${feedSqid}">${feed_title}</a> | 
-    <a style="color:inherit; text-decoration: none;" href="/items/${itemSqid}">permalink</a> | 
-    <time>${postDate}</time>
+    <small class="muted">
+    ${feedLink}
+    <time>${postDate}</time> |
+      <a class="no-underline no-color" href="/items/${itemSqid}">permalink</a> 
     </small>
   </div>
   `
@@ -75,5 +69,11 @@ export const renderAddFeedForm = (url:string = '', flash:string = '') => {
     <input type="submit" value="Submit">
   </form> 
   <div>${flash}</div>
+  `
+}
+
+export const renderFeedLong = (feed_id, title, url, rss_url, items) => {
+  const feedSqid = idToSqid(feed_id)
+  let list = `<h1>${title}</h1><p><a href="${url}">${url}</a></p>
   `
 }

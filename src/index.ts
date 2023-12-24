@@ -42,7 +42,10 @@ app.use('/my/*', userPageMiddleware)
 app.get('/static/*', serveStatic({ root: './' }))
 
 // APP ROUTES
-app.get('/', (c) => {return c.redirect('/all', 301) })
+app.get('/', (c) => {
+	if (!c.get('USER_ID')) return c.redirect('/all') 
+	return c.redirect('/my') 
+})
 app.get('/all', itemsAll) // all posts
 
 app.get('/login', loginOrCreateAccount);
@@ -191,9 +194,11 @@ async function addItemsToFeed(env:Bindings, items:Array<any>, feedId: Number) {
 	const stmt = env.DB.prepare("INSERT INTO items (feed_id, title, url, pub_date, content) values (?, ?, ?, ?, ?)");
 	let binds: any[] = [];
 	items.forEach((item: any) => {
-		binds.push(stmt.bind(feedId, item.title, item.link, item.published, item.description));
+		const link = item.link || item.guid || item.id;
+		binds.push(stmt.bind(feedId, item.title, link, item.published, item.description));
 	});
 	await env.DB.batch(binds);
+	console.log(`Added ${items.length} items to feed ${feedId}`)
 }
 
 

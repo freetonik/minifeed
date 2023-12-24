@@ -8,11 +8,12 @@ export const usersAll = async (c) => {
     .prepare("SELECT * from users")
     .run();
 
-  let list = `<h1>All users</h1>`
+  let list = `<div class="main">`
   results.forEach((user: any) => {
-    list += `<li><a href="/users/${user.username}">${user.username}</a></li>`
+    list += `<div><a href="/users/${user.username}">${user.username}</a></div>`
   })
-  return c.html(renderHTML("All items", html`${raw(list)}`))
+  list += "</div>"
+  return c.html(renderHTML("All items", html`${raw(list)}`, c.get('USERNAME'), 'users'))
 }
 
 export const usersSingle = async (c) => {
