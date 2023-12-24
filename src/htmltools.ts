@@ -18,6 +18,10 @@ export const renderHTML = (title, inner, username = '?', active = 'all') => {
   />
   <link rel="stylesheet" href="/static/minifeed.css">
   <script src="/static/htmx.min.js"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/typesense-instantsearch-adapter@2/dist/typesense-instantsearch-adapter.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/instantsearch.css@7/themes/algolia-min.css">
+
 </head>
 
   <body>
@@ -36,6 +40,36 @@ export const renderHTML = (title, inner, username = '?', active = 'all') => {
     <main>${inner}</main>
 
     <footer><div><a href="/my/account" class="bold">My account</a> / Minifeed.net </div></footer>
+
+
+    <header class="header">
+    <h1 class="header-title">
+        <a href="/">Instant Search Demo</a>
+    </h1>
+    <p class="header-subtitle">
+        using
+        <a href="https://github.com/algolia/instantsearch.js">
+            Typesense + InstantSearch.js
+        </a>
+    </p>
+</header>
+
+<div class="container">
+    <div class="search-panel">
+        <div class="search-panel__results">
+            <div id="searchbox"></div>
+            <div id="hits"></div>
+        </div>
+    </div>
+
+    <div id="pagination"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4.44.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/typesense-instantsearch-adapter@2/dist/typesense-instantsearch-adapter.min.js"></script>
+<script src="/static/search.js"></script>
+
+</body>
   </body>
 </html>`
 }
