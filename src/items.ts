@@ -140,7 +140,8 @@ export const itemsMyFollows = async (c) => {
 }
 
 export const itemsSingle = async (c) => {
-  const item_id = parseInt(sqidToId(c.req.param('item_sqid'), 10), 10);
+  const item_id:number = sqidToId(c.req.param('item_sqid'), 10);
+  console.log(item_id)
   const { results } = await c.env.DB
     .prepare(`
       SELECT items.item_id, items.title AS item_title, items.content, items.pub_date, items.url AS item_url, feeds.title AS feed_title, feeds.feed_id FROM items 

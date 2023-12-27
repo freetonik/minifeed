@@ -11,9 +11,8 @@ import { itemsAll, itemsMy, itemsMySubs, itemsMyFollows, itemsSingle } from './i
 import { feedsAll, feedsSingle, feedsSubscribe, feedsUnsubscribe } from './feeds'
 import { usersAll, usersSingle, usersFollow, usersUnfollow } from './users'
 import { loginOrCreateAccount, loginPost, accountMy, logout, signupPost } from './account'
+import { search } from './search'
 import { idToSqid } from './utils'
-
-import { Typesense } from 'typesense'
 
 type Bindings = {
 	DB: D1Database;
@@ -48,6 +47,7 @@ app.get('/', (c) => {
 	if (!c.get('USER_ID')) return c.redirect('/all')
 	return c.redirect('/my')
 })
+app.get('/search', search)
 app.get('/all', itemsAll) // all posts
 
 app.get('/login', loginOrCreateAccount);
@@ -88,13 +88,15 @@ app.post('/c/f/add', async (c) => {
 	const url = body['url'].toString();
 	let rssUrl;
 	try {
-		rssUrl = await addFeed(c, url)
+		rssUrl = await addFeed(c, url); 
 	} catch (e) {
 		return c.html(renderHTML("Add new feed", html`${raw(renderAddFeedForm(url, e.toString()))}`))
 	}
+
+	// RSS url is found
 	if (rssUrl) {
 		const feedId = await getFeedIdByRSSUrl(c, rssUrl)
-		await c.env.FEED_UPDATE_QUEUE.send(feedId);
+		// await c.env.FEED_UPDATE_QUEUE.send(feedId); 
 		const sqid = idToSqid(feedId)
 		return c.redirect(`/feeds/${sqid}`, 301)
 	}
@@ -138,8 +140,8 @@ async function getFeedIdByRSSUrl(c: Context, rssUrl: string) {
 
 async function addFeed(c, url: string) {
 	let req;
-	let rssUrl = await getRSSLinkFromUrl(url)
-	const r = await extract(rssUrl)
+	let rssUrl = await getRSSLinkFromUrl(url);
+	const r = await extract(rssUrl);
 
 	// if url === rssUrl that means the submitted URL was feed URL, so retrieve site URL from feed; otherwise use submitted URL as site URL
 	const siteUrl = (url === rssUrl) ? r.link : url
@@ -147,10 +149,10 @@ async function addFeed(c, url: string) {
 	const dbQueryResult = await c.env.DB.prepare("INSERT INTO feeds (title, url, rss_url) values (?, ?, ?)").bind(r.title, siteUrl, rssUrl).all()
 
 	if (dbQueryResult['success'] === true) {
-		// if (r.entries) {
-		// 	const feedId = await getFeedIdByRSSUrl(c, rssUrl)
-		// 	addItemsToFeed(c.env, r.entries, feedId)
-		// }
+		if (r.entries) {
+			const feedId = await getFeedIdByRSSUrl(c, rssUrl)
+			addItemsToFeed(c.env, r.entries, feedId)
+		}
 		const feedId = await getFeedIdByRSSUrl(c, rssUrl)
 		// await c.env.FEED_UPDATE_QUEUE.send(feedId);
 		return rssUrl
@@ -195,80 +197,82 @@ async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: Number) 
 	if (!items.length) return
 	const stmt = env.DB.prepare("INSERT INTO items (feed_id, title, url, pub_date, content) values (?, ?, ?, ?, ?)");
 	let binds: any[] = [];
-	let searchDocuments = []
+	let searchDocuments: any[] = [];
 	items.forEach((item: any) => {
 		const link = item.link || item.guid || item.id;
-		searchDocuments.push(JSON.stringify({
+		searchDocuments.push({
 			'title': item.title,
-			'content': item.description
-		}))
+			'content': item.description,
+
+			'link': link,
+			'pub_date': item.published,
+			'feed_id': feedId,
+		})
 		binds.push(stmt.bind(feedId, item.title, link, item.published, item.description));
 	});
-	await env.DB.batch(binds);
+
+	const resultsOfInsertion = await env.DB.batch(binds);
+	let searchDocumentsWalker = 0;
+	resultsOfInsertion.forEach((result: any) => {
+		if (result['success']) {
+			// add last_row_id to each item in searchDocuments as item_id
+			searchDocuments[searchDocumentsWalker]['id'] = result['meta']['last_row_id'];
+		} 
+	});
 	console.log(`Added ${items.length} items to feed ${feedId}`)
 
-	// console.log(`Updating Typesense index for feed ${feedId}`)
-	// let client = new Typesense.Client({
-	// 	'nodes': [{
-	// 		'host': '3afyidm6tgzxlvq7p-1.a1.typesense.net', // For Typesense Cloud use xxx.a1.typesense.net
-	// 		'port': '443',      // For Typesense Cloud use 443
-	// 		'protocol': 'https'   // For Typesense Cloud use https
-	// 	}],
-	// 	'apiKey': 'G5t6CiQtDGFGW9XOOPWQRFhlXrtYvK6a',
-	// 	'connectionTimeoutSeconds': 5
-	// })
-
-	console.log(`Importing ${searchDocuments.length} documents to Typesense`)
-	// client.collections('companies').documents().create(searchDocuments[0])
-
+	// convert searchDocument to newline separated string
+	const jsonlines = searchDocuments.map(item => JSON.stringify(item)).join('\n')	
 	
-
+	let results;
 	const init = {
-		body: searchDocuments.join('\n'),
+		body: jsonlines,
 		method: "POST",
 		headers: {
-		  "X-TYPESENSE-API-KEY": "G5t6CiQtDGFGW9XOOPWQRFhlXrtYvK6a",
-		  "Content-Type": "text/plain"
+			"X-TYPESENSE-API-KEY": "G5t6CiQtDGFGW9XOOPWQRFhlXrtYvK6a",
+			"Content-Type": "text/plain"
 		},
-	  };
-	  const response = await fetch("https://3afyidm6tgzxlvq7p-1.a1.typesense.net:443/collections/blog_items/documents/import?action=create", init);
-	  const results = await gatherResponse(response);
-	  console.log(results)
-
-
+	};
+	try {
+		const response = await fetch("https://3afyidm6tgzxlvq7p-1.a1.typesense.net:443/collections/blog_items/documents/import?action=create", init);
+		results = await gatherResponse(response);
+	} catch (e) {
+		console.log(e)
+	}
+	console.log(results)
 }
 
 /**
-     * gatherResponse awaits and returns a response body as a string.
-     * Use await gatherResponse(..) in an async function to get the response body
-     * @param {Response} response
-     */
+	 * gatherResponse awaits and returns a response body as a string.
+	 * Use await gatherResponse(..) in an async function to get the response body
+	 * @param {Response} response
+	 */
 async function gatherResponse(response) {
 	const { headers } = response;
 	const contentType = headers.get("content-type") || "";
 	if (contentType.includes("application/json")) {
-	  return JSON.stringify(await response.json());
+		return JSON.stringify(await response.json());
 	} else if (contentType.includes("application/text")) {
-	  return response.text();
+		return response.text();
 	} else if (contentType.includes("text/html")) {
-	  return response.text();
+		return response.text();
 	} else {
-	  return response.text();
+		return response.text();
 	}
-  }
+}
 
 
 // MAIN EXPORT
 export default {
 	fetch: app.fetch,
 
-	// consumer of queue
+	// consumer of queue FEED_UPDATE_QUEUE
 	async queue(batch: MessageBatch<any>, env: Bindings) {
 		let messages = JSON.stringify(batch.messages);
 		console.log(`Started processing job: ${messages}`);
 
 		for (const message of batch.messages) {
-			const feedId = message.body;
+			const feedId = message.body; // feedId is the body of the message
 			await fetchFeed(env, feedId)
 		}
 
