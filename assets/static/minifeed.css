@@ -82,13 +82,23 @@ header nav {
     padding: 0.25em 1.5em 0;
 }
 
-header nav a {
+header nav a, 
+header nav .search-form {
     color: white;
     text-decoration: none;
     padding: 0.5em 0.75em 1em;
 }
 
-header a.active {
+header nav .search-form form {
+    display: inline-block;
+}
+
+header nav .search-form input {
+    border: none;
+    padding: 0.25em 0.5em;
+}
+
+header .active {
     font-weight: bold;
     background-color: white;
     color: black;
@@ -144,6 +154,7 @@ footer div {
 .item-short a.item-short-title {
     font-weight: bold;
 }
+
 
 button {
   appearance: none;

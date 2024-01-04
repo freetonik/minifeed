@@ -1,4 +1,4 @@
-import { renderHTML, renderItemShort } from './htmltools';
+import { renderAddFeedForm, renderHTML, renderItemShort } from './htmltools';
 import { html, raw } from 'hono/html'
 import { idToSqid, sqidToId } from './utils'
 
@@ -141,7 +141,6 @@ export const itemsMyFollows = async (c) => {
 
 export const itemsSingle = async (c) => {
   const item_id:number = sqidToId(c.req.param('item_sqid'), 10);
-  console.log(item_id)
   const { results } = await c.env.DB
     .prepare(`
       SELECT items.item_id, items.title AS item_title, items.content, items.pub_date, items.url AS item_url, feeds.title AS feed_title, feeds.feed_id FROM items 
@@ -161,7 +160,22 @@ export const itemsSingle = async (c) => {
   let list = `<h1>${item.item_title}</h1><p><time>${postDate}</time></p>`
   list += `
     from <a href="/feeds/${feedSqid}"">${item.feed_title}</a>
-    <div class="post-content">${item.content}</div>
+    <div class="post-content">${raw(item.content)}</div>
   `
-  return c.html(renderHTML("All items", html`${raw(list)}`))
+  return c.html(renderHTML(`${item.item_title} | ${item.feed_title} | minifeed`, html`${raw(list)}`))
+}
+
+export const itemsDelete = async (c) => {
+  const feed_id:number = sqidToId(c.req.param('feed_sqid'));
+  await c.env.DB
+    .prepare(`DELETE from items where feed_id = ?` )
+    .bind(feed_id)
+    .run();
+
+  await c.env.DB
+    .prepare(`DELETE from feeds where feed_id = ?` )
+    .bind(feed_id)
+    .run();
+
+  return c.html(renderHTML("Add new feed", html`${raw(renderAddFeedForm('', `Feed ${feed_id} deleted`))}`))
 }

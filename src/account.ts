@@ -32,10 +32,10 @@ export const loginOrCreateAccount = async (c) => {
   let list = `
   <h1>Log in</h1>
   <form action="/login" method="POST">
-    <label for="username">Username:</label>
-    <input type="text" id="username" name="username" required />
+    <label for="username">Username:</label><br>
+    <input type="text" id="username" name="username" required /><br>
 
-    <label for="pass">Password (8 characters minimum):</label>
+    <label for="pass">Password (8 characters minimum):</label><br>
     <input type="password" id="pass" name="password" minlength="8" required />
 
     <br>
@@ -44,14 +44,14 @@ export const loginOrCreateAccount = async (c) => {
 
   <h1>Create account</h1>
   <form action="/signup" method="POST">
-    <label for="username">Username:</label>
-    <input type="text" id="username" name="username" required />
+    <label for="username">Username:</label><br>
+    <input type="text" id="username" name="username" required /><br>
 
-    <label for="pass">Password (8 characters minimum):</label>
-    <input type="password" id="pass" name="password" minlength="8" required />
+    <label for="pass">Password (8 characters minimum):</label><br>
+    <input type="password" id="pass" name="password" minlength="8" required /><br>
 
-    <label for="invitation_code">Invitation code:</label>
-    <input type="text" id="invitation_code" name="invitation_code" required />
+    <label for="invitation_code">Invitation code:</label><br>
+    <input type="text" id="invitation_code" name="invitation_code" required /><br>
 
     <br>
     <input type="submit" value="Create account">

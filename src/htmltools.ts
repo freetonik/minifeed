@@ -1,7 +1,7 @@
 import { html, raw } from 'hono/html'
 import { idToSqid, sqidToId } from './utils'
 
-export const renderHTML = (title, inner, username = '?', active = 'all') => {
+export const renderHTML = (title, inner, username = '?', active = 'all', searchQuery = '') => {
 
   return html`
 <!DOCTYPE html>
@@ -19,8 +19,6 @@ export const renderHTML = (title, inner, username = '?', active = 'all') => {
   <link rel="stylesheet" href="/static/minifeed.css">
   <script src="/static/htmx.min.js"></script>
   
-  <script src="https://cdn.jsdelivr.net/npm/typesense-instantsearch-adapter@2/dist/typesense-instantsearch-adapter.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/instantsearch.css@7/themes/algolia-min.css">
 
 </head>
 
@@ -34,6 +32,11 @@ export const renderHTML = (title, inner, username = '?', active = 'all') => {
           <a href="/all" class="${active==='all' ? 'active' : ''}" style="margin-left: 0.5em">Everything</a>
           <a href="/feeds" class="${active==='feeds' ? 'active' : ''}" style="margin-left: 0.5em">Feeds</a>
           <a href="/users" class="${active==='users' ? 'active' : ''}" style="margin-left: 0.5em">Users</a>
+          <span class="search-form ${active==='search' ? 'active' : ''}">
+          <form action="/search" method="GET">
+            <input type="text" name="q" placeholder="Search..." style="width: 10em;" value="${searchQuery}">
+          </form>
+          </span>
       </nav>
     </header>
 
@@ -41,17 +44,6 @@ export const renderHTML = (title, inner, username = '?', active = 'all') => {
 
     <footer><div><a href="/my/account" class="bold">My account</a> / Minifeed.net </div></footer>
 
-
-    <header class="header">
-    <h1 class="header-title">
-        <a href="/">Instant Search Demo</a>
-    </h1>
-    <p class="header-subtitle">
-        using
-        <a href="https://github.com/algolia/instantsearch.js">
-            Typesense + InstantSearch.js
-        </a>
-    </p>
 </header>
 
 <div class="container">
@@ -64,10 +56,6 @@ export const renderHTML = (title, inner, username = '?', active = 'all') => {
 
     <div id="pagination"></div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4.44.0"></script>
-<script src="https://cdn.jsdelivr.net/npm/typesense-instantsearch-adapter@2/dist/typesense-instantsearch-adapter.min.js"></script>
-<script src="/static/search.js"></script>
 
 </body>
   </body>
@@ -86,9 +74,32 @@ export const renderItemShort = (item_id, title, url, feed_title, feed_id, pub_da
   <div class="item-short">
     <a href="${url}" class="item-short-title">${title}</a> <br>
     <small class="muted">
-    ${feedLink}
+    ${feedLink} |
     <time>${postDate}</time> |
       <a class="no-underline no-color" href="/items/${itemSqid}">permalink</a> 
+    </small>
+  </div>
+  `
+}
+
+export const renderItemSearchResult = (searchResult) => {
+  const item = searchResult['document']
+  // item_id, title, url, feed_title, feed_id, pub_date=''
+  const postDate = new Date(item['pub_date']).toLocaleDateString('en-UK', dateFormatOptions)
+  const feedSqid = idToSqid(item['feed_id'])
+  const itemSqid = idToSqid(item['item_id'], 10)
+
+  return `
+  <div class="item-short" style="margin-top:2em">
+    <a href="${item['url']}" class="item-short-title">${item['title']}</a> <br>
+    <small class="muted">
+      <a href="/feeds/${feedSqid}">${item['feed_title']}</a>
+      <time>${postDate}</time> |
+      <a class="no-underline no-color" href="/items/${itemSqid}">permalink</a> 
+      <br>
+      <span class="search-result-snippet">
+        ${searchResult['highlight']['content']['snippet']}...
+      </span>
     </small>
   </div>
   `

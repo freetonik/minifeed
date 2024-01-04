@@ -10,5 +10,3 @@ export const sqidToId = (sqid:string, length:number = 5): number => {
   if(sqid.length != length) return 0;
   return parseInt(sqids.decode(sqid).join(''), 10)
 }
-
-const LOG = (a) => console.log(a)

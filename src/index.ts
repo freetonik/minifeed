@@ -7,11 +7,11 @@ import { serveStatic } from 'hono/cloudflare-workers'
 import { getRssUrlsFromHtmlBody } from 'rss-url-finder'
 import { extract } from '@extractus/feed-extractor'
 
-import { itemsAll, itemsMy, itemsMySubs, itemsMyFollows, itemsSingle } from './items'
+import { itemsAll, itemsMy, itemsMySubs, itemsMyFollows, itemsSingle, itemsDelete } from './items'
 import { feedsAll, feedsSingle, feedsSubscribe, feedsUnsubscribe } from './feeds'
 import { usersAll, usersSingle, usersFollow, usersUnfollow } from './users'
 import { loginOrCreateAccount, loginPost, accountMy, logout, signupPost } from './account'
-import { search } from './search'
+import { indexMultipleDocuments, search } from './search'
 import { idToSqid } from './utils'
 
 type Bindings = {
@@ -21,6 +21,7 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
+// Set user_id and username in context if user is logged in
 async function authMiddleware(c: Context<any, any, {}>, next: () => any) {
 	const sessionKey = getCookie(c, 'minifeed_session')
 	if (sessionKey) {
@@ -33,18 +34,32 @@ async function authMiddleware(c: Context<any, any, {}>, next: () => any) {
 	await next()
 }
 
+// User must be logged in
 async function userPageMiddleware(c: Context<any, any, {}>, next: () => any) {
 	if (!c.get('USER_ID')) return c.redirect('/login');
 	await next()
 }
 
-app.use('*', authMiddleware)
-app.use('/my/*', userPageMiddleware)
+// User must be logged in and be admin
+async function adminMiddleware(c: Context<any, any, {}>, next: () => any) {
+	if (!c.get('USER_ID') || c.get('USER_ID') != 1) {
+		c.status(401)
+		return c.bpdy('Unauthorized')
+	}
+	await next()
+}
+
+// static files
 app.get('/static/*', serveStatic({ root: './' }))
+
+
+app.use('*', authMiddleware); 
+app.use('/my/*', userPageMiddleware); 
+app.use('/feeds/:feed_sqid/delete', adminMiddleware)
 
 // APP ROUTES
 app.get('/', (c) => {
-	if (!c.get('USER_ID')) return c.redirect('/all')
+	if (!c.get('USER_ID')) return c.redirect('/all');
 	return c.redirect('/my')
 })
 app.get('/search', search)
@@ -64,6 +79,7 @@ app.get('/feeds', feedsAll)
 app.get('/feeds/:feed_sqid', feedsSingle)
 app.post('/feeds/:feed_sqid/subscribe', feedsSubscribe)
 app.post('/feeds/:feed_sqid/unsubscribe', feedsUnsubscribe)
+app.post('/feeds/:feed_sqid/delete', itemsDelete)
 
 app.get('/users', usersAll)
 app.get('/users/:username', usersSingle)
@@ -78,6 +94,8 @@ app.get('/items/:item_sqid', itemsSingle)
 // 	return c.text('ok')
 // })
 
+
+
 app.get('/c/f/add', async (c) => {
 	if (!c.get('USER_ID')) return c.redirect('/login')
 	return c.html(renderHTML("Add new feed", html`${raw(renderAddFeedForm())}`))
@@ -88,6 +106,7 @@ app.post('/c/f/add', async (c) => {
 	const url = body['url'].toString();
 	let rssUrl;
 	try {
+
 		rssUrl = await addFeed(c, url); 
 	} catch (e) {
 		return c.html(renderHTML("Add new feed", html`${raw(renderAddFeedForm(url, e.toString()))}`))
@@ -138,10 +157,13 @@ async function getFeedIdByRSSUrl(c: Context, rssUrl: string) {
 	return results[0]['feed_id']
 }
 
+
+// add new feed to DB
 async function addFeed(c, url: string) {
-	let req;
 	let rssUrl = await getRSSLinkFromUrl(url);
-	const r = await extract(rssUrl);
+	const r = await extract(rssUrl, {
+		descriptionMaxLen: 0,
+	});
 
 	// if url === rssUrl that means the submitted URL was feed URL, so retrieve site URL from feed; otherwise use submitted URL as site URL
 	const siteUrl = (url === rssUrl) ? r.link : url
@@ -176,7 +198,9 @@ async function fetchFeed(env: Bindings, feedId: Number) {
 	const rssURL = feeds[0]['rss_url']
 
 	// fetch RSS content
-	const r = await extract(rssURL)
+	const r = await extract(rssURL, {
+		descriptionMaxLen: 0
+	});
 
 	// get URLs of existing items from DB
 	const { results: existingItems } = await env.DB.prepare("SELECT url FROM items WHERE feed_id = ?").bind(feedId).all();
@@ -195,6 +219,11 @@ async function fetchFeed(env: Bindings, feedId: Number) {
 
 async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: Number) {
 	if (!items.length) return
+
+	// get feed title
+	const { results: feeds } = await env.DB.prepare("SELECT title FROM feeds WHERE feed_id = ?").bind(feedId).all();
+	const feedTitle = feeds[0]['title'];
+
 	const stmt = env.DB.prepare("INSERT INTO items (feed_id, title, url, pub_date, content) values (?, ?, ?, ?, ?)");
 	let binds: any[] = [];
 	let searchDocuments: any[] = [];
@@ -204,10 +233,12 @@ async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: Number) 
 			'title': item.title,
 			'content': item.description,
 
-			'link': link,
+			'url': link,
 			'pub_date': item.published,
 			'feed_id': feedId,
+			'feed_title': feedTitle
 		})
+
 		binds.push(stmt.bind(feedId, item.title, link, item.published, item.description));
 	});
 
@@ -216,50 +247,14 @@ async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: Number) 
 	resultsOfInsertion.forEach((result: any) => {
 		if (result['success']) {
 			// add last_row_id to each item in searchDocuments as item_id
-			searchDocuments[searchDocumentsWalker]['id'] = result['meta']['last_row_id'];
+			searchDocuments[searchDocumentsWalker]['item_id'] = result['meta']['last_row_id'];
+			searchDocumentsWalker += 1
 		} 
 	});
 	console.log(`Added ${items.length} items to feed ${feedId}`)
-
-	// convert searchDocument to newline separated string
-	const jsonlines = searchDocuments.map(item => JSON.stringify(item)).join('\n')	
-	
-	let results;
-	const init = {
-		body: jsonlines,
-		method: "POST",
-		headers: {
-			"X-TYPESENSE-API-KEY": "G5t6CiQtDGFGW9XOOPWQRFhlXrtYvK6a",
-			"Content-Type": "text/plain"
-		},
-	};
-	try {
-		const response = await fetch("https://3afyidm6tgzxlvq7p-1.a1.typesense.net:443/collections/blog_items/documents/import?action=create", init);
-		results = await gatherResponse(response);
-	} catch (e) {
-		console.log(e)
-	}
-	console.log(results)
+	indexMultipleDocuments(searchDocuments)
 }
 
-/**
-	 * gatherResponse awaits and returns a response body as a string.
-	 * Use await gatherResponse(..) in an async function to get the response body
-	 * @param {Response} response
-	 */
-async function gatherResponse(response) {
-	const { headers } = response;
-	const contentType = headers.get("content-type") || "";
-	if (contentType.includes("application/json")) {
-		return JSON.stringify(await response.json());
-	} else if (contentType.includes("application/text")) {
-		return response.text();
-	} else if (contentType.includes("text/html")) {
-		return response.text();
-	} else {
-		return response.text();
-	}
-}
 
 
 // MAIN EXPORT

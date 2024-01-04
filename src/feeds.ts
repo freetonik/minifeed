@@ -67,6 +67,14 @@ export const feedsSingle = async (c) => {
   <hr style="margin:2em 0;">
   `
 
+  if (c.get('USER_ID') == 1) {
+    list += `
+    <form action="/feeds/${feedSqid}/delete" method="POST" onsubmit="return confirm('Are you sure you want to delete it?');">
+      <input type="submit" value="DELETE">
+    </form> 
+    `
+  }
+
   // batch[1] is items
   if (!batch[1].results.length) list += `<p>Feed is being updated, come back later...</p>`; 
   else {
@@ -93,7 +101,6 @@ export const feedsSubscribe = async (c) => {
     c.status(400);
     return c.body('bad request');
   }
-  console.log(result);
   if (result.success) {
     c.status(201);
     return c.html(`

@@ -1,5 +1,5 @@
 import { html, raw } from "hono/html";
-import { renderHTML, renderItemShort } from "./htmltools";
+import { renderHTML, renderItemSearchResult } from "./htmltools";
 
 export const search = async (c) => {
   const q = c.req.query('q');
@@ -28,20 +28,35 @@ export const search = async (c) => {
   const response = await fetch("https://3afyidm6tgzxlvq7p-1.a1.typesense.net:443/multi_search?query_by=title,content", init);
   const results = await gatherResponse(response);
   const parsedReults = JSON.parse(results);
-  
 
-  // if (!results.length) return c.notFound();
-
-  let list = `<p></p>`
+  let list = `<h2>Search results for '${q}'</h2>`
   parsedReults['results'][0]['hits'].forEach((item: any) => {
-    console.log(item['document'])
-      list += renderItemShort(item['document']['id'], item['document']['title'], item['document']['link'], 'abc', item['document']['feed_id'], item['document']['pub_date'])
+    list += renderItemSearchResult(item);    
   })
   return c.html(
-      renderHTML("Everything | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'all')
+      renderHTML(`${q} | minifeed`, html`${raw(list)}`, c.get('USERNAME'), 'search', q)
   )
 }
 
+export const indexMultipleDocuments = async (documents: object[]) => {
+  console.log("indexing documents")
+  const jsonlines = documents.map(item => JSON.stringify(item)).join('\n');
+  const init = {
+    body: jsonlines,
+    method: "POST",
+    headers: {
+      "X-TYPESENSE-API-KEY": "G5t6CiQtDGFGW9XOOPWQRFhlXrtYvK6a",
+      "Content-Type": "text/plain"
+    },
+  };
+  try {
+    const response = await fetch("https://3afyidm6tgzxlvq7p-1.a1.typesense.net:443/collections/blog_items/documents/import?action=create", init);
+    const results = await gatherResponse(response);
+    console.log(results)
+  } catch (e) {
+    console.log(e)
+  }
+}
 
 /**
    * gatherResponse awaits and returns a response body as a string.
