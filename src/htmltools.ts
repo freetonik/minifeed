@@ -1,8 +1,7 @@
 import { html, raw } from 'hono/html'
-import { idToSqid, sqidToId } from './utils'
+import { feedIdToSqid, itemIdToSqid } from './utils'
 
-export const renderHTML = (title: string, inner, username:string = '?', active:string = 'all', searchQuery:string = '') => {
-
+export const renderHTML = (title: string, inner:any, username:string = '?', active:string = 'all', searchQuery:string = '') => {
   return html`
 <!DOCTYPE html>
 <html>
@@ -46,32 +45,38 @@ export const renderHTML = (title: string, inner, username:string = '?', active:s
 </html>`
 }
 
-const dateFormatOptions = {year: 'numeric', month: 'short', day: 'numeric', };
+const dateFormatOptions:Intl.DateTimeFormatOptions = {year: 'numeric', month: 'short', day: 'numeric'};
 
-export const renderItemShort = (item_id, title, url, feed_title, feed_id, pub_date='') => {
+export const renderItemShort = (item_id:number, title:string, url:string, feed_title:string, feed_id:number, pub_date:string='', summary: string = '') => {
   const postDate = new Date(pub_date).toLocaleDateString('en-UK', dateFormatOptions)
-  const feedSqid = idToSqid(feed_id)
-  const itemSqid = idToSqid(item_id, 10)
+  const feedSqid = feedIdToSqid(feed_id)
+  const itemSqid = itemIdToSqid(item_id)
 
-  const feedLink = feed_title ? `<a href="/feeds/${feedSqid}">${feed_title}</a>` : ''
+  const feedLink = feed_title ? `<a href="/feeds/${feedSqid}">${feed_title}</a> | ` : ''
+  const summaryContent = summary ? `
+  <details style="display:inline;">
+    <summary>summary</summary>
+    ${summary}
+  </details>` : ''
   return `
   <div class="item-short">
-    <a href="${url}" class="item-short-title">${title}</a> <br>
+    <a href="/items/${itemSqid}" class="item-short-title">${title}</a> <br>
     <small class="muted">
-    ${feedLink} |
+    ${feedLink}
     <time>${postDate}</time> |
-      <a class="no-underline no-color" href="/items/${itemSqid}">permalink</a> 
+      <a class="no-underline no-color" href="${url}">original</a> 
+    ${summaryContent}
     </small>
   </div>
   `
 }
 
-export const renderItemSearchResult = (searchResult) => {
+export const renderItemSearchResult = (searchResult:any) => {
   const item = searchResult['document']
   // item_id, title, url, feed_title, feed_id, pub_date=''
   const postDate = new Date(item['pub_date']).toLocaleDateString('en-UK', dateFormatOptions)
-  const feedSqid = idToSqid(item['feed_id'])
-  const itemSqid = idToSqid(item['item_id'], 10)
+  const feedSqid = feedIdToSqid(item['feed_id'])
+  const itemSqid = itemIdToSqid(item['item_id'])
   console.log(searchResult);
 
   let title = item['title'];
@@ -85,12 +90,15 @@ export const renderItemSearchResult = (searchResult) => {
   
   return `
   <div class="item-short" style="margin-top:2em">
-    <a href="${item['url']}" class="item-short-title">${title}</a> <br>
+    <a href="/items/${itemSqid}" class="item-short-title">${title}</a> <br>
     <small class="muted">
-      <a href="/feeds/${feedSqid}">${item['feed_title']}</a>
+      <a href="/feeds/${feedSqid}">${item['feed_title']}</a> | 
       <time>${postDate}</time> |
-      <a class="no-underline no-color" href="/items/${itemSqid}">permalink</a> 
+      <a class="no-underline no-color" href="${item['url']}">original</a> 
       <br>
+      
+    </small>
+    <small>
       <span class="search-result-snippet">
         ${content}...
       </span>
@@ -108,11 +116,5 @@ export const renderAddFeedForm = (url:string = '', flash:string = '') => {
     <input type="submit" value="Submit">
   </form> 
   <div>${flash}</div>
-  `
-}
-
-export const renderFeedLong = (feed_id, title, url, rss_url, items) => {
-  const feedSqid = idToSqid(feed_id)
-  let list = `<h1>${title}</h1><p><a href="${url}">${url}</a></p>
   `
 }

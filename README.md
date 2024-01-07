@@ -28,6 +28,7 @@ npm run deploy
     2. get each article content separately via extractus (probably better idea, because this is needed anyway + will result in better search; this requires stripping HTML tags from the doc though); but this doesn't always work, see https://antonz.org/go-1-22/ for example
 - [ ] request for post, voted and commented by users
 - [ ] download images?
+- [ ] summary for posts
 
 ### Maybe
 - [ ] show origin of item in listing (from my subs vs. from followings), see 'origin of item' below

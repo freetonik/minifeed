@@ -217,6 +217,30 @@ button:-webkit-details-marker {
     font-weight: bold;
 }
 
+/* headlines with lines */
+.decorated{
+    overflow: hidden;
+    text-align: center;
+}
+.decorated > span{
+   position: relative;
+   display: inline-block;
+}
+.decorated > span:before, .decorated > span:after{
+   content: '';
+   position: absolute;
+   top: 50%;
+   border-bottom: 1px solid gray;
+   width: 100vw;
+   margin: 0 20px;
+}
+.decorated > span:before{
+   right: 100%;
+}
+.decorated > span:after{
+   left: 100%;
+}
+
 .muted,
 .muted a {
     color: var(--color-gray) !important;
@@ -224,4 +248,59 @@ button:-webkit-details-marker {
 
 .post-content img {
     max-width: 100%;
+}
+
+.admin-control {
+    background-color: var(--color-yellow);
+    padding: 1em;
+    margin-top: 2em;
+}
+
+
+/* FORMS */
+.formbg {
+    margin: 2em auto;
+    padding: 1.75em 2em 2.25em 2em;
+    width: 100%;
+    max-width: 448px;
+    background: white;
+    border-radius: 4px;
+    box-shadow: rgba(60, 66, 87, 0.12) 0px 7px 14px 0px, rgba(0, 0, 0, 0.12) 0px 3px 6px 0px;
+}
+
+.formbg h2 {
+    margin-top: 0;
+}
+
+.formbg input {
+    font-size: 16px;
+    line-height: 28px;
+    padding: 8px 16px;
+    width: 100%;
+    min-height: 44px;
+    border: unset;
+    border-radius: 4px;
+    outline-color: rgb(84 105 212 / 0.5);
+    background-color: rgb(255, 255, 255);
+    box-shadow: rgba(0, 0, 0, 0) 0px 0px 0px 0px, 
+                rgba(0, 0, 0, 0) 0px 0px 0px 0px, 
+                rgba(0, 0, 0, 0) 0px 0px 0px 0px, 
+                rgba(60, 66, 87, 0.16) 0px 0px 0px 1px, 
+                rgba(0, 0, 0, 0) 0px 0px 0px 0px, 
+                rgba(0, 0, 0, 0) 0px 0px 0px 0px, 
+                rgba(0, 0, 0, 0) 0px 0px 0px 0px;
+}
+
+.formbg input[type="submit"] {
+    background-color: rgb(5 133 76);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.formbg label {
+    font-size: 14px;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.5em;
 }

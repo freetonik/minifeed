@@ -3,7 +3,7 @@ import { getCookie, getSignedCookie, setCookie, setSignedCookie, deleteCookie } 
 
 import { renderHTML, renderItemShort } from './htmltools';
 
-export const accountMy = async (c) => {
+export const accountMy = async (c:any) => {
   const invitationCode = await hashPassword(c.get('USER_ID'), 'gqw@zfe8GDB@xfe.kvp')
   let list = `
   <h1>My account</h1>
@@ -14,7 +14,7 @@ export const accountMy = async (c) => {
   return c.html(renderHTML("All items", html`${raw(list)}`))
 }
 
-export const logout = async (c) => {
+export const logout = async (c:any) => {
   const sessionKey = getCookie(c, 'minifeed_session');
   try {
     await c.env.DB.prepare("DELETE FROM sessions WHERE session_key = ?").bind(sessionKey).run();
@@ -25,42 +25,56 @@ export const logout = async (c) => {
   return c.redirect('/')
 }
 
-export const loginOrCreateAccount = async (c) => {
+export const loginOrCreateAccount = async (c:any) => {
   const userId = c.get('USER_ID') || "0";
   if (c.get('USER_ID')) return c.redirect('/')
 
   let list = `
-  <h1>Log in</h1>
-  <form action="/login" method="POST">
-    <label for="username">Username:</label><br>
-    <input type="text" id="username" name="username" required /><br>
+  <div class="formbg">
+    <h2>Log in</h2>
+    <form action="/login" method="POST">
+      <div style="margin-bottom:1em;">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required />
+      </div>
 
-    <label for="pass">Password (8 characters minimum):</label><br>
-    <input type="password" id="pass" name="password" minlength="8" required />
+      <div style="margin-bottom:2em;">
+        <label for="pass">Password (8 characters minimum)</label>
+        <input type="password" id="pass" name="password" minlength="8" required />
+      </div>
 
-    <br>
-    <input type="submit" value="Log in">
-  </form> 
+      <input type="submit" value="Log in">
+    </form> 
+  </div>
 
-  <h1>Create account</h1>
-  <form action="/signup" method="POST">
-    <label for="username">Username:</label><br>
-    <input type="text" id="username" name="username" required /><br>
+  <h3 style="margin: 3em 0;" class="decorated"><span>or</span></h3>
 
-    <label for="pass">Password (8 characters minimum):</label><br>
-    <input type="password" id="pass" name="password" minlength="8" required /><br>
+  <div class="formbg">
+    <h2>Create account</h2>
+    <form action="/signup" method="POST">
+      <div style="margin-bottom:1em;">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required />
+      </div>
 
-    <label for="invitation_code">Invitation code:</label><br>
-    <input type="text" id="invitation_code" name="invitation_code" required /><br>
+      <div style="margin-bottom:1em;">
+        <label for="pass">Password (8 characters minimum)</label>
+        <input type="password" id="pass" name="password" minlength="8" required />
+      </div>
 
-    <br>
-    <input type="submit" value="Create account">
-  </form> 
+      <div style="margin-bottom:2em;">
+        <label for="invitation_code">Invitation code:</label>
+        <input type="text" id="invitation_code" name="invitation_code" required />
+      </div>
+
+      <input type="submit" value="Create account">
+    </form> 
+  </div>
   `
   return c.html(renderHTML("All items", html`${raw(list)}`))
 }
 
-export const loginPost = async (c) => {
+export const loginPost = async (c:any) => {
   const body = await c.req.parseBody();
   const username = body['username'].toString();
   const password = body['password'].toString();
@@ -72,7 +86,7 @@ export const loginPost = async (c) => {
     .bind(username)
     .run();
 
-  if (!results.length) return c.notFound();
+  if (!results.length) return c.text("Wrong username or password")
 
   const user = results[0];
   const salt = user.password_salt
@@ -90,7 +104,7 @@ export const loginPost = async (c) => {
   return c.text("Wrong password")
 }
 
-export const createSessionSetCookieAndRedirect = async (c, userId, redirectTo = '/') => {
+export const createSessionSetCookieAndRedirect = async (c:any, userId:number, redirectTo = '/') => {
   const sessionKey = randomHash(16);
   try {
     await c.env.DB.prepare("INSERT INTO sessions (user_id, session_key) values (?, ?)").bind(userId, sessionKey).run();
@@ -101,7 +115,7 @@ export const createSessionSetCookieAndRedirect = async (c, userId, redirectTo = 
   return c.redirect(redirectTo)
 }
 
-export const signupPost = async (c) => {
+export const signupPost = async (c:any) => {
   const body = await c.req.parseBody();
   const username = body['username'].toString();
   const password = body['password'].toString();

@@ -4,12 +4,12 @@ import { Context } from 'hono'
 import { decode } from 'html-entities'
 import { isObject } from 'bellajs'
 
-export const idToSqid = (id:number, length:number): string => {
+const idToSqid = (id:number, length:number): string => {
   const sqids = new Sqids({minLength: length, alphabet: 'UV8E4hOJwLiXMpYBsWyQ7rNoeDgm9TGxbFI5aknAztjC2K3uZ6cldSqRv1PfH0',})
   return sqids.encode(id.toString().split('').map(char => parseInt(char, 10)))
 }
 
-export const sqidToId = (sqid:string, length:number): number => {
+const sqidToId = (sqid:string, length:number): number => {
   const sqids = new Sqids({minLength: length, alphabet: 'UV8E4hOJwLiXMpYBsWyQ7rNoeDgm9TGxbFI5aknAztjC2K3uZ6cldSqRv1PfH0',})
   if(sqid.length != length) return 0;
   return parseInt(sqids.decode(sqid).join(''), 10)

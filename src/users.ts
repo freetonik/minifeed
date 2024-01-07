@@ -1,8 +1,8 @@
 import { renderHTML, renderItemShort } from './htmltools';
 import { html, raw } from 'hono/html'
-import { idToSqid, sqidToId } from './utils'
+import { feedIdToSqid } from './utils';
 
-export const usersAll = async (c) => {
+export const usersAll = async (c:any) => {
   const userId = c.get('USER_ID') || "0";
   const { results } = await c.env.DB
     .prepare("SELECT * from users")
@@ -16,7 +16,7 @@ export const usersAll = async (c) => {
   return c.html(renderHTML("All items", html`${raw(list)}`, c.get('USERNAME'), 'users'))
 }
 
-export const usersSingle = async (c) => {
+export const usersSingle = async (c:any) => {
   const userId = c.get('USER_ID') || "0";
   const username = c.req.param('username');
   const batch = await c.env.DB.batch([
@@ -52,7 +52,7 @@ export const usersSingle = async (c) => {
 
     // favorites batch[4]
     c.env.DB.prepare(`
-      SELECT items.item_id, items.feed_id, items.url, items.title, feeds.title as feed_title 
+      SELECT items.item_id, items.feed_id, items.url, items.title, items.pub_date, feeds.title as feed_title 
       FROM items
       JOIN favorites on items.item_id = favorites.item_id
       JOIN feeds on items.feed_id = feeds.feed_id
@@ -82,8 +82,7 @@ export const usersSingle = async (c) => {
   // user favorited these jabronis
   list += `<h2>Favorites:</h2>`
   batch[4].results.forEach((item: any) => {
-    // list += `<li><a href="${fav.url}">${fav.title}</a></li>`
-    list += renderItemShort(item.item_id, item.title, item.url, item.feed_title, item.feed_id)
+    list += renderItemShort(item.item_id, item.title, item.url, item.feed_title, item.feed_id, item.pub_date)
     // const sqid = idToSqid(fav.feed_id)
     // list += `<li><a href="/feeds/${sqid}">${fav.title}</a></li>`
   })
@@ -91,7 +90,7 @@ export const usersSingle = async (c) => {
   // user subscribed to these jabronis
   list += `<h2>Subscriptions:</h2>`
   batch[1].results.forEach((feed: any) => {
-    const sqid = idToSqid(feed.feed_id)
+    const sqid = feedIdToSqid(feed.feed_id)
     list += `<li><a href="/feeds/${sqid}">${feed.title}</a></li>`
   })
 
@@ -111,7 +110,7 @@ export const usersSingle = async (c) => {
 
 }
 
-export const usersFollow = async (c) => {
+export const usersFollow = async (c:any) => {
   if (!c.get('USER_ID')) return c.html('');
   const userId = c.get('USER_ID');
   const username = c.req.param('username')
@@ -146,7 +145,7 @@ export const usersFollow = async (c) => {
     `);
 }
 
-export const usersUnfollow = async (c) => {
+export const usersUnfollow = async (c:any) => {
   if (!c.get('USER_ID')) return c.html('');
   const userId = c.get('USER_ID');
   const username = c.req.param('username')

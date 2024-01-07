@@ -35,14 +35,14 @@ export const feedsSingle = async (c:any) => {
       WHERE feeds.feed_id = ?
       `).bind(userId, feedId),
     c.env.DB.prepare(`
-      SELECT items.item_id, items.title AS item_title, items.pub_date, items.url AS item_url, feeds.title AS feed_title, feeds.url AS feed_url, feeds.feed_id
+      SELECT items.item_id, items.description, items.title AS item_title, items.pub_date, items.url AS item_url, feeds.title AS feed_title, feeds.url AS feed_url, feeds.feed_id
       FROM items 
       JOIN feeds ON items.feed_id = feeds.feed_id 
       WHERE feeds.feed_id = ? 
       ORDER BY items.pub_date DESC`).bind(feedId),
   ]);
 
-  // batch[0] is feed with subscription status; 0 means no feed foudn in DB
+  // batch[0] is feed joined with subscription status; 0 means no feed foudn in DB
   if (!batch[0].results.length) return c.notFound();
   const feedTitle = batch[0].results[0]['title']
   const feedUrl = batch[0].results[0]['url']
@@ -67,14 +67,6 @@ export const feedsSingle = async (c:any) => {
   <hr style="margin:2em 0;">
   `
 
-  if (c.get('USER_ID') == 1) {
-    list += `
-    <form action="/feeds/${feedSqid}/delete" method="POST" onsubmit="return confirm('Are you sure you want to delete it?');">
-      <input type="submit" value="DELETE">
-    </form> 
-    `
-  }
-
   // batch[1] is items
   if (!batch[1].results.length) list += `<p>Feed is being updated, come back later...</p>`; 
   else {
@@ -83,6 +75,16 @@ export const feedsSingle = async (c:any) => {
       list += renderItemShort(item.item_id, item.item_title, item.item_url, '', item.feed_id, item.pub_date)
     })
     list += `</div>`
+  }
+
+  if (c.get('USER_ID') == 1) {
+    list += `
+    <div class="admin-control">
+    <form action="/feeds/${feedSqid}/delete" method="POST" onsubmit="return confirm('Are you sure you want to delete it?');">
+      <input type="submit" value="DELETE">
+    </form> 
+    </div>
+    `
   }
 
   return c.html(renderHTML(`${feedTitle} | Minifeed`, html`${raw(list)}`))
