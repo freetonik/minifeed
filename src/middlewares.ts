@@ -5,7 +5,11 @@ import { getCookie } from 'hono/cookie'
 export async function authMiddleware(c: Context<any, any, {}>, next: () => any) {
 	const sessionKey = getCookie(c, 'minifeed_session')
 	if (sessionKey) {
-		const result = await c.env.DB.prepare("SELECT sessions.user_id, users.username FROM sessions JOIN users on users.user_id = sessions.user_id WHERE session_key = ?").bind(sessionKey).run();
+		const result = await c.env.DB.prepare(`
+			SELECT sessions.user_id, users.username
+			FROM sessions 
+			JOIN users on users.user_id = sessions.user_id 
+			WHERE session_key = ?`).bind(sessionKey).run();
 		if (result && result.results && result.results.length) {
 			c.set('USER_ID', result.results[0]['user_id']);
 			c.set('USERNAME', result.results[0]['username']);

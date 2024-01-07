@@ -4,11 +4,18 @@ import { getCookie, getSignedCookie, setCookie, setSignedCookie, deleteCookie } 
 import { renderHTML, renderItemShort } from './htmltools';
 
 export const accountMy = async (c:any) => {
-  const invitationCode = await hashPassword(c.get('USER_ID'), 'gqw@zfe8GDB@xfe.kvp')
+  // const invitationCode = await hashPassword(c.get('USER_ID'), 'gqw@zfe8GDB@xfe.kvp')
+  const username = c.get('USERNAME');
+  const linkToMyProfile = `<a href="/users/${username}">${username}</a>`;
   let list = `
   <h1>My account</h1>
-  <code>${invitationCode}</code>
-  <a href="/logout">Log out</a>
+  <p>
+    Username: ${username}<br>
+    Profile: ${linkToMyProfile}
+  </p>
+  <p style="margin-top:3em;">
+    <a style="padding: 0.75em; border: 1px solid; background-color: #9c0000; color: white;" href="/logout">Log out</a>
+  </p>
   
   `
   return c.html(renderHTML("All items", html`${raw(list)}`))
@@ -67,7 +74,7 @@ export const loginOrCreateAccount = async (c:any) => {
         <input type="text" id="invitation_code" name="invitation_code" required />
       </div>
 
-      <input type="submit" value="Create account">
+      <input class="blue" type="submit" value="Create account">
     </form> 
   </div>
   `

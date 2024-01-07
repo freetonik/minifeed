@@ -207,7 +207,6 @@ async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: Number) 
 	await indexMultipleDocuments(searchDocuments)
 }
 
-
 // MAIN EXPORT
 export default {
 	fetch: app.fetch,

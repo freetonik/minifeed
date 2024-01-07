@@ -87,7 +87,11 @@ export const feedsSingle = async (c:any) => {
     `
   }
 
-  return c.html(renderHTML(`${feedTitle} | Minifeed`, html`${raw(list)}`))
+  return c.html(renderHTML(
+    `${feedTitle} | minifeed`, 
+    html`${raw(list)}`,
+    c.get('USERNAME'),
+    'feeds'))
 }
 
 export const feedsSubscribe = async (c:any) => {

@@ -69,7 +69,8 @@ export const itemsMy = async (c:any) => {
     })
     list += `<p><a href="?p=${page + 1}">More</a></p></div>`
   } else {
-    list += `Nothing</div>`
+    list += `Your home is empty :-( <br>Subscribe to some <strong><a href="/feeds">feeds</a></strong> or follow some <strong><a href="/users">users</a></strong>.
+      </div>`
   }
 
   return c.html(renderHTML("My stuff | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'my'))
@@ -102,7 +103,7 @@ export const itemsMySubs = async (c:any) => {
     })
     list += `<p><a href="?p=${page + 1}">More</a></p></div>`
   } else {
-    list += `Nothing</div>`
+    list += `Your have no subscriptions :-( <br>Subscribe to some <strong><a href="/feeds">feeds</a></strong>.</div>`
   }
   return c.html(renderHTML("From my subscriptions", html`${raw(list)}`))
 }
@@ -134,7 +135,7 @@ export const itemsMyFollows = async (c:any) => {
     })
     list += `<p><a href="?p=${page + 1}">More</a></p></div>`
   } else {
-    list += `Nothing</div>`
+    list += `Your don't follow anyone :-( <br> Go find some <strong><a href="/users">users to follow</a></strong>`
   }
 
   return c.html(renderHTML("From my follows", html`${raw(list)}`))
@@ -165,12 +166,12 @@ export const itemsSingle = async (c:any) => {
     <hr>
     <div class="post-content">${raw(item.content_html)}</div>
   `
-
-  
-
-  
-
-  return c.html(renderHTML(`${item.item_title} | ${item.feed_title} | minifeed`, html`${raw(list)}`))
+  return c.html(renderHTML(
+    `${item.item_title} | ${item.feed_title} | minifeed`, 
+    html`${raw(list)}`,
+    c.get('USERNAME'),
+    'items'
+    ))
 }
 
 export const itemsDelete = async (c:any) => {

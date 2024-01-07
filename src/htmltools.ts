@@ -1,7 +1,18 @@
 import { html, raw } from 'hono/html'
 import { feedIdToSqid, itemIdToSqid } from './utils'
+import { version } from './version'
 
-export const renderHTML = (title: string, inner:any, username:string = '?', active:string = 'all', searchQuery:string = '') => {
+export const renderHTML = (title: string, inner:any, username:string = '', active:string = 'all', searchQuery:string = '') => {
+
+  let userBlock = html``
+  if (username) {
+    userBlock = html`
+      <a href="/my/account" class="bold">${username}</a>
+      <a href="/logout" class="bold">(logout)</a>
+    `
+  } else {
+    userBlock = html`<a href="/login" class="bold">Log in or create account</a>`
+  }
   return html`
 <!DOCTYPE html>
 <html>
@@ -21,25 +32,34 @@ export const renderHTML = (title: string, inner:any, username:string = '?', acti
 
   <body>
     <header>
-      <div class="logo">
-        <a href="/"><span>⬤</span> <span class="bold" style="margin-left: 0.2em;">minifeed</span>.net</a>
+      <div class="topline">
+        <div class="logo">
+          <a href="/"><span>⬤</span> <span class="bold" style="margin-left: 0.2em;">minifeed</span>.net</a>
+        </div>
+        <div class="user">
+          ${userBlock}
+        </div>
       </div>
+
       <nav aria-label="Site sections">
           <a href="/my" class="${active==='my' ? 'active' : ''}">Home</a>
           <a href="/all" class="${active==='all' ? 'active' : ''}" style="margin-left: 0.5em">Everything</a>
           <a href="/feeds" class="${active==='feeds' ? 'active' : ''}" style="margin-left: 0.5em">Feeds</a>
           <a href="/users" class="${active==='users' ? 'active' : ''}" style="margin-left: 0.5em">Users</a>
           <span class="search-form ${active==='search' ? 'active' : ''}">
-          <form action="/search" method="GET">
-            <input type="text" name="q" placeholder="Search..." style="width: 10em;" value="${searchQuery}">
-          </form>
+            <form action="/search" method="GET">
+              <input type="text" name="q" placeholder="Search..." size="22" value="${searchQuery}">
+            </form>
           </span>
       </nav>
     </header>
 
     <main>${inner}</main>
 
-    <footer><div><a href="/my/account" class="bold">My account</a> / Minifeed.net </div></footer>
+    <footer><div>
+      <p><a href="/my/account" class="bold">${userBlock}</p>
+      <p>Minifeed.net, 2024 (version ${version}) </p>
+    </div></footer>
 
   </body>
 </html>`

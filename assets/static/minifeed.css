@@ -73,20 +73,26 @@ h2 {
 header {
     background-color: var(--color-blue);
     color: white;
-    padding: 0.5em 0;
+    padding: 0.5em 0 0 0;
 }
 
 header nav {
     margin: auto;
     max-width: 900px;
-    padding: 0.25em 1.5em 0;
+    padding: 0.25em 0 0 1.5em;
+    display: flex;
 }
 
 header nav a, 
 header nav .search-form {
     color: white;
     text-decoration: none;
-    padding: 0.5em 0.75em 1em;
+    padding: 0.5em 0.75em 0.55em;
+}
+
+header nav .search-form {
+    margin-left: auto;
+    padding-right: 0;
 }
 
 header nav .search-form form {
@@ -104,15 +110,31 @@ header .active {
     color: black;
 }
 
-header .logo {
-    color: white !important;
+header .topline {
     max-width: 900px;
     margin: auto;
-    padding: 0.25em 1.5em;
+    display: flex;
     margin-bottom: 1em;
+    flex-direction: row;
+    justify-content: space-between;
 }
 
-header .logo a {
+header .topline .user {
+    padding: 0.25em 0;
+    font-size: smaller;
+}
+
+    header .topline .user a {
+        color: white;
+        text-decoration: none;
+    }
+
+header .topline .logo {
+    color: white !important;
+    padding: 0.25em 1.5em;
+}
+
+header .topline .logo a {
     color: white;
     text-decoration: none;
 
@@ -141,10 +163,19 @@ footer {
     margin-top: 3em;
 }
 
+
+footer a {
+    text-decoration: none;
+}
+footer a:visited {
+    color: var(--color-blue);
+}
+
 footer div {
     max-width: 900px;
     margin: auto;
     padding: 1.25em 1.5em;
+    text-align: center;
 }
 
 .item-short {
@@ -296,6 +327,10 @@ button:-webkit-details-marker {
     color: #fff;
     font-weight: 600;
     cursor: pointer;
+}
+
+.formbg input.blue {
+    background-color: var(--color-blue);
 }
 
 .formbg label {

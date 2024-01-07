@@ -106,8 +106,11 @@ export const usersSingle = async (c:any) => {
   })
 
 
-  return c.html(renderHTML("All items", html`${raw(list)}`))
-
+  return c.html(renderHTML(
+    `${username} | minifeed`, 
+    html`${raw(list)}`, 
+    c.get('USERNAME'), 
+    'users'));
 }
 
 export const usersFollow = async (c:any) => {
