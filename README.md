@@ -27,6 +27,7 @@ npm run deploy
     1. parse RSS better by getting content and description separately; content is optional in feeds; sometimes description is encoded
     2. get each article content separately via extractus (probably better idea, because this is needed anyway + will result in better search; this requires stripping HTML tags from the doc though); but this doesn't always work, see https://antonz.org/go-1-22/ for example
 - [ ] request for post, voted and commented by users
+- [ ] download images?
 
 ### Maybe
 - [ ] show origin of item in listing (from my subs vs. from followings), see 'origin of item' below
@@ -61,3 +62,20 @@ const r = await extract(rssUrl, {
 		}
 	});
 ```
+
+#### MAE service
+
+```
+let req;
+  const maeServiceUrl = `https://mae.deno.dev/?apikey=ZKQABMTSZCHMXEPGZMRKOXWODWELAVLN&url=${item.item_url}`
+  <!-- https://mae.deno.dev/?apikey=ZKQABMTSZCHMXEPGZMRKOXWODWELAVLN&url=https://antonz.org/go-1-22/ -->
+  try {
+		req = await fetch(maeServiceUrl);
+	} catch (err) {
+		throw new Error(`Cannot fetch url: ${maeServiceUrl}`)
+	}
+	const articleInfo = await req.text();
+  const content = JSON.parse(articleInfo).data.content;
+
+  list += html`${raw(content)}`
+  ```

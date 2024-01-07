@@ -2,6 +2,7 @@ import { renderAddFeedForm, renderHTML, renderItemShort } from './htmltools';
 import { html, raw } from 'hono/html'
 import { idToSqid, sqidToId } from './utils'
 
+
 export const itemsAll = async (c) => {
   const itemsPerPage = 10
   const page = Number(c.req.query('p')) || 1
@@ -143,7 +144,7 @@ export const itemsSingle = async (c) => {
   const item_id:number = sqidToId(c.req.param('item_sqid'), 10);
   const { results } = await c.env.DB
     .prepare(`
-      SELECT items.item_id, items.title AS item_title, items.content, items.pub_date, items.url AS item_url, feeds.title AS feed_title, feeds.feed_id FROM items 
+      SELECT items.item_id, items.title AS item_title, items.description, items.content_html, items.pub_date, items.url AS item_url, feeds.title AS feed_title, feeds.feed_id FROM items 
       JOIN feeds ON items.feed_id = feeds.feed_id 
       WHERE items.item_id = ? 
       ORDER BY items.pub_date DESC`
@@ -157,11 +158,18 @@ export const itemsSingle = async (c) => {
   const dateFormatOptions = { year: 'numeric', month: 'short', day: 'numeric', };
   const postDate = new Date(item.pub_date).toLocaleDateString('en-UK', dateFormatOptions)
   const feedSqid = idToSqid(item.feed_id)
-  let list = `<h1>${item.item_title}</h1><p><time>${postDate}</time></p>`
+  let list = `<h1>${item.item_title}</h1>`
   list += `
-    from <a href="/feeds/${feedSqid}"">${item.feed_title}</a>
-    <div class="post-content">${raw(item.content)}</div>
+    <p>from <a href="/feeds/${feedSqid}"">${item.feed_title}</a>, <time>${postDate}</time></p>
+    <div class="post-content">${raw(item.description)}</div>
+    <hr>
+    <div class="post-content">${raw(item.content_html)}</div>
   `
+
+  
+
+  
+
   return c.html(renderHTML(`${item.item_title} | ${item.feed_title} | minifeed`, html`${raw(list)}`))
 }
 

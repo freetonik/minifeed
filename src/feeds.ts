@@ -1,8 +1,8 @@
 import { renderHTML, renderItemShort } from './htmltools';
 import { html, raw } from 'hono/html'
-import { idToSqid, sqidToId } from './utils'
+import { feedIdToSqid, feedSqidToId } from './utils'
 
-export const feedsAll = async (c) => {
+export const feedsAll = async (c:any) => {
   // const user = c.get('USER_ID')
   // return c.text(`User: ${user}`)
   const { results } = await c.env.DB
@@ -11,7 +11,7 @@ export const feedsAll = async (c) => {
 
   let list = `<div class="main">`
   results.forEach((feed: any) => {
-    const sqid = idToSqid(feed.feed_id)
+    const sqid = feedIdToSqid(feed.feed_id)
     list += `
     <div>
       <a href="/feeds/${sqid}">${feed.title}</a>
@@ -21,11 +21,11 @@ export const feedsAll = async (c) => {
   return c.html(renderHTML("All feeds | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'feeds'))
 }
 
-export const feedsSingle = async (c) => {
+export const feedsSingle = async (c:any) => {
   // TODO: we're assuming that feed always has items; if feed has 0 items, this will return 404, but maybe we want to
   // show the feed still as "processing"; use https://developers.cloudflare.com/d1/platform/client-api/#batch-statements
   const feedSqid = c.req.param('feed_sqid')
-  const feedId = sqidToId(feedSqid);
+  const feedId = feedSqidToId(feedSqid);
   const userId = c.get('USER_ID') || "0";
 
   const batch = await c.env.DB.batch([
@@ -88,11 +88,11 @@ export const feedsSingle = async (c) => {
   return c.html(renderHTML(`${feedTitle} | Minifeed`, html`${raw(list)}`))
 }
 
-export const feedsSubscribe = async (c) => {
+export const feedsSubscribe = async (c:any) => {
   if (!c.get('USER_ID')) return c.redirect('/login');
   const userId = c.get('USER_ID');
   const feedSqid = c.req.param('feed_sqid')
-  const feedId = sqidToId(feedSqid);
+  const feedId = feedSqidToId(feedSqid);
   let result
 
   try {
@@ -121,11 +121,11 @@ export const feedsSubscribe = async (c) => {
     `);
 }
 
-export const feedsUnsubscribe = async (c) => {
+export const feedsUnsubscribe = async (c:any) => {
   if (!c.get('USER_ID')) return c.redirect('/login');
   const userId = c.get('USER_ID');
   const feedSqid = c.req.param('feed_sqid')
-  const feedId = sqidToId(feedSqid);
+  const feedId = feedSqidToId(feedSqid);
 
   try {
     await c.env.DB.prepare("DELETE FROM subscriptions WHERE user_id = ? AND feed_id = ?").bind(userId, feedId).all()

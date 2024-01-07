@@ -1,18 +1,17 @@
-import { Context, Hono } from 'hono'
-import { getCookie } from 'hono/cookie'
+import { Hono } from 'hono'
 import { html, raw } from 'hono/html'
-import { XMLParser } from 'fast-xml-parser'
 import { renderAddFeedForm, renderHTML } from './htmltools';
 import { serveStatic } from 'hono/cloudflare-workers'
-import { getRssUrlsFromHtmlBody } from 'rss-url-finder'
 import { extract } from '@extractus/feed-extractor'
+import { stripTags } from 'bellajs'
 
 import { itemsAll, itemsMy, itemsMySubs, itemsMyFollows, itemsSingle, itemsDelete } from './items'
 import { feedsAll, feedsSingle, feedsSubscribe, feedsUnsubscribe } from './feeds'
 import { usersAll, usersSingle, usersFollow, usersUnfollow } from './users'
 import { loginOrCreateAccount, loginPost, accountMy, logout, signupPost } from './account'
 import { indexMultipleDocuments, search } from './search'
-import { idToSqid } from './utils'
+import { absolitifyImageUrls, feedIdToSqid, getFeedIdByRSSUrl, getRSSLinkFromUrl, getText, idToSqid } from './utils'
+import { adminMiddleware, authMiddleware, userPageMiddleware } from './middlewares';
 
 type Bindings = {
 	DB: D1Database;
@@ -21,38 +20,10 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-// Set user_id and username in context if user is logged in
-async function authMiddleware(c: Context<any, any, {}>, next: () => any) {
-	const sessionKey = getCookie(c, 'minifeed_session')
-	if (sessionKey) {
-		const result = await c.env.DB.prepare("SELECT sessions.user_id, users.username FROM sessions JOIN users on users.user_id = sessions.user_id WHERE session_key = ?").bind(sessionKey).run();
-		if (result && result.results && result.results.length) {
-			c.set('USER_ID', result.results[0]['user_id']);
-			c.set('USERNAME', result.results[0]['username']);
-		}
-	}
-	await next()
-}
-
-// User must be logged in
-async function userPageMiddleware(c: Context<any, any, {}>, next: () => any) {
-	if (!c.get('USER_ID')) return c.redirect('/login');
-	await next()
-}
-
-// User must be logged in and be admin
-async function adminMiddleware(c: Context<any, any, {}>, next: () => any) {
-	if (!c.get('USER_ID') || c.get('USER_ID') != 1) {
-		c.status(401)
-		return c.bpdy('Unauthorized')
-	}
-	await next()
-}
-
 // static files
 app.get('/static/*', serveStatic({ root: './' }))
 
-
+// middlewares
 app.use('*', authMiddleware); 
 app.use('/my/*', userPageMiddleware); 
 app.use('/feeds/:feed_sqid/delete', adminMiddleware)
@@ -88,14 +59,6 @@ app.post('/users/:username/unfollow', usersUnfollow)
 
 app.get('/items/:item_sqid', itemsSingle)
 
-// app.get('/test', async (c) => {
-// 	if (!c.get('USER_ID')) return c.redirect('/login')
-// 	// await fetchAllFeeds(c.env)
-// 	return c.text('ok')
-// })
-
-
-
 app.get('/c/f/add', async (c) => {
 	if (!c.get('USER_ID')) return c.redirect('/login')
 	return c.html(renderHTML("Add new feed", html`${raw(renderAddFeedForm())}`))
@@ -106,9 +69,8 @@ app.post('/c/f/add', async (c) => {
 	const url = body['url'].toString();
 	let rssUrl;
 	try {
-
 		rssUrl = await addFeed(c, url); 
-	} catch (e) {
+	} catch (e: any) {
 		return c.html(renderHTML("Add new feed", html`${raw(renderAddFeedForm(url, e.toString()))}`))
 	}
 
@@ -116,7 +78,7 @@ app.post('/c/f/add', async (c) => {
 	if (rssUrl) {
 		const feedId = await getFeedIdByRSSUrl(c, rssUrl)
 		// await c.env.FEED_UPDATE_QUEUE.send(feedId); 
-		const sqid = idToSqid(feedId)
+		const sqid = feedIdToSqid(feedId)
 		return c.redirect(`/feeds/${sqid}`, 301)
 	}
 	return c.text("Something went wrong")
@@ -124,45 +86,31 @@ app.post('/c/f/add', async (c) => {
 
 
 // INTERNAL FUNCTIONS
-async function getRSSLinkFromUrl(url: string) {
-	let req;
-	try {
-		req = await fetch(url);
-	} catch (err) {
-		throw new Error(`Cannot fetch url: ${url}`)
-	}
-	const pageContent = await req.text();
-
-	if (!pageContent.length) throw new Error(`Empty content at url: ${url}`)
-
-	// the content of the page is HTML, try to find RSS link
-	if (pageContent.includes('<html') || pageContent.includes('<!DOCTYPE html>')) {
-		const rssUrlObj = getRssUrlsFromHtmlBody(pageContent)
-		if (!rssUrlObj.length || !rssUrlObj[0]['url']) throw new Error(`Cannot find RSS link in HTML of URL: ${url}`)
-		let foundRSSLink = rssUrlObj[0]['url']
-		// the found rss link may be relative or absolute; handle both cases here
-		if (foundRSSLink.substring(0, 4) != "http") {
-			if (url.substring(url.length - 1) != "/") foundRSSLink = url + '/' + foundRSSLink;
-			else foundRSSLink = url + foundRSSLink;
-		}
-		return foundRSSLink
-	}
-
-	// otherwise assume the url is direct RSS url, so just return it
-	return url
-}
-
-async function getFeedIdByRSSUrl(c: Context, rssUrl: string) {
-	const { results } = await c.env.DB.prepare("SELECT feed_id FROM feeds where rss_url = ?").bind(rssUrl).all()
-	return results[0]['feed_id']
-}
-
-
 // add new feed to DB
 async function addFeed(c, url: string) {
 	let rssUrl = await getRSSLinkFromUrl(url);
 	const r = await extract(rssUrl, {
 		descriptionMaxLen: 0,
+		getExtraEntryFields: (feedEntry) => {
+			const { 
+				// this is plaintext of description, which may come from anything
+				description: content_from_description,
+				
+				// if both description and content present, `description` is taken from description and we lose content, so here we save it
+				// also, content is for ATOM format
+				content: content_from_content, 
+
+				// this is for RSS format and RDF format
+				"content:encoded": content_from_content_encoded, 
+				
+				// for JSON format
+				content_html: content_from_content_html,
+
+			} = feedEntry
+			return {
+				content_from_description, content_from_content_encoded, content_from_content, content_from_content_html
+			}
+		}
 	});
 
 	// if url === rssUrl that means the submitted URL was feed URL, so retrieve site URL from feed; otherwise use submitted URL as site URL
@@ -173,16 +121,14 @@ async function addFeed(c, url: string) {
 	if (dbQueryResult['success'] === true) {
 		if (r.entries) {
 			const feedId = await getFeedIdByRSSUrl(c, rssUrl)
-			addItemsToFeed(c.env, r.entries, feedId)
+			await addItemsToFeed(c.env, r.entries, feedId)
 		}
-		const feedId = await getFeedIdByRSSUrl(c, rssUrl)
-		// await c.env.FEED_UPDATE_QUEUE.send(feedId);
 		return rssUrl
 	}
 	return
 }
 
-async function fetchAllFeeds(env: Bindings) {
+async function updateAllFeeds(env: Bindings) {
 	const { results: feeds } = await env.DB.prepare("SELECT feed_id, rss_url FROM feeds").all();
 	for (const feed of feeds) {
 		console.log(`Initiating feed update job for feed: ${feed['feed_id']} (${feed['rss_url']})`)
@@ -190,12 +136,10 @@ async function fetchAllFeeds(env: Bindings) {
 	}
 }
 
-async function fetchFeed(env: Bindings, feedId: Number) {
-	const parser = new XMLParser();
-
+async function updateFeed(env: Bindings, feedId: Number) {
 	// get RSS url of feed
 	const { results: feeds } = await env.DB.prepare("SELECT * FROM feeds WHERE feed_id = ?").bind(feedId).all();
-	const rssURL = feeds[0]['rss_url']
+	const rssURL = feeds[0]['rss_url'];
 
 	// fetch RSS content
 	const r = await extract(rssURL, {
@@ -206,9 +150,9 @@ async function fetchFeed(env: Bindings, feedId: Number) {
 	const { results: existingItems } = await env.DB.prepare("SELECT url FROM items WHERE feed_id = ?").bind(feedId).all();
 	const existingUrls = existingItems.map(obj => obj.url);
 
-	// if RSS entries exist
+	// if remote RSS entries exist
 	if (r.entries) {
-		// filter out existing ones
+		// filter out existing ones and add them to Db
 		const newItemsToBeAdded = r.entries.filter(entry => !existingUrls.includes(entry.link));
 		if (newItemsToBeAdded.length) await addItemsToFeed(env, newItemsToBeAdded, feedId)
 		console.log(`Updated feed ${feedId} (${rssURL}), fetched items: ${r.entries.length}, of which new items added: ${newItemsToBeAdded.length}`)
@@ -224,22 +168,31 @@ async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: Number) 
 	const { results: feeds } = await env.DB.prepare("SELECT title FROM feeds WHERE feed_id = ?").bind(feedId).all();
 	const feedTitle = feeds[0]['title'];
 
-	const stmt = env.DB.prepare("INSERT INTO items (feed_id, title, url, pub_date, content) values (?, ?, ?, ?, ?)");
+	const stmt = env.DB.prepare("INSERT INTO items (feed_id, title, url, pub_date, description, content_html) values (?, ?, ?, ?, ?, ?)");
 	let binds: any[] = [];
+	
 	let searchDocuments: any[] = [];
 	items.forEach((item: any) => {
 		const link = item.link || item.guid || item.id;
+		let content_html = 
+			item['content_from_content'] || 
+			item['content_from_content_encoded'] || 
+			item['content_from_description'] || 
+			item['content_from_content_html'] || '';
+		content_html = getText(content_html);
+		content_html = absolitifyImageUrls(content_html, item.link);
+
 		searchDocuments.push({
 			'title': item.title,
-			'content': item.description,
-
+			'content': stripTags(content_html),
+			'type': 'blog',
+			// non-searchable fields
 			'url': link,
 			'pub_date': item.published,
 			'feed_id': feedId,
 			'feed_title': feedTitle
 		})
-
-		binds.push(stmt.bind(feedId, item.title, link, item.published, item.description));
+		binds.push(stmt.bind(feedId, item.title, link, item.published, item.description, content_html));
 	});
 
 	const resultsOfInsertion = await env.DB.batch(binds);
@@ -251,10 +204,8 @@ async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: Number) 
 			searchDocumentsWalker += 1
 		} 
 	});
-	console.log(`Added ${items.length} items to feed ${feedId}`)
-	indexMultipleDocuments(searchDocuments)
+	await indexMultipleDocuments(searchDocuments)
 }
-
 
 
 // MAIN EXPORT
@@ -268,13 +219,13 @@ export default {
 
 		for (const message of batch.messages) {
 			const feedId = message.body; // feedId is the body of the message
-			await fetchFeed(env, feedId)
+			await updateFeed(env, feedId)
 		}
 
 	},
 
 	// cron
 	async scheduled(event: any, env: Bindings, ctx: any) {
-		await fetchAllFeeds(env)
+		await updateAllFeeds(env)
 	},
 };

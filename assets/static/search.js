@@ -33,7 +33,8 @@ search.addWidgets([
             item(item) {
                 return `
                     <div>
-                    ${item.title}
+                    ${item._highlightResult}<br>
+                    <h2>{{#helpers.highlight}}{ "attribute": "name" }{{/helpers.highlight}}</h2>
                     </div>
                     `;
             },

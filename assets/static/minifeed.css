@@ -221,3 +221,7 @@ button:-webkit-details-marker {
 .muted a {
     color: var(--color-gray) !important;
 }
+
+.post-content img {
+    max-width: 100%;
+}

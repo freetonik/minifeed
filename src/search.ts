@@ -1,13 +1,13 @@
 import { html, raw } from "hono/html";
 import { renderHTML, renderItemSearchResult } from "./htmltools";
 
-export const search = async (c) => {
+export const search = async (c:any) => {
   const q = c.req.query('q');
 
   const searchDocuments = {
     "searches": [
       {
-        "collection": "blog_items",
+        "collection": "items",
         "q": q,
       },
       {
@@ -25,7 +25,7 @@ export const search = async (c) => {
       "Content-Type": "application/json"
     },
   };
-  const response = await fetch("https://3afyidm6tgzxlvq7p-1.a1.typesense.net:443/multi_search?query_by=title,content", init);
+  const response = await fetch("https://3afyidm6tgzxlvq7p-1.a1.typesense.net:443/multi_search?per_page=30&query_by=title,content", init);
   const results = await gatherResponse(response);
   const parsedReults = JSON.parse(results);
 
@@ -39,7 +39,6 @@ export const search = async (c) => {
 }
 
 export const indexMultipleDocuments = async (documents: object[]) => {
-  console.log("indexing documents")
   const jsonlines = documents.map(item => JSON.stringify(item)).join('\n');
   const init = {
     body: jsonlines,
@@ -49,12 +48,13 @@ export const indexMultipleDocuments = async (documents: object[]) => {
       "Content-Type": "text/plain"
     },
   };
+  
+  let results;
   try {
-    const response = await fetch("https://3afyidm6tgzxlvq7p-1.a1.typesense.net:443/collections/blog_items/documents/import?action=create", init);
-    const results = await gatherResponse(response);
-    console.log(results)
+    const response = await fetch("https://3afyidm6tgzxlvq7p-1.a1.typesense.net:443/collections/items/documents/import?action=create", init);
+    results = await gatherResponse(response);
   } catch (e) {
-    console.log(e)
+    console.log(`Error while indexing documents: ${e}`)
   }
 }
 
@@ -63,9 +63,11 @@ export const indexMultipleDocuments = async (documents: object[]) => {
    * Use await gatherResponse(..) in an async function to get the response body
    * @param {Response} response
    */
-async function gatherResponse(response) {
+async function gatherResponse(response: Response) {
+  console.log(`gatherResponse: ${response}`);
   const { headers } = response;
   const contentType = headers.get("content-type") || "";
+  console.log(contentType);
   if (contentType.includes("application/json")) {
     return JSON.stringify(await response.json());
   } else if (contentType.includes("application/text")) {
@@ -75,5 +77,4 @@ async function gatherResponse(response) {
   } else {
     return response.text();
   }
-
 }

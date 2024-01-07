@@ -1,7 +1,7 @@
 import { html, raw } from 'hono/html'
 import { idToSqid, sqidToId } from './utils'
 
-export const renderHTML = (title, inner, username = '?', active = 'all', searchQuery = '') => {
+export const renderHTML = (title: string, inner, username:string = '?', active:string = 'all', searchQuery:string = '') => {
 
   return html`
 <!DOCTYPE html>
@@ -88,17 +88,27 @@ export const renderItemSearchResult = (searchResult) => {
   const postDate = new Date(item['pub_date']).toLocaleDateString('en-UK', dateFormatOptions)
   const feedSqid = idToSqid(item['feed_id'])
   const itemSqid = idToSqid(item['item_id'], 10)
+  console.log(searchResult);
 
+  let title = item['title'];
+  if (searchResult['highlight']['title'] && searchResult['highlight']['title']['snippet']) {
+    title = searchResult['highlight']['title']['snippet']
+  }
+  let content = '';
+  if (searchResult['highlight']['content'] && searchResult['highlight']['content']['snippet']) {
+    content = searchResult['highlight']['content']['snippet']
+  }
+  
   return `
   <div class="item-short" style="margin-top:2em">
-    <a href="${item['url']}" class="item-short-title">${item['title']}</a> <br>
+    <a href="${item['url']}" class="item-short-title">${title}</a> <br>
     <small class="muted">
       <a href="/feeds/${feedSqid}">${item['feed_title']}</a>
       <time>${postDate}</time> |
       <a class="no-underline no-color" href="/items/${itemSqid}">permalink</a> 
       <br>
       <span class="search-result-snippet">
-        ${searchResult['highlight']['content']['snippet']}...
+        ${content}...
       </span>
     </small>
   </div>
