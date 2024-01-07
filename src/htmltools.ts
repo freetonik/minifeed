@@ -18,8 +18,6 @@ export const renderHTML = (title: string, inner, username:string = '?', active:s
   />
   <link rel="stylesheet" href="/static/minifeed.css">
   <script src="/static/htmx.min.js"></script>
-  
-
 </head>
 
   <body>
@@ -44,20 +42,6 @@ export const renderHTML = (title: string, inner, username:string = '?', active:s
 
     <footer><div><a href="/my/account" class="bold">My account</a> / Minifeed.net </div></footer>
 
-</header>
-
-<div class="container">
-    <div class="search-panel">
-        <div class="search-panel__results">
-            <div id="searchbox"></div>
-            <div id="hits"></div>
-        </div>
-    </div>
-
-    <div id="pagination"></div>
-</div>
-
-</body>
   </body>
 </html>`
 }
