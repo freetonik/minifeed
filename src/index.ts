@@ -26,7 +26,8 @@ app.get('/static/*', serveStatic({ root: './' }))
 // middlewares
 app.use('*', authMiddleware); 
 app.use('/my/*', userPageMiddleware); 
-app.use('/feeds/:feed_sqid/delete', adminMiddleware)
+app.use('/feeds/:feed_sqid/delete', adminMiddleware);
+app.use('/c/f/add', adminMiddleware)
 
 // APP ROUTES
 app.get('/', (c) => {
@@ -115,8 +116,9 @@ async function addFeed(c, url: string) {
 
 	// if url === rssUrl that means the submitted URL was feed URL, so retrieve site URL from feed; otherwise use submitted URL as site URL
 	const siteUrl = (url === rssUrl) ? r.link : url
+	const verified = (c.get('USER_ID') === 1) ? 1 : 0
 
-	const dbQueryResult = await c.env.DB.prepare("INSERT INTO feeds (title, url, rss_url) values (?, ?, ?)").bind(r.title, siteUrl, rssUrl).all()
+	const dbQueryResult = await c.env.DB.prepare("INSERT INTO feeds (title, url, rss_url, verified) values (?, ?, ?, ?)").bind(r.title, siteUrl, rssUrl, verified).all()
 
 	if (dbQueryResult['success'] === true) {
 		if (r.entries) {

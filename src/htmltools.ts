@@ -2,7 +2,16 @@ import { html, raw } from 'hono/html'
 import { feedIdToSqid, itemIdToSqid } from './utils'
 import { version } from './version'
 
-export const renderHTML = (title: string, inner:any, username:string = '', active:string = 'all', searchQuery:string = '') => {
+export const renderHTML = (
+    title: string, 
+    inner:any, 
+    username:string = '', 
+    active:string = 'all', 
+    searchQuery:string = '',
+    canonicalUrl:string = ''
+  ) => {
+
+  const canonicalUrlBlock = canonicalUrl ? html`<link rel="canonical" href="${canonicalUrl}">` : ''
 
   let userBlock = html``
   if (username) {
@@ -13,6 +22,7 @@ export const renderHTML = (title: string, inner:any, username:string = '', activ
   } else {
     userBlock = html`<a href="/login" class="bold">Log in or create account</a>`
   }
+
   return html`
 <!DOCTYPE html>
 <html>
@@ -22,6 +32,7 @@ export const renderHTML = (title: string, inner:any, username:string = '', activ
   <meta name="author" content="">
   <meta name="description" content="">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  ${canonicalUrlBlock}
   <link
     rel="icon"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>"
