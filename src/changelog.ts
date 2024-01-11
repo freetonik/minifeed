@@ -5,7 +5,7 @@ export const changelog = `
 
     <h3>${version}</h3>
     <ul>
-        <li>Added changelog</li>
+        <li>Added public changelog</li>
     </ul>
 
     <h3>0.1.1</h3>
