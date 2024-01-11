@@ -8,12 +8,12 @@
     "@extractus/feed-extractor": "^7.0.8",
     "bellajs": "^11.1.2",
     "hono": "^3.10.0",
-    "typesense": "^1.7.2"
+    "typesense": "^1.7.2",
+    "sqids": "^0.3.0",
+    "rss-url-finder": "^0.0.5-1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230914.0",
-    "rss-url-finder": "^0.0.5-1",
-    "sqids": "^0.3.0",
     "wrangler": "^3.22.3"
   }
 }
