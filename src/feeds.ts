@@ -50,10 +50,10 @@ export const feedsSingle = async (c:any) => {
   const subscriptionButtonText = batch[0].results[0]['subscription_id'] ? "unsubscribe" : "subscribe";
 
   let list = `
-  <h1>${feedTitle}</h1>
-  <p>
-    <a href="${feedUrl}">${feedUrl}</a> (<a href="${rssUrl}">RSS</a>)
-  </p>
+  <h1>
+    ${feedTitle}
+    <small>(<a href="${feedUrl}">site</a> / <a href="${rssUrl}">rss</a>)</small>
+  </h1>
   <p>
   <span id="subscription">
     <button hx-post="/feeds/${feedSqid}/${subscriptionButtonText}"

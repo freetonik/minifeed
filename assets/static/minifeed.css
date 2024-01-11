@@ -50,6 +50,7 @@ main {
     padding: 2em 0;
 }
 
+
 main a,
 main a:visited {
     color: var(--color-blue);
@@ -279,6 +280,11 @@ button:-webkit-details-marker {
 
 .post-content img {
     max-width: 100%;
+}
+
+.post-content code {
+    overflow: auto;
+    text-wrap: wrap;
 }
 
 .admin-control {
