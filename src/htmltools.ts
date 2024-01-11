@@ -1,6 +1,6 @@
 import { html, raw } from 'hono/html'
 import { feedIdToSqid, itemIdToSqid } from './utils'
-import { version } from './version'
+import { version } from './changelog'
 
 export const renderHTML = (
     title: string, 
