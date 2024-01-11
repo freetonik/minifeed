@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     user_id INTEGER,
     session_key TEXT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS feeds (
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS items (
     content_html_scraped TEXT,
 	url TEXT UNIQUE NOT NULL, 
     pub_date TIMESTAMP,
-	FOREIGN KEY(feed_id) REFERENCES feeds(feed_id)
+	FOREIGN KEY(feed_id) REFERENCES feeds(feed_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS favorites (
@@ -61,8 +61,8 @@ CREATE TABLE subscriptions (
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     user_id INTEGER,
     feed_id INTEGER,
-    FOREIGN KEY (user_id) REFERENCES users(user_id),
-    FOREIGN KEY (feed_id) REFERENCES feeds(feed_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (feed_id) REFERENCES feeds(feed_id) ON DELETE CASCADE,
     UNIQUE (user_id, feed_id)
 );
 
@@ -71,8 +71,8 @@ CREATE TABLE followings (
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     follower_user_id INTEGER,
     followed_user_id INTEGER,
-    FOREIGN KEY (follower_user_id) REFERENCES users(user_id),
-    FOREIGN KEY (followed_user_id) REFERENCES users(user_id),
+    FOREIGN KEY (follower_user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (followed_user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     UNIQUE (follower_user_id, followed_user_id)
 );
 

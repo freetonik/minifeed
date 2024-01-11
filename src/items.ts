@@ -214,16 +214,12 @@ export const itemsSingle = async (c:any) => {
 }
 
 export const itemsDelete = async (c:any) => {
-  const feed_id:number = feedSqidToId(c.req.param('feed_sqid'))
-  await c.env.DB
-    .prepare(`DELETE from items where feed_id = ?` )
-    .bind(feed_id)
-    .run();
+  const feedId:number = feedSqidToId(c.req.param('feed_sqid'));
 
   await c.env.DB
     .prepare(`DELETE from feeds where feed_id = ?` )
-    .bind(feed_id)
+    .bind(feedId)
     .run();
 
-  return c.html(renderHTML("Add new feed", html`${raw(renderAddFeedForm('', `Feed ${feed_id} deleted`))}`))
+  return c.html(renderHTML("Add new feed", html`${raw(renderAddFeedForm('', `Feed ${feedId} deleted`))}`))
 }
