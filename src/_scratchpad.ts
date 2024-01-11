@@ -60,3 +60,52 @@
 //     item.item_url
 //     ))
 // }
+
+
+// #### Origin of item
+// ```
+// SELECT items.item_id, items.title, items.url, 'placeholder' AS followed_user_id
+// FROM items
+// JOIN subscriptions ON items.feed_id = subscriptions.feed_id
+// WHERE subscriptions.user_id = ?
+
+// UNION
+
+// SELECT items.item_id, items.title, items.url, followings.followed_user_id
+// FROM items
+// JOIN subscriptions ON items.feed_id = subscriptions.feed_id
+// JOIN followings ON subscriptions.user_id = followings.followed_user_id
+// WHERE followings.follower_user_id = ?
+
+// ```
+
+// #### Getting CDATA content via custom parser
+
+// ```
+// const r = await extract(rssUrl, {
+// 		descriptionMaxLen: 0,
+// 		getExtraEntryFields: (feedEntry) => {
+// 			const { description: content } = feedEntry
+// 			return {
+// 			  content,
+// 			}
+// 		}
+// 	});
+// ```
+
+// #### MAE service
+
+// ```
+// let req;
+//   const maeServiceUrl = `https://mae.deno.dev/?apikey=ZKQABMTSZCHMXEPGZMRKOXWODWELAVLN&url=${item.item_url}`
+//   <!-- https://mae.deno.dev/?apikey=ZKQABMTSZCHMXEPGZMRKOXWODWELAVLN&url=https://antonz.org/go-1-22/ -->
+//   try {
+// 		req = await fetch(maeServiceUrl);
+// 	} catch (err) {
+// 		throw new Error(`Cannot fetch url: ${maeServiceUrl}`)
+// 	}
+// 	const articleInfo = await req.text();
+//   const content = JSON.parse(articleInfo).data.content;
+
+//   list += html`${raw(content)}`
+//   ```

@@ -18,6 +18,7 @@ export const usersAll = async (c:any) => {
 
 export const usersSingle = async (c:any) => {
   const userId = c.get('USER_ID') || "0";
+  const userLoggedIn = c.get('USER_ID') ? true : false;
   const username = c.req.param('username');
   const batch = await c.env.DB.batch([
     // who this user is and if he is followed by current user batch[0]
@@ -65,19 +66,23 @@ export const usersSingle = async (c:any) => {
   const followButtonText = batch[0].results[0]['following_id'] ? "unfollow" : "follow";
 
   let list = `<h1>${username}</h1>`;
-  if (userId != batch[0].results[0]['user_id']) { 
-    list += `
-    <span id="follow">
+  if (userLoggedIn) {
+    if (userId != batch[0].results[0]['user_id']) { 
+      list += `
+      <span id="follow">
       <button hx-post="/users/${username}/${followButtonText}"
-        hx-trigger="click"
-        hx-target="#follow"
-        hx-swap="outerHTML">
+      hx-trigger="click"
+      hx-target="#follow"
+      hx-swap="outerHTML">
         ${followButtonText}
-      </button>
-    </span>`;
-  } else {
-    list += "<span>this is me</span>"
-  }
+        </button>
+        </span>`;
+      } else {
+        list += `<div class="flash-blue">This is your public profile (<a href="/my/account">account settings</a>)</div>`
+      }
+    } else {
+      list += `<p><i>Once logged in, you'll be able to follow users and read their feeds on your home page.</i></p>`
+    }
 
   // user favorited these jabronis
   list += `<h2>Favorites:</h2>`

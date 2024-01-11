@@ -1,8 +1,20 @@
+# Minifeed.net
+
+Community curated RSS reader.
+
+## Development
+
+### Local development
+
+Env variables are in `.dev.vars`
+
 ```
 npm install
 npm run dev
 npm run dev-remote
 ```
+
+### Deployment
 
 ```
 npm run deploy
@@ -18,10 +30,10 @@ npm run deploy
 - [x] pagination
 - [x] user sign up
 - [ ] youtube channels
-- [ ] adding custom missing pages
+- [ ] custom 404 pages
 - [ ] click to add note
 - [x] full-text search
-- [ ] search form and pretty results
+- [x] search form and pretty results
 - [ ] refactor rendering functions
 - [ ] decide whether: 
     1. parse RSS better by getting content and description separately; content is optional in feeds; sometimes description is encoded
@@ -29,54 +41,3 @@ npm run deploy
 - [ ] request for post, voted and commented by users
 - [ ] download images?
 - [ ] summary for posts
-
-### Maybe
-- [ ] show origin of item in listing (from my subs vs. from followings), see 'origin of item' below
-
-#### Origin of item
-```
-SELECT items.item_id, items.title, items.url, 'placeholder' AS followed_user_id
-FROM items
-JOIN subscriptions ON items.feed_id = subscriptions.feed_id
-WHERE subscriptions.user_id = ?
-
-UNION
-
-SELECT items.item_id, items.title, items.url, followings.followed_user_id
-FROM items
-JOIN subscriptions ON items.feed_id = subscriptions.feed_id
-JOIN followings ON subscriptions.user_id = followings.followed_user_id
-WHERE followings.follower_user_id = ?
-
-```
-
-#### Getting CDATA content via custom parser
-
-```
-const r = await extract(rssUrl, {
-		descriptionMaxLen: 0,
-		getExtraEntryFields: (feedEntry) => {
-			const { description: content } = feedEntry
-			return {
-			  content,
-			}
-		}
-	});
-```
-
-#### MAE service
-
-```
-let req;
-  const maeServiceUrl = `https://mae.deno.dev/?apikey=ZKQABMTSZCHMXEPGZMRKOXWODWELAVLN&url=${item.item_url}`
-  <!-- https://mae.deno.dev/?apikey=ZKQABMTSZCHMXEPGZMRKOXWODWELAVLN&url=https://antonz.org/go-1-22/ -->
-  try {
-		req = await fetch(maeServiceUrl);
-	} catch (err) {
-		throw new Error(`Cannot fetch url: ${maeServiceUrl}`)
-	}
-	const articleInfo = await req.text();
-  const content = JSON.parse(articleInfo).data.content;
-
-  list += html`${raw(content)}`
-  ```
