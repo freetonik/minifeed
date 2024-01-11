@@ -11,7 +11,7 @@ DROP TABLE IF EXISTS users;
 CREATE TABLE IF NOT EXISTS users (
     user_id INTEGER PRIMARY KEY, 
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    username TEXT, 
+    username TEXT UNIQUE NOT NULL, 
     password_hash TEXT, 
     password_salt TEXT
 );
