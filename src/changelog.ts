@@ -1,9 +1,14 @@
-export const version = "0.1.1";
+export const version = "0.1.2";
 
 export const changelog = `
     <h2>Changelog</h2>
 
     <h3>${version}</h3>
+    <ul>
+        <li>Added changelog</li>
+    </ul>
+
+    <h3>0.1.1</h3>
     <ul>
         <li>Bugfix: follow and subscribe buttons no longer shown to guests</li>
         <li>Improved error messages</li>
