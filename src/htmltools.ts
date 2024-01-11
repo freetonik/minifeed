@@ -108,7 +108,6 @@ export const renderItemSearchResult = (searchResult:any) => {
   const postDate = new Date(item['pub_date']).toLocaleDateString('en-UK', dateFormatOptions)
   const feedSqid = feedIdToSqid(item['feed_id'])
   const itemSqid = itemIdToSqid(item['item_id'])
-  console.log(searchResult);
 
   let title = item['title'];
   if (searchResult['highlight']['title'] && searchResult['highlight']['title']['snippet']) {

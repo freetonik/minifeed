@@ -345,3 +345,11 @@ button:-webkit-details-marker {
     display: block;
     margin-bottom: 0.5em;
 }
+
+.flash-blue {
+    margin-top: 1em;
+    background-color: #e9f2ff;
+    padding: 1em;
+    border: 1px solid #052962;
+    border-bottom: 3px solid #052962;
+}

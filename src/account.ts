@@ -134,7 +134,7 @@ export const signupPost = async (c:any) => {
     const salt = randomHash(32);
     const passwordHashed = await hashPassword(password, salt);
     try {
-      await c.env.DB.prepare("INSERT INTO users (username, password_hash, password_salt) values (?, ?)").bind(username, passwordHashed, salt).run();
+      await c.env.DB.prepare("INSERT INTO users (username, password_hash, password_salt) values (?, ?, ?)").bind(username, passwordHashed, salt).run();
       const userId = (await c.env.DB.prepare("SELECT users.user_id FROM users WHERE username = ?").bind(username).run()).results[0]['user_id'];
       return await createSessionSetCookieAndRedirect(c, userId);
     } catch (err) {

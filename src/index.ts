@@ -16,7 +16,14 @@ import { adminMiddleware, authMiddleware, userPageMiddleware } from './middlewar
 type Bindings = {
 	DB: D1Database;
 	FEED_UPDATE_QUEUE: Queue;
+
+	TYPESENSE_API_KEY: string;
+	TYPESENSE_API_KEY_SEARCH: string;
+	TYPESENSE_ITEMS_COLLECTION: string;
+	TYPESENSE_BLOGS_COLLECTION: string;
+	TYPESENSE_CLUSTER: string;
 }
+
 
 const app = new Hono<{ Bindings: Bindings }>()
 
@@ -83,6 +90,10 @@ app.post('/c/f/add', async (c) => {
 		return c.redirect(`/feeds/${sqid}`, 301)
 	}
 	return c.text("Something went wrong")
+});
+
+app.get('test', async (c) => {
+	return c.text(c.env.TYPESENSE_API_KEY_SEARCH)
 });
 
 
@@ -206,7 +217,7 @@ async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: Number) 
 			searchDocumentsWalker += 1
 		} 
 	});
-	await indexMultipleDocuments(searchDocuments)
+	await indexMultipleDocuments(env, searchDocuments)
 }
 
 // MAIN EXPORT
@@ -216,7 +227,6 @@ export default {
 	// consumer of queue FEED_UPDATE_QUEUE
 	async queue(batch: MessageBatch<any>, env: Bindings) {
 		let messages = JSON.stringify(batch.messages);
-		console.log(`Started processing job: ${messages}`);
 
 		for (const message of batch.messages) {
 			const feedId = message.body; // feedId is the body of the message
