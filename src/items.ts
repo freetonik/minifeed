@@ -149,6 +149,7 @@ export const itemsMyFollows = async (c:any) => {
 export const itemsSingle = async (c:any) => {
   const item_id:number = itemSqidToId(c.req.param('item_sqid'))
   const userId = c.get('USER_ID') || -1;
+  const userLoggedIn = userId != -1;
 
   const batch = await c.env.DB.batch([
     // find subscription status of user to this feed
@@ -167,7 +168,6 @@ export const itemsSingle = async (c:any) => {
   ]);
 
   const userIsSubscribed = batch[0].results.length ? true : false;
-  const userLoggedIn = userId != -1;
   if (!batch[1].results.length) return c.notFound();
 
   const item = batch[1].results[0];

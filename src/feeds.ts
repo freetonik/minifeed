@@ -26,7 +26,8 @@ export const feedsSingle = async (c:any) => {
   // show the feed still as "processing"; use https://developers.cloudflare.com/d1/platform/client-api/#batch-statements
   const feedSqid = c.req.param('feed_sqid')
   const feedId = feedSqidToId(feedSqid);
-  const userId = c.get('USER_ID') || "0";
+  const userId = c.get('USER_ID') || -1;
+  const userLoggedIn = c.get('USER_ID') ? true : false;
 
   const batch = await c.env.DB.batch([
     c.env.DB.prepare(`
@@ -42,28 +43,27 @@ export const feedsSingle = async (c:any) => {
       ORDER BY items.pub_date DESC`).bind(feedId),
   ]);
 
-  // batch[0] is feed joined with subscription status; 0 means no feed foudn in DB
+  // batch[0] is feed joined with subscription status; 0 means no feed found in DB
   if (!batch[0].results.length) return c.notFound();
   const feedTitle = batch[0].results[0]['title']
   const feedUrl = batch[0].results[0]['url']
   const rssUrl = batch[0].results[0]['rss_url']
   const subscriptionButtonText = batch[0].results[0]['subscription_id'] ? "unsubscribe" : "subscribe";
-
+  const subscriptionBlock = userLoggedIn ? `
+    <span id="subscription">
+      <button hx-post="/feeds/${feedSqid}/${subscriptionButtonText}"
+        hx-trigger="click"
+        hx-target="#subscription"
+        hx-swap="outerHTML">
+        ${subscriptionButtonText}
+      </button>
+    </span>`  : ''
   let list = `
   <h1>
     ${feedTitle}
     <small>(<a href="${feedUrl}">site</a> / <a href="${rssUrl}">rss</a>)</small>
   </h1>
-  <p>
-  <span id="subscription">
-    <button hx-post="/feeds/${feedSqid}/${subscriptionButtonText}"
-      hx-trigger="click"
-      hx-target="#subscription"
-      hx-swap="outerHTML">
-      ${subscriptionButtonText}
-    </button>
-  </span>
-  </p>
+  ${subscriptionBlock}
   <hr style="margin:2em 0;">
   `
 
