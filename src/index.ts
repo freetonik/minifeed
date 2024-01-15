@@ -64,6 +64,29 @@ app.get('/my/subs', itemsMySubs)
 app.get('/my/follows', itemsMyFollows)
 
 app.get('/feeds', feedsAll)
+app.get('/feeds/new', async (c) => {
+	if (!c.get('USER_ID')) return c.redirect('/login')
+	return c.html(renderHTML("Add new feed", html`${renderAddFeedForm()}`))
+});
+app.post('/feeds/new', async (c) => {
+	const body = await c.req.parseBody();
+	const url = body['url'].toString();
+	let rssUrl;
+	try {
+		rssUrl = await addFeed(c, url); 
+	} catch (e: any) {
+		return c.html(renderHTML("Add new feed", html`${renderAddFeedForm(url, e.toString())}`))
+	}
+
+	// RSS url is found
+	if (rssUrl) {
+		const feedId = await getFeedIdByRSSUrl(c, rssUrl)
+		const sqid = feedIdToSqid(feedId)
+		return c.redirect(`/feeds/${sqid}`, 301)
+	}
+	return c.text("Something went wrong")
+});
+
 app.get('/feeds/:feed_sqid', feedsSingle)
 app.post('/feeds/:feed_sqid/subscribe', feedsSubscribe)
 app.post('/feeds/:feed_sqid/unsubscribe', feedsUnsubscribe)
@@ -83,29 +106,9 @@ app.get('/about/changelog', async (c) => {
 	return c.html(renderHTML("Changelog | minifeed", raw(changelog)))
 });
 
-app.get('/c/f/add', async (c) => {
-	if (!c.get('USER_ID')) return c.redirect('/login')
-	return c.html(renderHTML("Add new feed", html`${raw(renderAddFeedForm())}`))
-});
 
-app.post('/c/f/add', async (c) => {
-	const body = await c.req.parseBody();
-	const url = body['url'].toString();
-	let rssUrl;
-	try {
-		rssUrl = await addFeed(c, url); 
-	} catch (e: any) {
-		return c.html(renderHTML("Add new feed", html`${raw(renderAddFeedForm(url, e.toString()))}`))
-	}
 
-	// RSS url is found
-	if (rssUrl) {
-		const feedId = await getFeedIdByRSSUrl(c, rssUrl)
-		const sqid = feedIdToSqid(feedId)
-		return c.redirect(`/feeds/${sqid}`, 301)
-	}
-	return c.text("Something went wrong")
-});
+
 
 
 // INTERNAL FUNCTIONS

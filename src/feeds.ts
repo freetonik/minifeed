@@ -9,7 +9,10 @@ export const feedsAll = async (c:any) => {
     .prepare("SELECT * from feeds")
     .run();
 
-  let list = `<div class="main">`
+  let list = `
+  <div class="main">
+  <p style="margin-top:0"><a class="button" href="/feeds/new">+ add new feed</a></p>
+  `
   results.forEach((feed: any) => {
     const sqid = feedIdToSqid(feed.feed_id)
     list += `
