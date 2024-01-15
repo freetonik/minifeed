@@ -49,3 +49,4 @@ npm run deploy
 - [ ] request for post, voted and commented by users
 - [ ] download images?
 - [x] summary for posts
+- [ ] re-check typesense api keys leak

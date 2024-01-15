@@ -37,7 +37,7 @@ export const loginOrCreateAccount = async (c:any) => {
   if (c.get('USER_ID')) return c.redirect('/')
 
   let list = `
-  <div class="formbg">
+  <div class="formbg formbg-small">
     <h2>Log in</h2>
     <form action="/login" method="POST">
       <div style="margin-bottom:1em;">
@@ -56,7 +56,7 @@ export const loginOrCreateAccount = async (c:any) => {
 
   <h3 style="margin: 3em 0;" class="decorated"><span>or</span></h3>
 
-  <div class="formbg">
+  <div class="formbg formbg-small">
     <h2>Create account</h2>
     <form action="/signup" method="POST">
       <div style="margin-bottom:1em;">
@@ -128,7 +128,7 @@ export const signupPost = async (c:any) => {
   const password = body['password'].toString();
   const invitationCode = body['invitation_code'].toString();
 
-  if (invitationCode === 'IDMF2042KFA') {
+  if (invitationCode === 'RJDKBA') {
     if (!checkUsername(username)) return c.text("Invalid username");
 
     const salt = randomHash(32);

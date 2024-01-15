@@ -85,7 +85,8 @@ export const usersSingle = async (c:any) => {
     }
 
   // user favorited these jabronis
-  list += `<h2>Favorites:</h2>`
+  list += `<hr><h2>Favorites:</h2>`
+  if (!batch[4].results.length) list += `<p><i>None yet</i></p>`
   batch[4].results.forEach((item: any) => {
     list += renderItemShort(item.item_id, item.title, item.url, item.feed_title, item.feed_id, item.pub_date)
     // const sqid = idToSqid(fav.feed_id)
@@ -93,19 +94,22 @@ export const usersSingle = async (c:any) => {
   })
 
   // user subscribed to these jabronis
-  list += `<h2>Subscriptions:</h2>`
+  list += `<hr><h2>Subscriptions:</h2>`
+  if (!batch[1].results.length) list += `<p><i>None yet</i></p>`
   batch[1].results.forEach((feed: any) => {
     const sqid = feedIdToSqid(feed.feed_id)
     list += `<li><a href="/feeds/${sqid}">${feed.title}</a></li>`
   })
 
   // user follows these jabronis
-  list += `<h2>Follows:</h2>`
+  list += `<hr><h2>Follows:</h2>`
+  if (!batch[2].results.length) list += `<p><i>None yet</i></p>`
   batch[2].results.forEach((user: any) => {
     list += `<li><a href="${user.followed}">${user.followed}</a></li>`
   })
 
-  list += `<h2>Followers:</h2>`
+  list += `<hr><h2>Followers:</h2>`
+  if (!batch[3].results.length) list += `<p><i>None yet</i></p>`
   batch[3].results.forEach((user: any) => {
     list += `<li><a href="${user.follower}">${user.follower}</a></li>`
   })
