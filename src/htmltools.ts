@@ -69,7 +69,7 @@ export const renderHTML = (
 
     <footer><div>
       <p><a href="/my/account" class="bold">${userBlock}</p>
-      <p>Minifeed.net (version ${version}) </p>
+      <p>Minifeed.net (version ${version} / <a href="/about/changelog">changelog</a>) </p>
     </div></footer>
 
   </body>
@@ -137,13 +137,24 @@ export const renderItemSearchResult = (searchResult:any) => {
 }
 
 export const renderAddFeedForm = (url:string = '', flash:string = '') => {
-  return `
-  <h1>New feed</h1>
-  <form action="/c/f/add" method="POST">
-    <label for="url">Blog URL (or direct RSS URL):</label><br>
-    <input type="text" id="url" name="url" value="${url}" style="width: 100%;"><br>
-    <input type="submit" value="Submit">
-  </form> 
-  <div>${flash}</div>
+  let flash_test = ''
+  if (flash.includes('Cannot find RSS link')) flash_test += "Cannot find RSS link on that page. Try entering direct RSS URL."
+  else if (flash.includes('UNIQUE constraint failed: feeds.rss_url')) flash_test += 'Feed already exists.'
+  else if (flash.includes('Cannot fetch url')) flash_test += 'That page does not exist.'
+  else flash_test += flash;
+
+  const flashBlock = flash ? html`<div class="flash-red">${flash_test}</div>` : ''
+  return html`
+  <h1>Add new feed</h1>
+  ${flashBlock}
+  <div class="formbg">
+    <form action="/feeds/new" method="POST">
+    <div style="margin-bottom:1em;">
+      <label for="url">Blog URL (or direct RSS URL):</label>
+      <input type="text" id="url" name="url" value="${url}" style="width: 100%;"><br>
+      </div>
+      <input type="submit" value="Add feed">
+    </form> 
+  </div>
   `
 }
