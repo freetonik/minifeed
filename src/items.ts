@@ -182,21 +182,26 @@ export const itemsSingle = async (c:any) => {
 
     // find other items from this feed
     c.env.DB.prepare(`
+      WITH FeedInfo AS (
+        SELECT feed_id
+        FROM items
+        WHERE item_id = ?
+    )
       SELECT 
         items.item_id, 
         items.title AS item_title, 
         items.description, 
         items.pub_date, 
         items.url AS item_url, 
-        feeds.feed_id, 
+        items.feed_id,
         favorite_id 
       FROM items 
-      JOIN feeds ON items.feed_id = feeds.feed_id 
+      JOIN FeedInfo fi ON items.feed_id = fi.feed_id
       LEFT JOIN favorites ON items.item_id = favorites.item_id
       WHERE items.item_id != ? 
       ORDER BY items.pub_date DESC
       LIMIT 5`)
-      .bind(item_id)
+      .bind(item_id, item_id)
   ]);
 
   if (!batch[1].results.length) return c.notFound();
@@ -262,6 +267,7 @@ export const itemsSingle = async (c:any) => {
   }
 
   let otherItemsBlock = '';
+  console.log(batch[2].results[0])
   if (batch[2].results.length) {
     otherItemsBlock += `<div><hr> <h3>More from <a href="/feeds/${feed_sqid}"">${item.feed_title}</a>:</h3>`
       batch[2].results.forEach((related_item: any) => {
@@ -281,7 +287,7 @@ export const itemsSingle = async (c:any) => {
     ${favoriteBlock}
     <hr>
     <div class="post-content">${contentBlock}
-    <p style="text-align:right; font-size:smaller; margin-top:1em;">
+    <p style="font-size:smaller; margin-top:1em;">
       <time>${post_date}</time> (<a href="${item.item_url}">original</a>)
     </p>
     </div>

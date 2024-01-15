@@ -69,7 +69,7 @@ export const renderHTML = (
 
     <footer><div>
       <p><a href="/my/account" class="bold">${userBlock}</p>
-      <p>Minifeed.net, 2024 (version ${version}) </p>
+      <p>Minifeed.net (version ${version}) </p>
     </div></footer>
 
   </body>
