@@ -92,15 +92,10 @@ app.post('/c/f/add', async (c) => {
 	// RSS url is found
 	if (rssUrl) {
 		const feedId = await getFeedIdByRSSUrl(c, rssUrl)
-		// await c.env.FEED_UPDATE_QUEUE.send(feedId); 
 		const sqid = feedIdToSqid(feedId)
 		return c.redirect(`/feeds/${sqid}`, 301)
 	}
 	return c.text("Something went wrong")
-});
-
-app.get('test', async (c) => {
-	return c.text(c.env.TYPESENSE_API_KEY_SEARCH)
 });
 
 
@@ -119,7 +114,7 @@ async function addFeed(c, url: string) {
 	if (dbQueryResult['success'] === true) {
 		if (r.entries) {
 			const feedId = dbQueryResult['meta']['last_row_id'];
-			await addItemsToFeed(c.env, r.entries, feedId)
+			await c.env.FEED_UPDATE_QUEUE.send(feedId);
 		}
 		return RSSUrl
 	}
