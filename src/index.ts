@@ -65,6 +65,7 @@ app.get('/users', usersAll)
 app.get('/users/:username', usersSingle)
 app.post('/users/:username/follow', usersFollow)
 app.post('/users/:username/unfollow', usersUnfollow)
+app.get('/items/:item_sqid', itemsSingle)
 
 app.get('/about/changelog', async (c) => {
 	return c.html(renderHTML("Changelog | minifeed", raw(changelog)))

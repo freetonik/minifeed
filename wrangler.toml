@@ -5,6 +5,12 @@ workers_dev = false
 route = { pattern = "minifeed.net", custom_domain = true }
 main = "src/index.ts"
 
+[vars]
+TYPESENSE_API_KEY_SEARCH = "GCuPvjR4vz3gvACRo2N5hpRjZnEaijKE"
+TYPESENSE_BLOG_FEEDS_COLLECTION = "blog_feeds"
+TYPESENSE_CLUSTER = "3afyidm6tgzxlvq7p-1.a1.typesense.net"
+TYPESENSE_ITEMS_COLLECTION = "items"
+
 [site]
 bucket = "./assets"
 
