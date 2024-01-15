@@ -3,6 +3,9 @@ import { renderHTML, renderItemSearchResult } from "./htmltools";
 
 export const search = async (c:any) => {
   const q = c.req.query('q');
+  
+  const itemsPerPage = 30
+  const page = Number(c.req.query('p')) || 1
 
   const searchDocuments = {
     "searches": [
@@ -25,14 +28,23 @@ export const search = async (c:any) => {
       "Content-Type": "application/json"
     },
   };
-  const response = await fetch(`https://${c.env.TYPESENSE_CLUSTER}:443/multi_search?per_page=30&query_by=title,content`, init);
+  const response = await fetch(`https://${c.env.TYPESENSE_CLUSTER}:443/multi_search?per_page=${itemsPerPage}&page=${page}&query_by=title,content`, init);
   const results = await gatherResponse(response);
   const parsedResults = JSON.parse(results);
 
+  console.log(parsedResults)
+  const hasNextPage = parsedResults['results'][0]['found'] > (page * itemsPerPage)
+
   let list = `<h2>Search results for '${q}'</h2>`
+  if (!parsedResults['results'][0]['hits'].length) list += `<p><i>No results found</i></p>`
   parsedResults['results'][0]['hits'].forEach((item: any) => {
     list += renderItemSearchResult(item);    
-  })
+  });
+  
+  if (hasNextPage) {
+    list += `<p><a href="/search?q=${q}&p=${page + 1}">More</a></p>`
+  }
+
   return c.html(
       renderHTML(`${q} | minifeed`, html`${raw(list)}`, c.get('USERNAME'), 'search', q)
   )
