@@ -147,61 +147,147 @@ export const itemsMyFollows = async (c:any) => {
 }
 
 export const itemsSingle = async (c:any) => {
-  const item_id:number = itemSqidToId(c.req.param('item_sqid'))
-  const userId = c.get('USER_ID') || -1;
-  const userLoggedIn = userId != -1;
+  const item_sqid = c.req.param('item_sqid');
+  const item_id:number = itemSqidToId(item_sqid)
+  const user_id = c.get('USER_ID') || -1;
+  const user_logged_in = user_id != -1;
 
   const batch = await c.env.DB.batch([
     // find subscription status of user to this feed
     c.env.DB.prepare(`
-      SELECT subscriptions.subscription_id 
-      FROM subscriptions 
-      JOIN items ON subscriptions.feed_id = items.feed_id 
-      WHERE subscriptions.user_id = ? AND items.item_id = ?`).bind(userId, item_id),
+        SELECT subscriptions.subscription_id 
+        FROM subscriptions 
+        JOIN items ON subscriptions.feed_id = items.feed_id 
+        WHERE subscriptions.user_id = ? AND items.item_id = ?`)
+      .bind(user_id, item_id),
 
     // find item
     c.env.DB.prepare(`
-      SELECT items.item_id, items.title AS item_title, items.description, items.content_html, items.pub_date, items.url AS item_url, feeds.title AS feed_title, feeds.feed_id FROM items 
+      SELECT 
+        items.item_id, 
+        items.title AS item_title, 
+        items.description, 
+        items.content_html, 
+        items.pub_date, 
+        items.url AS item_url, 
+        feeds.title AS feed_title, 
+        feeds.feed_id, 
+        favorite_id 
+      FROM items 
       JOIN feeds ON items.feed_id = feeds.feed_id 
+      LEFT JOIN favorites ON items.item_id = favorites.item_id
       WHERE items.item_id = ? 
-      ORDER BY items.pub_date DESC`).bind(item_id),
+      ORDER BY items.pub_date DESC`)
+      .bind(item_id),
+
+    // find other items from this feed
+    c.env.DB.prepare(`
+      SELECT 
+        items.item_id, 
+        items.title AS item_title, 
+        items.description, 
+        items.pub_date, 
+        items.url AS item_url, 
+        feeds.feed_id, 
+        favorite_id 
+      FROM items 
+      JOIN feeds ON items.feed_id = feeds.feed_id 
+      LEFT JOIN favorites ON items.item_id = favorites.item_id
+      WHERE items.item_id != ? 
+      ORDER BY items.pub_date DESC
+      LIMIT 5`)
+      .bind(item_id)
   ]);
 
-  const userIsSubscribed = batch[0].results.length ? true : false;
   if (!batch[1].results.length) return c.notFound();
+  
+  const user_is_subscribed = batch[0].results.length ? true : false;
 
   const item = batch[1].results[0];
-  const dateFormatOptions:Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric', };
-  const postDate = new Date(item.pub_date).toLocaleDateString('en-UK', dateFormatOptions)
-  const feedSqid = feedIdToSqid(item.feed_id)
+  const date_format_opts:Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric', };
+  const post_date = new Date(item.pub_date).toLocaleDateString('en-UK', date_format_opts)
+  const feed_sqid = feedIdToSqid(item.feed_id)
 
   let contentBlock;
-  if (userLoggedIn) {
-    contentBlock = raw(item.content_html)
-  }
-  else {
-    contentBlock = `${truncate(item.description, 250)} <div class="flash-blue"><a href="/login">Log in</a> to view full content</div>`;
-  }
+  if (user_logged_in) contentBlock = raw(item.content_html)
+  else contentBlock = `${truncate(item.description, 250)} <div class="flash-blue"><a href="/login">Log in</a> to view full content</div>`;
   
-  let list = `<h1>${item.item_title}</h1>`
+  let favoriteBlock = '';
   let subscriptionBlock = '';
-  if (userLoggedIn) {
-    if (userIsSubscribed) {
-      subscriptionBlock = `(subscribed)`
+  
+  if (user_logged_in) {
+    if (item.favorite_id) {
+      favoriteBlock = 
+        `<span id="favorite">
+          <button hx-post="/items/${item_sqid}/unfavorite"
+            hx-trigger="click"
+            hx-target="#favorite"
+            hx-swap="outerHTML">
+            ★ unfavorite
+          </button>
+        </span>`
     } else {
-      subscriptionBlock = `(not subscribed)`
+      favoriteBlock = 
+        `<span id="favorite">
+          <button hx-post="/items/${item_sqid}/favorite"
+            hx-trigger="click"
+            hx-target="#favorite"
+            hx-swap="outerHTML">
+            ☆ favorite
+          </button>
+        </span>`
+    }
+      
+    if (user_is_subscribed) {
+      subscriptionBlock = `
+        <span id="subscription">
+        <button hx-post="/feeds/${feed_sqid}/unsubscribe"
+          hx-trigger="click"
+          hx-target="#subscription"
+          hx-swap="outerHTML">
+          unsubscribe
+        </button>
+      </span>`
+    } else {
+      subscriptionBlock = `
+      <span id="subscription">
+      <button hx-post="/feeds/${feed_sqid}/subscribe"
+        hx-trigger="click"
+        hx-target="#subscription"
+        hx-swap="outerHTML">
+        subscribe
+      </button>
+    </span>`
     }
   }
-  list += `
-    <div>
-      from <a href="/feeds/${feedSqid}"">${item.feed_title}</a> ${subscriptionBlock}
-    </div>
-    <hr style="margin-top:1em;">
+
+  let otherItemsBlock = '';
+  if (batch[2].results.length) {
+    otherItemsBlock += `<div><hr> <h3>More from <a href="/feeds/${feed_sqid}"">${item.feed_title}</a>:</h3>`
+      batch[2].results.forEach((related_item: any) => {
+        otherItemsBlock += `<div style="margin-bottom:2em;">`
+        const itemTitle = related_item.favorite_id ? `★ ${related_item.item_title}` : related_item.item_title;
+        otherItemsBlock += renderItemShort(related_item.item_id, itemTitle, related_item.item_url, '', related_item.feed_id, related_item.pub_date, truncate(related_item.description, 350));
+        otherItemsBlock += `</div>`
+      })
+    otherItemsBlock += `</div>`
+  }
+      
+  let list = `
+    <h1 style="margin-bottom: 0.25em;">${item.item_title} </h1>
+    <div style="margin-bottom:1.25em;"><small>from <a href="/feeds/${feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time></small></div>
+
+    <a class="button" href="${item.item_url}">↗ open original</a>
+    ${favoriteBlock}
+    <hr>
     <div class="post-content">${contentBlock}
     <p style="text-align:right; font-size:smaller; margin-top:1em;">
-      <time>${postDate}</time> (<a href="${item.item_url}">original</a>)
+      <time>${post_date}</time> (<a href="${item.item_url}">original</a>)
     </p>
     </div>
+
+    
+    ${otherItemsBlock}
   `
   return c.html(renderHTML(
     `${item.item_title} | ${item.feed_title} | minifeed`, 
@@ -213,3 +299,72 @@ export const itemsSingle = async (c:any) => {
     ))
 }
 
+export const itemsAddToFavorites = async (c:any) => {
+  const itemSqid = c.req.param('item_sqid')
+  const itemId:number = itemSqidToId(itemSqid)
+  const userId = c.get('USER_ID');
+
+  let result;
+  try {
+    console.log(`INSERT INTO favorites (user_id, itemId) VALUES (${userId}, ${itemId})`);
+    result = await c.env.DB.prepare(`INSERT INTO favorites (user_id, item_id) VALUES (?, ?)`).bind(userId, itemId).run();
+  } catch (e) {
+    c.status(400);
+    console.log(e)
+    return c.body(e);
+  }
+
+  if (result.success) {
+    c.status(201);
+    return c.html(`
+      <span id="favorite">
+        <button hx-post="/items/${itemSqid}/unfavorite"
+          hx-trigger="click"
+          hx-target="#favorite"
+          hx-swap="outerHTML">
+          ★ unfavorite
+        </button>
+      </span>
+    `);
+  }
+
+  return c.html(`
+      <span id="favorite">
+        "Error"
+      </span>
+    `);
+}
+
+export const itemsRemoveFromFavorites = async (c:any) => {
+  const itemSqid = c.req.param('item_sqid')
+  const itemId:number = itemSqidToId(itemSqid)
+  const userId = c.get('USER_ID');
+
+  let result;
+  try {
+    result = await c.env.DB.prepare(`DELETE FROM favorites WHERE user_id = ? AND item_id = ?`).bind(userId, itemId).run();
+  } catch (e) {
+    c.status(400);
+    return c.body(e);
+  }
+
+  if (result.success) {
+    c.status(201);
+    return c.html(`
+      <span id="favorite">
+        <button hx-post="/items/${itemSqid}/favorite"
+          hx-trigger="click"
+          hx-target="#favorite"
+          hx-swap="outerHTML">
+          ☆ favorite
+        </button>
+      </span>
+    `);
+  }
+
+  return c.html(`
+      <span id="favorite">
+        "Error"
+      </span>
+    `);
+}

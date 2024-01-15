@@ -5,7 +5,7 @@ import { serveStatic } from 'hono/cloudflare-workers'
 import { extract } from '@extractus/feed-extractor'
 import { stripTags } from 'bellajs'
 
-import { itemsAll, itemsMy, itemsMySubs, itemsMyFollows, itemsSingle } from './items'
+import { itemsAll, itemsMy, itemsMySubs, itemsMyFollows, itemsSingle, itemsAddToFavorites, itemsRemoveFromFavorites } from './items'
 import { feedsAll, feedsSingle, feedsSubscribe, feedsUnsubscribe, feedsDelete, feedsUpdate } from './feeds'
 import { usersAll, usersSingle, usersFollow, usersUnfollow } from './users'
 import { loginOrCreateAccount, loginPost, accountMy, logout, signupPost } from './account'
@@ -34,7 +34,13 @@ app.get('/static/*', serveStatic({ root: './' }))
 
 // middlewares
 app.use('*', authMiddleware); 
+
 app.use('/my/*', userPageMiddleware); 
+app.use('/feeds/:feed_sqid/subscribe', userPageMiddleware);
+app.use('/feeds/:feed_sqid/unsubscribe', userPageMiddleware);
+app.use('/items/:feed_sqid/favorite', userPageMiddleware);
+app.use('/items/:feed_sqid/unfavorite', userPageMiddleware);
+
 app.use('/feeds/:feed_sqid/delete', adminMiddleware);
 app.use('/feeds/:feed_sqid/update', adminMiddleware);
 app.use('/c/f/add', adminMiddleware)
@@ -64,11 +70,14 @@ app.post('/feeds/:feed_sqid/unsubscribe', feedsUnsubscribe)
 app.post('/feeds/:feed_sqid/delete', feedsDelete)
 app.post('/feeds/:feed_sqid/update', feedsUpdate)
 
+app.get('/items/:item_sqid', itemsSingle)
+app.post('/items/:item_sqid/favorite', itemsAddToFavorites)
+app.post('/items/:item_sqid/unfavorite', itemsRemoveFromFavorites)
+
 app.get('/users', usersAll)
 app.get('/users/:username', usersSingle)
 app.post('/users/:username/follow', usersFollow)
 app.post('/users/:username/unfollow', usersUnfollow)
-app.get('/items/:item_sqid', itemsSingle)
 
 app.get('/about/changelog', async (c) => {
 	return c.html(renderHTML("Changelog | minifeed", raw(changelog)))
