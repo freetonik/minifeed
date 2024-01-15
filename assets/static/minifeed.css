@@ -54,8 +54,14 @@ main {
 main a,
 main a:visited {
     color: var(--color-blue);
-    text-decoration: none;
     border-bottom: 1px solid var(--color-highlight);
+    text-decoration: none;
+    transition-duration: 0.5s;
+}
+
+main a:hover {
+    border-bottom: 1px solid var(--color-blue);
+    transition-duration: 0.2s;
 }
 
 a.no-underline {
@@ -73,7 +79,7 @@ h2 {
 
 header {
     background-color: var(--color-blue);
-    color: white;
+    color: var(--color-bg);
     padding: 0.5em 0 0 0;
 }
 
@@ -86,7 +92,7 @@ header nav {
 
 header nav a, 
 header nav .search-form {
-    color: white;
+    color: var(--color-bg);
     text-decoration: none;
     padding: 0.5em 0.75em 0.55em;
 }
@@ -107,8 +113,8 @@ header nav .search-form input {
 
 header .active {
     font-weight: bold;
-    background-color: white;
-    color: black;
+    background-color: var(--color-bg);
+    color: var(--color-text);
 }
 
 header .topline {
@@ -126,17 +132,17 @@ header .topline .user {
 }
 
     header .topline .user a {
-        color: white;
+        color: var(--color-bg);
         text-decoration: none;
     }
 
 header .topline .logo {
-    color: white !important;
+    color: var(--color-bg) !important;
     padding: 0.25em 1.5em;
 }
 
 header .topline .logo a {
-    color: white;
+    color: var(--color-bg);
     text-decoration: none;
 
 }
@@ -191,7 +197,7 @@ footer div {
 button, .button, a.button:visited {
   appearance: none;
   background-color: #FAFBFC;
-  border: 1px solid rgba(27, 31, 35, 0.15);
+  border: 1px solid rgba(27, 31, 35, 0.15) !important;
   border-radius: 6px;
   box-shadow: rgba(27, 31, 35, 0.04) 0 1px 0, rgba(255, 255, 255, 0.25) 0 1px 0 inset;
   box-sizing: border-box;
@@ -214,26 +220,26 @@ button, .button, a.button:visited {
   word-wrap: break-word;
 }
 
-button:hover, .button:hover {
+button:hover, a.button:hover {
   background-color: #F3F4F6;
   text-decoration: none;
   transition-duration: 0.1s;
 }
 
-button:disabled, .button:disabled {
+button:disabled, a.button:disabled {
   background-color: #FAFBFC;
   border-color: rgba(27, 31, 35, 0.15);
   color: #959DA5;
   cursor: default;
 }
 
-button:active, .button:active {
+button:active, a.button:active {
   background-color: #EDEFF2;
   box-shadow: rgba(225, 228, 232, 0.2) 0 1px 0 inset;
   transition: none 0s;
 }
 
-button:focus, .button:focus {
+button:focus, a.button:focus {
   outline: 1px transparent;
 }
 
@@ -300,10 +306,13 @@ button:-webkit-details-marker {
     margin: 2em auto;
     padding: 1.75em 2em 2.25em 2em;
     width: 100%;
-    max-width: 448px;
     background: white;
     border-radius: 4px;
     box-shadow: rgba(60, 66, 87, 0.12) 0px 7px 14px 0px, rgba(0, 0, 0, 0.12) 0px 3px 6px 0px;
+}
+
+.formbg-small {
+    max-width: 448px;
 }
 
 .formbg h2 {
@@ -355,8 +364,22 @@ button:-webkit-details-marker {
     border-bottom: 3px solid #052962;
 }
 
+.flash-red {
+    margin-top: 1em;
+    background-color: var(--color-red);
+    padding: 1em;
+    border: 1px solid #052962;
+    border-bottom: 3px solid #052962;
+}
+
 hr {
     border: 0;
     border-top: 1px solid var(--color-gray);
     margin: 2em 0;
+}
+
+.related-items {
+    margin-top: 2em;
+    background-color: #f5f9ff;
+    padding: 0.3em 1.5em;
 }
