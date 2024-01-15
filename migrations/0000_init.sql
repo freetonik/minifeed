@@ -1,13 +1,3 @@
-DROP TABLE IF EXISTS followings;
-DROP TABLE IF EXISTS subscriptions;
-DROP TABLE IF EXISTS favorites;
-
-DROP TABLE IF EXISTS items;
-DROP TABLE IF EXISTS feeds;
-
-DROP TABLE IF EXISTS sessions;
-DROP TABLE IF EXISTS users;
-
 CREATE TABLE IF NOT EXISTS users (
     user_id INTEGER PRIMARY KEY, 
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -76,4 +66,9 @@ CREATE TABLE followings (
     UNIQUE (follower_user_id, followed_user_id)
 );
 
+INSERT INTO users (user_id, username, password_hash, password_salt) VALUES 
+    (1, 'rakhim',  'de8c10cdcdea7672e35780c07b4896202d5aac438575a3c40de8660ca9768794', '66c1382b7eea51b9123e977db4032859');
+
+
 CREATE INDEX IF NOT EXISTS idx_users_on_username ON users(username);
+-- Migration number: 0000 	 2024-01-15T15:25:45.272Z

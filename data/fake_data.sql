@@ -1,5 +1,4 @@
 INSERT INTO users (user_id, username, password_hash, password_salt) VALUES 
-    (1, 'rakhim',  '94b7eb783a13ec4b0e0399951c78b94f5bc38917c714442aa22c87e12e0f629f', 'cf76f03fd6603ecd62b1380e0775cc48'),
     (2, 'rakhim2', '58a3a9d3c4e5dd3cfe1304086f2485975acb65118551f5c23c296b0e33f33f44', 'd5f911d9fe8fb5278fa77a1370e77b14');
 
 INSERT INTO feeds (feed_id, title, url, rss_url, verified) VALUES 
