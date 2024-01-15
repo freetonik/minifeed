@@ -1,6 +1,6 @@
-import { renderAddFeedForm, renderHTML, renderItemShort } from './htmltools';
+import { renderHTML, renderItemShort } from './htmltools';
 import { html, raw } from 'hono/html'
-import { feedIdToSqid, feedSqidToId, itemIdToSqid, itemSqidToId } from './utils'
+import { feedIdToSqid, itemSqidToId } from './utils'
 import { truncate } from 'bellajs'
 
 export const itemsAll = async (c:any) => {
@@ -213,13 +213,3 @@ export const itemsSingle = async (c:any) => {
     ))
 }
 
-export const itemsDelete = async (c:any) => {
-  const feedId:number = feedSqidToId(c.req.param('feed_sqid'));
-
-  await c.env.DB
-    .prepare(`DELETE from feeds where feed_id = ?` )
-    .bind(feedId)
-    .run();
-
-  return c.html(renderHTML("Add new feed", html`${raw(renderAddFeedForm('', `Feed ${feedId} deleted`))}`))
-}

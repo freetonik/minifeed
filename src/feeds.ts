@@ -1,4 +1,4 @@
-import { renderHTML, renderItemShort } from './htmltools';
+import { renderAddFeedForm, renderHTML, renderItemShort } from './htmltools';
 import { html, raw } from 'hono/html'
 import { feedIdToSqid, feedSqidToId } from './utils'
 
@@ -83,6 +83,9 @@ export const feedsSingle = async (c:any) => {
     <form action="/feeds/${feedSqid}/delete" method="POST" onsubmit="return confirm('Are you sure you want to delete it?');">
       <input type="submit" value="DELETE">
     </form> 
+    <form action="/feeds/${feedSqid}/update" method="POST" onsubmit="return confirm('Are you sure you want to update it?');">
+      <input type="submit" value="UPDATE">
+    </form> 
     </div>
     `
   }
@@ -154,4 +157,21 @@ export const feedsUnsubscribe = async (c:any) => {
         </button>
       </span>
     `);
+}
+
+export const feedsDelete = async (c:any) => {
+  const feedId:number = feedSqidToId(c.req.param('feed_sqid'));
+
+  await c.env.DB
+    .prepare(`DELETE from feeds where feed_id = ?` )
+    .bind(feedId)
+    .run();
+
+  return c.html(renderHTML("Add new feed", html`${raw(renderAddFeedForm('', `Feed ${feedId} deleted`))}`))
+}
+
+export const feedsUpdate = async (c:any) => {
+  const feedId:number = feedSqidToId(c.req.param('feed_sqid'));
+  await c.env.FEED_UPDATE_QUEUE.send(feedId); 
+  return c.text("ok")
 }

@@ -5,14 +5,15 @@ import { serveStatic } from 'hono/cloudflare-workers'
 import { extract } from '@extractus/feed-extractor'
 import { stripTags } from 'bellajs'
 
-import { itemsAll, itemsMy, itemsMySubs, itemsMyFollows, itemsSingle, itemsDelete } from './items'
-import { feedsAll, feedsSingle, feedsSubscribe, feedsUnsubscribe } from './feeds'
+import { itemsAll, itemsMy, itemsMySubs, itemsMyFollows, itemsSingle } from './items'
+import { feedsAll, feedsSingle, feedsSubscribe, feedsUnsubscribe, feedsDelete, feedsUpdate } from './feeds'
 import { usersAll, usersSingle, usersFollow, usersUnfollow } from './users'
 import { loginOrCreateAccount, loginPost, accountMy, logout, signupPost } from './account'
 import { indexMultipleDocuments, search } from './search'
-import { absolitifyImageUrls, feedIdToSqid, getFeedIdByRSSUrl, getRSSLinkFromUrl, getText, idToSqid } from './utils'
+import { absolitifyImageUrls, feedIdToSqid, getFeedIdByRSSUrl, getRSSLinkFromUrl, getText } from './utils'
 import { adminMiddleware, authMiddleware, userPageMiddleware } from './middlewares';
 import { changelog } from './changelog';
+import { extractRSS } from './feed_extractor';
 
 type Bindings = {
 	DB: D1Database;
@@ -35,6 +36,7 @@ app.get('/static/*', serveStatic({ root: './' }))
 app.use('*', authMiddleware); 
 app.use('/my/*', userPageMiddleware); 
 app.use('/feeds/:feed_sqid/delete', adminMiddleware);
+app.use('/feeds/:feed_sqid/update', adminMiddleware);
 app.use('/c/f/add', adminMiddleware)
 
 // APP ROUTES
@@ -59,7 +61,8 @@ app.get('/feeds', feedsAll)
 app.get('/feeds/:feed_sqid', feedsSingle)
 app.post('/feeds/:feed_sqid/subscribe', feedsSubscribe)
 app.post('/feeds/:feed_sqid/unsubscribe', feedsUnsubscribe)
-app.post('/feeds/:feed_sqid/delete', itemsDelete)
+app.post('/feeds/:feed_sqid/delete', feedsDelete)
+app.post('/feeds/:feed_sqid/update', feedsUpdate)
 
 app.get('/users', usersAll)
 app.get('/users/:username', usersSingle)
@@ -104,45 +107,22 @@ app.get('test', async (c) => {
 // INTERNAL FUNCTIONS
 // add new feed to DB
 async function addFeed(c, url: string) {
-	let rssUrl = await getRSSLinkFromUrl(url);
-	const r = await extract(rssUrl, {
-		descriptionMaxLen: 0,
-		getExtraEntryFields: (feedEntry) => {
-			const { 
-				// this is plaintext of description, which may come from anything
-				description: content_from_description,
-				
-				// if both description and content present, `description` is taken from description and we lose content, so here we save it
-				// also, content is for ATOM format
-				content: content_from_content, 
-
-				// this is for RSS format and RDF format
-				"content:encoded": content_from_content_encoded, 
-				
-				// for JSON format
-				content_html: content_from_content_html,
-
-			} = feedEntry
-			return {
-				content_from_description, content_from_content_encoded, content_from_content, content_from_content_html
-			}
-		}
-	});
-
+	let RSSUrl = await getRSSLinkFromUrl(url);
+	const r = await extractRSS(RSSUrl);
+	
 	// if url === rssUrl that means the submitted URL was feed URL, so retrieve site URL from feed; otherwise use submitted URL as site URL
-	const siteUrl = (url === rssUrl) ? r.link : url
+	const siteUrl = (url === RSSUrl) ? r.link : url
 	const verified = (c.get('USER_ID') === 1) ? 1 : 0
 
-	const dbQueryResult = await c.env.DB.prepare("INSERT INTO feeds (title, url, rss_url, verified) values (?, ?, ?, ?)").bind(r.title, siteUrl, rssUrl, verified).all()
+	const dbQueryResult = await c.env.DB.prepare("INSERT INTO feeds (title, url, rss_url, verified) values (?, ?, ?, ?)").bind(r.title, siteUrl, RSSUrl, verified).all()
 
 	if (dbQueryResult['success'] === true) {
 		if (r.entries) {
-			const feedId = await getFeedIdByRSSUrl(c, rssUrl)
+			const feedId = dbQueryResult['meta']['last_row_id'];
 			await addItemsToFeed(c.env, r.entries, feedId)
 		}
-		return rssUrl
+		return RSSUrl
 	}
-	return
 }
 
 async function updateAllFeeds(env: Bindings) {
@@ -156,12 +136,10 @@ async function updateAllFeeds(env: Bindings) {
 async function updateFeed(env: Bindings, feedId: Number) {
 	// get RSS url of feed
 	const { results: feeds } = await env.DB.prepare("SELECT * FROM feeds WHERE feed_id = ?").bind(feedId).all();
-	const rssURL = feeds[0]['rss_url'];
+	const RSSUrl = String(feeds[0]['rss_url']);
 
 	// fetch RSS content
-	const r = await extract(rssURL, {
-		descriptionMaxLen: 0
-	});
+	const r = await extractRSS(RSSUrl);
 
 	// get URLs of existing items from DB
 	const { results: existingItems } = await env.DB.prepare("SELECT url FROM items WHERE feed_id = ?").bind(feedId).all();
@@ -172,10 +150,10 @@ async function updateFeed(env: Bindings, feedId: Number) {
 		// filter out existing ones and add them to Db
 		const newItemsToBeAdded = r.entries.filter(entry => !existingUrls.includes(entry.link));
 		if (newItemsToBeAdded.length) await addItemsToFeed(env, newItemsToBeAdded, feedId)
-		console.log(`Updated feed ${feedId} (${rssURL}), fetched items: ${r.entries.length}, of which new items added: ${newItemsToBeAdded.length}`)
+		console.log(`Updated feed ${feedId} (${RSSUrl}), fetched items: ${r.entries.length}, of which new items added: ${newItemsToBeAdded.length}`)
 		return
 	}
-	console.log(`Updated feed ${feedId} (${rssURL}), no items fetched`)
+	console.log(`Updated feed ${feedId} (${RSSUrl}), no items fetched`)
 }
 
 async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: Number) {
