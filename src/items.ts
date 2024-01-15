@@ -4,7 +4,7 @@ import { feedIdToSqid, itemSqidToId } from './utils'
 import { truncate } from 'bellajs'
 
 export const itemsAll = async (c:any) => {
-  const itemsPerPage = 10
+  const itemsPerPage = 30
   const page = Number(c.req.query('p')) || 1
   const offset = (page * itemsPerPage) - itemsPerPage
   const { results } = await c.env.DB
@@ -17,13 +17,15 @@ export const itemsAll = async (c:any) => {
     .bind(itemsPerPage, offset)
     .run();
 
-  if (!results.length) return c.notFound();
+  let list = `<p></p>`;
+  
+  if (!results.length) list += `<p><i>Nothing exists on minifeed yet...</i></p>`
 
-  let list = `<p></p>`
   results.forEach((item: any) => {
     list += renderItemShort(item.item_id, item.item_title, item.item_url, item.feed_title, item.feed_id, item.pub_date)
   })
-  list += `<a href="?p=${page + 1}">More</a></p>`
+
+  if (results.length) list += `<a href="?p=${page + 1}">More</a></p>`
   return c.html(
     renderHTML("Everything | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'all')
   )
@@ -31,25 +33,27 @@ export const itemsAll = async (c:any) => {
 
 // // MY HOME FEED: subs + follows
 export const itemsMy = async (c:any) => {
-  const itemsPerPage = 10
+  const itemsPerPage = 30
   const page = Number(c.req.query('p')) || 1
   const offset = (page * itemsPerPage) - itemsPerPage
 
   const userId = c.get('USER_ID')
   const { results } = await c.env.DB
     .prepare(`
-      SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id 
+      SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id
       FROM items
       JOIN subscriptions ON items.feed_id = subscriptions.feed_id
       JOIN feeds ON items.feed_id = feeds.feed_id
+      LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
       WHERE subscriptions.user_id = ?
 
       UNION
 
-      SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id  
+      SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id  
       FROM items
       JOIN subscriptions ON items.feed_id = subscriptions.feed_id
       JOIN feeds ON items.feed_id = feeds.feed_id
+      LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
       JOIN followings ON subscriptions.user_id = followings.followed_user_id
       WHERE followings.follower_user_id = ?
 
@@ -57,27 +61,32 @@ export const itemsMy = async (c:any) => {
 
       LIMIT ? OFFSET ?
       `)
-    .bind(userId, userId, itemsPerPage, offset)
+    .bind(userId, userId, userId, userId, itemsPerPage, offset)
     .all();
 
   let list = `<nav class="my-menu"><small><a href="/my" class="active">all</a> / <a href="/my/subs">from subscriptions</a> / <a href="/my/follows">from follows</a></small></nav>
     <div class="main">`
   if (results.length) {
-
+    
     results.forEach((item: any) => {
-      list += renderItemShort(item.item_id, item.title, item.url, item.feed_title, item.feed_id, item.pub_date)
+      let title = item.favorite_id ? `★ ${item.title}` : item.title;
+      list += renderItemShort(item.item_id, title, item.url, item.feed_title, item.feed_id, item.pub_date)
     })
     list += `<p><a href="?p=${page + 1}">More</a></p></div>`
   } else {
-    list += `Your home is empty :-( <br>Subscribe to some <strong><a href="/feeds">feeds</a></strong> or follow some <strong><a href="/users">users</a></strong>.
-      </div>`
+    if (page == 1) {
+
+      list += `Your home is empty :-( <br>Subscribe to some <strong><a href="/feeds">feeds</a></strong> or follow some <strong><a href="/users">users</a></strong>.`
+    }
+
+    list += ` </div>`
   }
 
   return c.html(renderHTML("My stuff | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'my'))
 }
 
 export const itemsMySubs = async (c:any) => {
-  const itemsPerPage = 10
+  const itemsPerPage = 30
   const page = Number(c.req.query('p')) || 1
   const offset = (page * itemsPerPage) - itemsPerPage
 
@@ -103,7 +112,11 @@ export const itemsMySubs = async (c:any) => {
     })
     list += `<p><a href="?p=${page + 1}">More</a></p></div>`
   } else {
-    list += `Your have no subscriptions :-( <br>Subscribe to some <strong><a href="/feeds">feeds</a></strong>.</div>`
+    if (page == 1) {
+      list += `Your have no subscriptions :-( <br>Subscribe to some <strong><a href="/feeds">feeds</a></strong>.`
+    }
+    list += `</div>`
+    
   }
   return c.html(renderHTML(
     "From my subscriptions", 
@@ -114,33 +127,36 @@ export const itemsMySubs = async (c:any) => {
 }
 
 export const itemsMyFollows = async (c:any) => {
-  const itemsPerPage = 10
+  const itemsPerPage = 30
   const page = Number(c.req.query('p')) || 1
   const offset = (page * itemsPerPage) - itemsPerPage
 
   const userId = c.get('USER_ID')
   const { results } = await c.env.DB
     .prepare(`
-      SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title
+      SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id  
       FROM items
       JOIN subscriptions ON items.feed_id = subscriptions.feed_id
       JOIN feeds ON items.feed_id = feeds.feed_id
       JOIN followings ON subscriptions.user_id = followings.followed_user_id
       WHERE followings.follower_user_id = ?
       ORDER BY items.pub_date DESC
+      LIMIT ? OFFSET ?
       `)
-    .bind(userId)
+    .bind(userId, itemsPerPage, offset)
     .all();
 
   let list = `<nav class="my-menu"><small><a href="/my">all</a> / <a href="/my/subs">from subscriptions</a> / <a class="active" href="/my/follows">from follows</a></small></nav>
     <div class="main">`
   if (results.length) {
     results.forEach((item: any) => {
-      list += `<li><a href="${item.url}">${item.title}</a> (${item.feed_title})</li>`
+      list += renderItemShort(item.item_id, item.title, item.url, item.feed_title, item.feed_id, item.pub_date)
     })
     list += `<p><a href="?p=${page + 1}">More</a></p></div>`
   } else {
-    list += `Your don't follow anyone, or you do, but they aren't subscribed to anything :-( <br> Go find some <strong><a href="/users">users to follow</a></strong>`
+    if (page == 1) {
+      list += `Your don't follow anyone, or you do, but they aren't subscribed to anything :-( <br> Go find some <strong><a href="/users">users to follow</a></strong>`
+    }
   }
 
   return c.html(renderHTML("From my follows", html`${raw(list)}`, c.get('USERNAME'), 'my'))
@@ -214,7 +230,10 @@ export const itemsSingle = async (c:any) => {
   const feed_sqid = feedIdToSqid(item.feed_id)
 
   let contentBlock;
-  if (user_logged_in) contentBlock = raw(item.content_html)
+  if (user_logged_in) {
+    if (item.content_html) contentBlock = raw(item.content_html)
+    else contentBlock = item.description
+  }
   else contentBlock = `${truncate(item.description, 250)} <div class="flash-blue"><a href="/login">Log in</a> to view full content</div>`;
   
   let favoriteBlock = '';
@@ -267,9 +286,8 @@ export const itemsSingle = async (c:any) => {
   }
 
   let otherItemsBlock = '';
-  console.log(batch[2].results[0])
   if (batch[2].results.length) {
-    otherItemsBlock += `<div><hr> <h3>More from <a href="/feeds/${feed_sqid}"">${item.feed_title}</a>:</h3>`
+    otherItemsBlock += `<div class="related-items"><h3>More from <a href="/feeds/${feed_sqid}"">${item.feed_title}</a>:</h3>`
       batch[2].results.forEach((related_item: any) => {
         otherItemsBlock += `<div style="margin-bottom:2em;">`
         const itemTitle = related_item.favorite_id ? `★ ${related_item.item_title}` : related_item.item_title;
@@ -283,13 +301,12 @@ export const itemsSingle = async (c:any) => {
     <h1 style="margin-bottom: 0.25em;">${item.item_title} </h1>
     <div style="margin-bottom:1.25em;"><small>from <a href="/feeds/${feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time></small></div>
 
-    <a class="button" href="${item.item_url}">↗ open original</a>
+    <a class="button" href="${item.item_url}" target="_blank">↗ open original</a>
     ${favoriteBlock}
     <hr>
-    <div class="post-content">${contentBlock}
-    <p style="font-size:smaller; margin-top:1em;">
-      <time>${post_date}</time> (<a href="${item.item_url}">original</a>)
-    </p>
+    <div class="post-content">
+    ${contentBlock}
+    
     </div>
 
     
