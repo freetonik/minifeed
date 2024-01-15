@@ -36,6 +36,23 @@ https://minifeed.net/feeds
 1. click on feeds
 1. try adding new feed
 
+#### Single feed page
+
+1. open any feed page from https://minifeed.net/feeds
+1. check `site` link opens correct external page
+1. check correct items listing (check a few random items, not all)
+    - dates sorted correctly
+    - links open corresponding items
+    - "original" links open correct original pages
+
+#### Single item page
+
+1. open any item from any feed
+1. check `open original` button opens correct external page
+1. check that item has text content
+1. check "More from..." block shows items from correct feed
+
+
 #### "Users" page https://minifeed.net/users
 
 1. click on users
@@ -53,7 +70,10 @@ https://minifeed.net/feeds
 1. try signing up with bad password (shorter than 8 characters)
 1. try signing up with empty fields
 1. sign up correctly
-1. logout
+1. logout in several ways
+    - via https://minifeed.net/my/account
+    - via header link (upper-right corner)
+    - via footer link
 1. try logging in with bad username and/or password
 1. log in correctly
 
@@ -98,6 +118,7 @@ https://minifeed.net/feeds
 #### Single feed page
 
 1. open any feed page from https://minifeed.net/feeds
+1. check `site` link opens correct external page
 1. check correct items listing (check a few random items, not all)
     - dates sorted correctly
     - links open corresponding items
@@ -107,10 +128,11 @@ https://minifeed.net/feeds
 #### Single item page
 
 1. open any item from any feed
+1. check `open original` button opens correct external page
 1. check `favorite`/`unfavorite` button behavior
+1. check that item has text content
+    - check that favorited item now shows with a star ★ symbol on all other pages
 1. check "More from..." block shows items from correct feed
-1. check that favorited item now shows with a star ★ symbol on all other pages
-
 
 #### Add new feed https://minifeed.net/feeds/new
 
