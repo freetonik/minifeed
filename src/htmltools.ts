@@ -38,7 +38,7 @@ export const renderHTML = (
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>"
   />
   <link rel="stylesheet" href="/static/minifeed.css">
-  <script src="/static/htmx.min.js"></script>
+  <script defer src="/static/htmx.min.js"></script>
 </head>
 
   <body>
