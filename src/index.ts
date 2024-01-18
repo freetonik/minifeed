@@ -215,13 +215,16 @@ export default {
 
 	// consumer of queue FEED_UPDATE_QUEUE
 	async queue(batch: MessageBatch<any>, env: Bindings) {
-		let messages = JSON.stringify(batch.messages);
+		// let messages = JSON.stringify(batch.messages);
 
 		for (const message of batch.messages) {
 			const feedId = message.body; // feedId is the body of the message
-			await updateFeed(env, feedId)
+			try {
+				await updateFeed(env, feedId);
+			} catch (e: any) {
+				console.log(`Error updating feed ${feedId}: ${e.toString()}`);
+			}
 		}
-
 	},
 
 	// cron
