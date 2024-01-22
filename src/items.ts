@@ -184,6 +184,7 @@ export const itemsSingle = async (c:any) => {
         items.title AS item_title, 
         items.description, 
         items.content_html, 
+        items.content_html_scraped,
         items.pub_date, 
         items.url AS item_url, 
         feeds.title AS feed_title, 
@@ -231,7 +232,8 @@ export const itemsSingle = async (c:any) => {
 
   let contentBlock;
   if (user_logged_in) {
-    if (item.content_html) contentBlock = raw(item.content_html)
+    if (item.content_html_scraped) contentBlock = raw(item.content_html_scraped)
+    else if (item.content_html) contentBlock = raw(item.content_html)
     else contentBlock = item.description
   }
   else contentBlock = `${truncate(item.description, 250)} <div class="flash-blue"><a href="/login">Log in</a> to view full content</div>`;
@@ -312,6 +314,17 @@ export const itemsSingle = async (c:any) => {
     
     ${otherItemsBlock}
   `
+
+  if (c.get('USER_ID') == 1) {
+    list += `
+    <div class="admin-control">
+    <form action="/items/${item_sqid}/scrape" method="POST" onsubmit="return confirm('Are you sure you want to scrape it?');">
+      <input type="submit" value="SCRAPE">
+    </form> 
+    </div>
+    `
+  }
+
   return c.html(renderHTML(
     `${item.item_title} | ${item.feed_title} | minifeed`, 
     html`${raw(list)}`,

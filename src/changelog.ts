@@ -6,6 +6,7 @@ export const changelog = `
     <h3>0.1.5</h3>
     <ul>
         <li>Bugfix: wrong navigation highlight fixed on item page #8</li>
+        <li>New feature: scraping of item content #20</li>
     </ul>
 
     <h3>0.1.4</h3>

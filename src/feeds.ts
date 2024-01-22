@@ -175,6 +175,11 @@ export const feedsDelete = async (c:any) => {
 
 export const feedsUpdate = async (c:any) => {
   const feedId:number = feedSqidToId(c.req.param('feed_sqid'));
-  await c.env.FEED_UPDATE_QUEUE.send(feedId); 
+  await c.env.FEED_UPDATE_QUEUE.send(
+    {
+      'type': 'feed_update',
+      'feed_id': feedId,
+    }
+  ); 
   return c.text("ok")
 }
