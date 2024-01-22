@@ -8,6 +8,7 @@ export const changelog = `
         <li>Bugfix: wrong navigation highlight fixed on item page #8</li>
         <li>New feature: scraping of item content #20</li>
         <li>Bugfix: show correct user status on feed add page #7</li>
+        <li>Bugfix: show correct favorite status on item page and related articles</li>
     </ul>
 
     <h3>0.1.4</h3>

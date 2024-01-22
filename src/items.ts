@@ -192,10 +192,10 @@ export const itemsSingle = async (c:any) => {
         favorite_id 
       FROM items 
       JOIN feeds ON items.feed_id = feeds.feed_id 
-      LEFT JOIN favorites ON items.item_id = favorites.item_id
+      LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
       WHERE items.item_id = ? 
       ORDER BY items.pub_date DESC`)
-      .bind(item_id),
+      .bind(user_id, item_id),
 
     // find other items from this feed
     c.env.DB.prepare(`
@@ -214,11 +214,11 @@ export const itemsSingle = async (c:any) => {
         favorite_id 
       FROM items 
       JOIN FeedInfo fi ON items.feed_id = fi.feed_id
-      LEFT JOIN favorites ON items.item_id = favorites.item_id
+      LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
       WHERE items.item_id != ? 
       ORDER BY items.pub_date DESC
       LIMIT 5`)
-      .bind(item_id, item_id)
+      .bind(item_id, user_id, item_id)
   ]);
 
   if (!batch[1].results.length) return c.notFound();
