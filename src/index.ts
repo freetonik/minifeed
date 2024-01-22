@@ -66,7 +66,7 @@ app.get('/my/follows', itemsMyFollows)
 app.get('/feeds', feedsAll)
 app.get('/feeds/new', async (c) => {
     if (!c.get('USER_ID')) return c.redirect('/login')
-    return c.html(renderHTML("Add new feed", html`${renderAddFeedForm()}`))
+    return c.html(renderHTML("Add new feed", html`${renderAddFeedForm()}`, c.get('USERNAME'), 'feeds'))
 });
 app.post('/feeds/new', async (c) => {
     const body = await c.req.parseBody();
@@ -75,7 +75,7 @@ app.post('/feeds/new', async (c) => {
     try {
         rssUrl = await addFeed(c, url); 
     } catch (e: any) {
-        return c.html(renderHTML("Add new feed", html`${renderAddFeedForm(url, e.toString())}`))
+        return c.html(renderHTML("Add new feed", html`${renderAddFeedForm(url, e.toString())}`, c.get('USERNAME'), 'feeds'))
     }
 
     // RSS url is found

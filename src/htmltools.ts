@@ -151,7 +151,7 @@ export const renderAddFeedForm = (url:string = '', flash:string = '') => {
     <form action="/feeds/new" method="POST">
     <div style="margin-bottom:1em;">
       <label for="url">Blog URL (or direct RSS URL):</label>
-      <input type="text" id="url" name="url" value="${url}" style="width: 100%;"><br>
+      <input type="url" id="url" name="url" value="${url}" style="width: 100%;"><br>
       </div>
       <input type="submit" value="Add feed">
     </form> 
