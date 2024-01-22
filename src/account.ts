@@ -18,7 +18,7 @@ export const accountMy = async (c:any) => {
   </p>
   
   `
-  return c.html(renderHTML("My account | minifeed", html`${raw(list)}`, '', ''))
+  return c.html(renderHTML("My account | minifeed", html`${raw(list)}`, c.get('USERNAME'), ''))
 }
 
 export const logout = async (c:any) => {
