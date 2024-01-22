@@ -316,7 +316,7 @@ export const itemsSingle = async (c:any) => {
     `${item.item_title} | ${item.feed_title} | minifeed`, 
     html`${raw(list)}`,
     c.get('USERNAME'),
-    'items',
+    'feeds',
     '',
     item.item_url
     ))
