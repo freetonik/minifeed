@@ -18,7 +18,7 @@ export const accountMy = async (c:any) => {
   </p>
   
   `
-  return c.html(renderHTML("All items", html`${raw(list)}`))
+  return c.html(renderHTML("My account | minifeed", html`${raw(list)}`, '', ''))
 }
 
 export const logout = async (c:any) => {
@@ -78,7 +78,7 @@ export const loginOrCreateAccount = async (c:any) => {
     </form> 
   </div>
   `
-  return c.html(renderHTML("All items", html`${raw(list)}`))
+  return c.html(renderHTML("Login or create account | minifeed", html`${raw(list)}`, '', ''))
 }
 
 export const loginPost = async (c:any) => {
