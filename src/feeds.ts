@@ -84,11 +84,20 @@ export const feedsSingle = async (c:any) => {
   if (c.get('USER_ID') == 1) {
     list += `
     <div class="admin-control">
-    <ul>
-      <li>Feed id: ${feedId}</li>
-      <li>Feed sqid: ${feedSqid}</li>
-      <li>Verified: ${batch[0].results[0]['verified'] ? 'yes' : 'no'}</li>
-    </ul>
+    <table>
+      <tr>
+        <td>Feed id:</td>
+        <td>${feedId}</td>
+      </tr>
+      <tr>
+        <td>Feed sqid:</td>
+        <td>${feedSqid}</td>
+      </tr>
+      <tr>
+        <td>Verified:</td>
+        <td>${batch[0].results[0]['verified'] ? 'yes' : 'no'}</td>
+      </tr>
+    </table>
     <p>
       <button hx-post="/feeds/${feedSqid}/delete"
         hx-confirm="Sure?"

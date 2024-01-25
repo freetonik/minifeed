@@ -328,21 +328,41 @@ export const itemsSingle = async (c:any) => {
     const show_content_html_over_scraped = (item.content_html && item.content_html_scraped) && (item.content_html.length > item.content_html_scraped.length * 0.65);
     let show_content_html_over_scraped_block = 'not applicable';
     if (item.content_html_scraped && show_content_html_over_scraped) show_content_html_over_scraped_block = `yes`
-    else show_content_html_over_scraped_block = `no`;
+    else if (item.content_html_scraped && !show_content_html_over_scraped) show_content_html_over_scraped_block = `no`;
     list += `
     <div class="admin-control">
-    <ul>
-      <li>Item ID: ${item.item_id}</li>
-      <li>Item sqid: ${item_sqid}</li>
-      <li>Length of description: ${item.description ? item.description.length : 0}</li>
-      <li>Length of content_html: ${item.content_html ? item.content_html.length : 0}</li>
-      <li>Length of content_html_scraped: ${item.content_html_scraped ? item.content_html_scraped.length : 0}</li>
-      <li>Scraped: ${item.content_html_scraped ? 'yes' : 'no'}</li>
-      <li>Show content_html over scraped: ${show_content_html_over_scraped_block}</li>
-    </ul>
+    <table>
+      <tr>
+        <td>Item ID:</td>
+        <td>${item.item_id}</td>
+      </tr>
+      <tr>
+        <td>Item sqid:</td>
+        <td>${item_sqid}</td>
+      </tr>
+      <tr>
+        <td>Length of description:</td>
+        <td>${item.description ? item.description.length : 0}</td>
+      </tr>
+      <tr>
+        <td>Length of content_html:</td>
+        <td>${item.content_html ? item.content_html.length : 0}</td>
+      </tr>
+      <tr>
+        <td>Show content_html over scraped:</td>
+        <td>${show_content_html_over_scraped_block}</td>
+      </tr>
+      <tr>
+        <td>Scraped:</td>
+        <td>${item.content_html_scraped ? 'yes' : 'no'}</td>
+      </tr>
+      <tr>
+        <td>Length of content_html_scraped:</td>
+        <td>${item.content_html_scraped ? item.content_html_scraped.length : "not applicable"}</td>
+      </tr>
+    </table>
 
-
-    <span id="scrape">
+    <p>
         <button hx-post="/items/${item_sqid}/scrape"
           hx-trigger="click"
           hx-target="#scrape-indicator"
@@ -350,7 +370,7 @@ export const itemsSingle = async (c:any) => {
           scrape
         </button>
         <span id="scrape-indicator"></span>
-      </span>
+    </p>
 
     </div>
     `
