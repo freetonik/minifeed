@@ -34,7 +34,8 @@ export const feedsSingle = async (c:any) => {
 
   const batch = await c.env.DB.batch([
     c.env.DB.prepare(`
-      SELECT feeds.title, feeds.url, feeds.rss_url, subscriptions.subscription_id from feeds 
+      SELECT feeds.title, feeds.url, feeds.rss_url, subscriptions.subscription_id, feeds.verified 
+      FROM feeds
       LEFT JOIN subscriptions on feeds.feed_id = subscriptions.feed_id AND subscriptions.user_id = ?
       WHERE feeds.feed_id = ?
       `).bind(userId, feedId),
@@ -83,12 +84,43 @@ export const feedsSingle = async (c:any) => {
   if (c.get('USER_ID') == 1) {
     list += `
     <div class="admin-control">
-    <form action="/feeds/${feedSqid}/delete" method="POST" onsubmit="return confirm('Are you sure you want to delete it?');">
-      <input type="submit" value="DELETE">
-    </form> 
-    <form action="/feeds/${feedSqid}/update" method="POST" onsubmit="return confirm('Are you sure you want to update it?');">
-      <input type="submit" value="UPDATE">
-    </form> 
+    <ul>
+      <li>Feed id: ${feedId}</li>
+      <li>Feed sqid: ${feedSqid}</li>
+      <li>Verified: ${batch[0].results[0]['verified'] ? 'yes' : 'no'}</li>
+    </ul>
+    <p>
+      <button hx-post="/feeds/${feedSqid}/delete"
+        hx-confirm="Sure?"
+        hx-trigger="click"
+        hx-target="#delete-indicator"
+        hx-swap="outerHTML">
+        delete
+      </button>
+      <span id="delete-indicator"></span>
+    </p>
+
+    <p>
+      <button hx-post="/feeds/${feedSqid}/update"
+        hx-confirm="Sure?"
+        hx-trigger="click"
+        hx-target="#update-indicator"
+        hx-swap="outerHTML">
+        update
+      </button>
+      <span id="update-indicator"></span>
+    </p>
+
+    <p>
+      <button hx-post="/feeds/${feedSqid}/scrape"
+        hx-confirm="Sure?"
+        hx-trigger="click"
+        hx-target="#scrape-indicator"
+        hx-swap="outerHTML">
+        scrape
+      </button>
+      <span id="scrape-indicator"></span>
+    </p>
     </div>
     `
   }
@@ -170,7 +202,7 @@ export const feedsDelete = async (c:any) => {
     .bind(feedId)
     .run();
 
-  return c.html(renderHTML("Add new feed", html`${raw(renderAddFeedForm('', `Feed ${feedId} deleted`))}`))
+  return c.html(`Feed ${feedId} deleted`)
 }
 
 export const feedsUpdate = async (c:any) => {
@@ -181,5 +213,16 @@ export const feedsUpdate = async (c:any) => {
       'feed_id': feedId,
     }
   ); 
-  return c.text("ok")
+  return c.text("Feed update enqueued...")
+}
+
+export const feedsScrape = async (c:any) => {
+  const feedId:number = feedSqidToId(c.req.param('feed_sqid'));
+  await c.env.FEED_UPDATE_QUEUE.send(
+    {
+      'type': 'feed_scrape',
+      'feed_id': feedId,
+    }
+  );
+  return c.html('Feed scrape enqueued...')
 }

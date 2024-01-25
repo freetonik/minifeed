@@ -232,8 +232,15 @@ export const itemsSingle = async (c:any) => {
 
   let contentBlock;
   if (user_logged_in) {
-    if (item.content_html_scraped) contentBlock = raw(item.content_html_scraped)
-    else if (item.content_html) contentBlock = raw(item.content_html)
+    if (item.content_html) {
+      if (item.content_html_scraped) {
+        if (item.content_html.length > item.content_html_scraped.length * 0.65) {
+          contentBlock = raw(item.content_html)
+        } else {
+          contentBlock = raw(item.content_html_scraped)
+        }
+      }
+    }
     else contentBlock = item.description
   }
   else contentBlock = `${truncate(item.description, 250)} <div class="flash-blue"><a href="/login">Log in</a> to view full content</div>`;
@@ -316,11 +323,30 @@ export const itemsSingle = async (c:any) => {
   `
 
   if (c.get('USER_ID') == 1) {
+    const show_content_html_over_scraped = (item.content_html && item.content_html_scraped) && (item.content_html.length > item.content_html_scraped.length * 0.65)
     list += `
     <div class="admin-control">
-    <form action="/items/${item_sqid}/scrape" method="POST" onsubmit="return confirm('Are you sure you want to scrape it?');">
-      <input type="submit" value="SCRAPE">
-    </form> 
+    <ul>
+      <li>Item ID: ${item.item_id}</li>
+      <li>Item sqid: ${item_sqid}</li>
+      <li>Length of description: ${item.description ? item.description.length : 0}</li>
+      <li>Length of content_html: ${item.content_html ? item.content_html.length : 0}</li>
+      <li>Length of content_html_scraped: ${item.content_html_scraped ? item.content_html_scraped.length : 0}</li>
+      <li>Scraped: ${item.content_html_scraped ? 'yes' : 'no'}</li>
+      <li>Show content_html over scraped: ${(show_content_html_over_scraped ? 'yes' : 'no')}</li>
+    </ul>
+
+
+    <span id="scrape">
+        <button hx-post="/items/${item_sqid}/scrape"
+          hx-trigger="click"
+          hx-target="#scrape-indicator"
+          hx-swap="outerHTML">
+          scrape
+        </button>
+        <span id="scrape-indicator"></span>
+      </span>
+
     </div>
     `
   }
@@ -403,4 +429,17 @@ export const itemsRemoveFromFavorites = async (c:any) => {
         "Error"
       </span>
     `);
+}
+
+export const itemsScrape = async (c:any) => {
+  const itemSqid = c.req.param('item_sqid')
+  const itemId:number = itemSqidToId(itemSqid)
+  
+  await c.env.FEED_UPDATE_QUEUE.send(
+    {
+        'type': 'item_scrape',
+        'item_id': itemId
+    }
+  );
+  return c.html('Scrape queued...');
 }

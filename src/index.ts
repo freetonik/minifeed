@@ -5,8 +5,8 @@ import { serveStatic } from 'hono/cloudflare-workers'
 import { extract } from '@extractus/feed-extractor'
 import { stripTags } from 'bellajs'
 
-import { itemsAll, itemsMy, itemsMySubs, itemsMyFollows, itemsSingle, itemsAddToFavorites, itemsRemoveFromFavorites } from './items'
-import { feedsAll, feedsSingle, feedsSubscribe, feedsUnsubscribe, feedsDelete, feedsUpdate } from './feeds'
+import { itemsAll, itemsMy, itemsMySubs, itemsMyFollows, itemsSingle, itemsAddToFavorites, itemsRemoveFromFavorites, itemsScrape } from './items'
+import { feedsAll, feedsSingle, feedsSubscribe, feedsUnsubscribe, feedsDelete, feedsUpdate, feedsScrape } from './feeds'
 import { usersAll, usersSingle, usersFollow, usersUnfollow } from './users'
 import { loginOrCreateAccount, loginPost, accountMy, logout, signupPost } from './account'
 import { indexMultipleDocuments, search } from './search'
@@ -24,6 +24,7 @@ type Bindings = {
     TYPESENSE_ITEMS_COLLECTION: string;
     TYPESENSE_BLOGS_COLLECTION: string;
     TYPESENSE_CLUSTER: string;
+    MAE_SERVICE_API_KEY: string
 }
 
 
@@ -43,7 +44,8 @@ app.use('/items/:feed_sqid/unfavorite', userPageMiddleware);
 
 app.use('/feeds/:feed_sqid/delete', adminMiddleware);
 app.use('/feeds/:feed_sqid/update', adminMiddleware);
-app.use('/c/f/add', adminMiddleware)
+app.use('/feeds/:feed_sqid/scrape', adminMiddleware);
+app.use('/items/:item_sqid/scrape', adminMiddleware);
 
 // APP ROUTES
 app.get('/', (c) => {
@@ -92,10 +94,12 @@ app.post('/feeds/:feed_sqid/subscribe', feedsSubscribe)
 app.post('/feeds/:feed_sqid/unsubscribe', feedsUnsubscribe)
 app.post('/feeds/:feed_sqid/delete', feedsDelete)
 app.post('/feeds/:feed_sqid/update', feedsUpdate)
+app.post('/feeds/:feed_sqid/scrape', feedsScrape)
 
 app.get('/items/:item_sqid', itemsSingle)
 app.post('/items/:item_sqid/favorite', itemsAddToFavorites)
 app.post('/items/:item_sqid/unfavorite', itemsRemoveFromFavorites)
+app.post('/items/:item_sqid/scrape', itemsScrape)
 
 app.get('/users', usersAll)
 app.get('/users/:username', usersSingle)
@@ -177,7 +181,7 @@ async function scrapeItem(env: Bindings, item_id: Number) {
     // get item URL
     const { results: items } = await env.DB.prepare("SELECT url FROM items WHERE item_id = ?").bind(item_id).all();
     const item_url = String(items[0]['url']);
-
+    console.log(`Scraping item ${item_id} (${item_url})`);
     let req;
     const maeServiceUrl = `https://mae.deno.dev/?apikey=${env.MAE_SERVICE_API_KEY}&url=${item_url}`
     try {
@@ -189,7 +193,18 @@ async function scrapeItem(env: Bindings, item_id: Number) {
     const content = JSON.parse(articleInfo).data.content;
 
     await env.DB.prepare("UPDATE items SET content_html_scraped = ? WHERE item_id = ?").bind(content, item_id).run();
-    console.log(`Scraped item ${item_id} (${item_url})`)
+}
+
+async function scrapeAllItemsOfFeed(env: Bindings, feedId: Number) {
+    const { results: items } = await env.DB.prepare("SELECT item_id, url FROM items WHERE feed_id = ?").bind(feedId).all();
+    for (const item of items) {
+        await env.FEED_UPDATE_QUEUE.send(
+            {
+                'type': 'item_scrape',
+                'item_id': item['item_id']
+            }
+        );
+    }
 }
 
 async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: Number) {
@@ -232,17 +247,11 @@ async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: Number) 
         if (result['success']) {
             // add last_row_id to each item in searchDocuments as item_id
             searchDocuments[searchDocumentsWalker]['item_id'] = result['meta']['last_row_id'];
-            // send result['meta']['last_row_id'] to queue for scraping
-            env.FEED_UPDATE_QUEUE.send(
-                {
-                    'type': 'item_scrape',
-                    'item_id': result['meta']['last_row_id']
-                }
-            );
             searchDocumentsWalker += 1
         } 
     });
-    await indexMultipleDocuments(env, searchDocuments)
+    await indexMultipleDocuments(env, searchDocuments);
+    await scrapeAllItemsOfFeed(env, feedId);
 }
 
 // MAIN EXPORT
@@ -252,7 +261,7 @@ export default {
     // consumer of queue FEED_UPDATE_QUEUE
     async queue(batch: MessageBatch<any>, env: Bindings) {
         // let messages = JSON.stringify(batch.messages);
-
+        console.log(`Received batch of ${batch.messages.length} messages`);
         for (const message of batch.messages) {
             if (message.body['type'] == 'feed_update') {
                 const feed_id = message.body.feed_id; 
@@ -261,7 +270,16 @@ export default {
                 } catch (e: any) {
                     console.log(`Error updating feed ${feed_id}: ${e.toString()}`);
                 }
-            } else if (message.body['type'] == 'item_scrape') {
+            } 
+            else if (message.body['type'] == 'feed_scrape') {
+                const feed_id = message.body.feed_id; 
+                try {
+                    await scrapeAllItemsOfFeed(env, feed_id);
+                } catch (e: any) {
+                    console.log(`Error scraping feed ${feed_id}: ${e.toString()}`);
+                }
+            }           
+            else if (message.body['type'] == 'item_scrape') {
                 const item_id = message.body.item_id; 
                 try {
                     await scrapeItem(env, item_id);
