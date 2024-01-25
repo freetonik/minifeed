@@ -239,6 +239,8 @@ export const itemsSingle = async (c:any) => {
         } else {
           contentBlock = raw(item.content_html_scraped)
         }
+      } else {
+        contentBlock = raw(item.content_html)
       }
     }
     else contentBlock = item.description
@@ -323,7 +325,10 @@ export const itemsSingle = async (c:any) => {
   `
 
   if (c.get('USER_ID') == 1) {
-    const show_content_html_over_scraped = (item.content_html && item.content_html_scraped) && (item.content_html.length > item.content_html_scraped.length * 0.65)
+    const show_content_html_over_scraped = (item.content_html && item.content_html_scraped) && (item.content_html.length > item.content_html_scraped.length * 0.65);
+    let show_content_html_over_scraped_block = 'not applicable';
+    if (item.content_html_scraped && show_content_html_over_scraped) show_content_html_over_scraped_block = `yes`
+    else show_content_html_over_scraped_block = `no`;
     list += `
     <div class="admin-control">
     <ul>
@@ -333,7 +338,7 @@ export const itemsSingle = async (c:any) => {
       <li>Length of content_html: ${item.content_html ? item.content_html.length : 0}</li>
       <li>Length of content_html_scraped: ${item.content_html_scraped ? item.content_html_scraped.length : 0}</li>
       <li>Scraped: ${item.content_html_scraped ? 'yes' : 'no'}</li>
-      <li>Show content_html over scraped: ${(show_content_html_over_scraped ? 'yes' : 'no')}</li>
+      <li>Show content_html over scraped: ${show_content_html_over_scraped_block}</li>
     </ul>
 
 
