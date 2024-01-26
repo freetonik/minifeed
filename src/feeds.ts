@@ -3,10 +3,14 @@ import { html, raw } from 'hono/html'
 import { feedIdToSqid, feedSqidToId } from './utils'
 
 export const feedsAll = async (c:any) => {
-  // const user = c.get('USER_ID')
+  const user_id = c.get('USER_ID')
   // return c.text(`User: ${user}`)
   const { results } = await c.env.DB
-    .prepare("SELECT * from feeds")
+    .prepare(`
+      SELECT feeds.feed_id, feeds.title, subscriptions.subscription_id from feeds 
+      LEFT JOIN subscriptions on feeds.feed_id = subscriptions.feed_id AND subscriptions.user_id = ?`
+    )
+    .bind(user_id)
     .run();
 
   let list = `
@@ -14,10 +18,11 @@ export const feedsAll = async (c:any) => {
   <p style="margin-top:0"><a class="button" href="/feeds/new">+ add new feed</a></p>
   `
   results.forEach((feed: any) => {
-    const sqid = feedIdToSqid(feed.feed_id)
+    const sqid = feedIdToSqid(feed.feed_id);
+    const subscribed = feed.subscription_id ? '(subscribed)' : '';
     list += `
     <div>
-      <a href="/feeds/${sqid}">${feed.title}</a>
+      <a href="/feeds/${sqid}">${feed.title}</a> ${subscribed}
     </div>`
   })
   list += "</div>"
