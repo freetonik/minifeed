@@ -141,6 +141,7 @@ export const renderAddFeedForm = (url:string = '', flash:string = '') => {
   if (flash.includes('Cannot find RSS link')) flash_test += "Cannot find RSS link on that page. Try entering direct RSS URL."
   else if (flash.includes('UNIQUE constraint failed: feeds.rss_url')) flash_test += 'Feed already exists.'
   else if (flash.includes('Cannot fetch url')) flash_test += 'That page does not exist.'
+  else if (flash.includes('error code 530')) flash_test += 'That page does not exist.'
   else flash_test += flash;
 
   const flashBlock = flash ? html`<div class="flash-red">${flash_test}</div>` : ''
