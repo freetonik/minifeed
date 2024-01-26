@@ -3,14 +3,15 @@ import { html, raw } from 'hono/html'
 import { feedIdToSqid } from './utils';
 
 export const usersAll = async (c:any) => {
-  const userId = c.get('USER_ID') || "0";
+  const username = c.get('USERNAME');
   const { results } = await c.env.DB
-    .prepare("SELECT * from users")
+    .prepare("SELECT * from users ORDER BY created ASC")
     .run();
 
   let list = `<div class="main">`
   results.forEach((user: any) => {
-    list += `<div><a href="/users/${user.username}">${user.username}</a></div>`
+    if (user.username == username) list += `<div><strong><a href="/users/${user.username}">${user.username}</a></strong> (this is me)</div>`
+    else list += `<div><a href="/users/${user.username}">${user.username}</a></div>`
   })
   list += "</div>"
   return c.html(renderHTML("All items", html`${raw(list)}`, c.get('USERNAME'), 'users'))
