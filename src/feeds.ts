@@ -3,7 +3,7 @@ import { html, raw } from 'hono/html'
 import { feedIdToSqid, feedSqidToId } from './utils'
 
 export const feedsAll = async (c:any) => {
-  const user_id = c.get('USER_ID')
+  const user_id = c.get('USER_ID') || -1;
   // return c.text(`User: ${user}`)
   const { results } = await c.env.DB
     .prepare(`
