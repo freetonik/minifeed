@@ -5,6 +5,7 @@ export const changelog = `
 
     <h3>0.1.6 (27.01.2024)</h3>
     <ul>
+        <li>New feature: show typo-tolerant search results clearly #9</li>
         <li>Bugfix: favorited item icons now show consistently on all pages #15</li>
         <li>Bugfix: correct error when adding unreachable URL as feed URL #19</li>
         <li>Bugfix: subscription status shows correctly on all feeds page #16</li>

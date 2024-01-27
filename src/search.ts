@@ -28,15 +28,26 @@ export const search = async (c:any) => {
       "Content-Type": "application/json"
     },
   };
-  const response = await fetch(`https://${c.env.TYPESENSE_CLUSTER}:443/multi_search?per_page=${itemsPerPage}&page=${page}&query_by=title,content`, init);
-  const results = await gatherResponse(response);
-  const parsedResults = JSON.parse(results);
+  let response = await fetch(`https://${c.env.TYPESENSE_CLUSTER}:443/multi_search?per_page=${itemsPerPage}&page=${page}&query_by=title,content&num_typos=0`, init);
+  let results = await gatherResponse(response);
+  let parsedResults = JSON.parse(results);
 
-  console.log(parsedResults)
+  console.log(parsedResults['results'][0].hits)
   const hasNextPage = parsedResults['results'][0]['found'] > (page * itemsPerPage)
 
   let list = `<h2>Search results for '${q}'</h2>`
-  if (!parsedResults['results'][0]['hits'].length) list += `<p><i>No results found</i></p>`
+  if (!parsedResults['results'][0]['hits'].length) {
+    
+    response = await fetch(`https://${c.env.TYPESENSE_CLUSTER}:443/multi_search?per_page=${itemsPerPage}&page=${page}&query_by=title,content`, init);
+    results = await gatherResponse(response);
+    parsedResults = JSON.parse(results);
+    if (parsedResults['results'][0]['hits'].length) {
+      list += `<div class="flash-blue">No exact results found. Below are potentially relevant results.</div>`;
+    } else {
+      list += `<div class="flash-blue">No results found</i></div>`;
+    }
+
+  }
   parsedResults['results'][0]['hits'].forEach((item: any) => {
     list += renderItemSearchResult(item);    
   });
@@ -50,7 +61,8 @@ export const search = async (c:any) => {
   )
 }
 
-export const indexMultipleDocuments = async (env:any, documents: object[]) => {
+export const 
+indexMultipleDocuments = async (env:any, documents: object[]) => {
   const jsonlines = documents.map(item => JSON.stringify(item)).join('\n');
   const init = {
     body: jsonlines,
