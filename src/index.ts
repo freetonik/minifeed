@@ -10,7 +10,7 @@ import { feedsAll, feedsSingle, feedsSubscribe, feedsUnsubscribe, feedsDelete, e
 import { usersAll, usersSingle, usersFollow, usersUnfollow } from './users'
 import { loginOrCreateAccount, loginPost, accountMy, logout, signupPost } from './account'
 import { indexMultipleDocuments, search } from './search'
-import { absolitifyImageUrls, feedIdToSqid, getFeedIdByRSSUrl, getRSSLinkFromUrl, getText } from './utils'
+import { absolitifyImageUrls, feedIdToSqid, getFeedIdByRSSUrl, getRSSLinkFromUrl, getRootUrl, getText } from './utils'
 import { adminMiddleware, authMiddleware, userPageMiddleware } from './middlewares';
 import { changelog } from './changelog';
 import { extractRSS } from './feed_extractor';
@@ -111,18 +111,15 @@ app.get('/about/changelog', async (c) => {
 });
 
 
-
-
-
-
 // INTERNAL FUNCTIONS
 // add new feed to DB
 async function addFeed(c, url: string) {
     let RSSUrl = await getRSSLinkFromUrl(url);
     const r = await extractRSS(RSSUrl);
     
-    // if url === rssUrl that means the submitted URL was feed URL, so retrieve site URL from feed; otherwise use submitted URL as site URL
-    const siteUrl = (url === RSSUrl) ? r.link : url
+    // if url === rssUrl that means the submitted URL was RSS URL, so retrieve site URL from RSS; otherwise use submitted URL as site URL
+    const attemptedSiteUrl = (r.link && r.link.length > 0) ? r.link : getRootUrl(url)
+    const siteUrl = (url === RSSUrl) ? attemptedSiteUrl : url
     const verified = (c.get('USER_ID') === 1) ? 1 : 0
 
     const dbQueryResult = await c.env.DB.prepare("INSERT INTO feeds (title, url, rss_url, verified) values (?, ?, ?, ?)").bind(r.title, siteUrl, RSSUrl, verified).all()
@@ -190,6 +187,7 @@ async function scrapeItem(env: Bindings, item_id: Number) {
         throw new Error(`Cannot fetch url: ${maeServiceUrl}`)
     }
     const articleInfo = await req.text();
+    console.log(articleInfo)
     const content = JSON.parse(articleInfo).data.content;
 
     await env.DB.prepare("UPDATE items SET content_html_scraped = ? WHERE item_id = ?").bind(content, item_id).run();
@@ -211,22 +209,27 @@ async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: Number) 
     if (!items.length) return
 
     // get feed title
-    const { results: feeds } = await env.DB.prepare("SELECT title FROM feeds WHERE feed_id = ?").bind(feedId).all();
+    const { results: feeds } = await env.DB.prepare("SELECT title, url FROM feeds WHERE feed_id = ?").bind(feedId).all();
     const feedTitle = feeds[0]['title'];
+    const feedUrl = String(feeds[0]['url']);
 
     const stmt = env.DB.prepare("INSERT INTO items (feed_id, title, url, pub_date, description, content_html) values (?, ?, ?, ?, ?, ?)");
     let binds: any[] = [];
     
     let searchDocuments: any[] = [];
     items.forEach((item: any) => {
-        const link = item.link || item.guid || item.id;
+        let link = item.link || item.guid || item.id;
+        // if link does not start with http, it's probably a relative link, so we need to absolutify it
+        if (!link.startsWith('http')) {
+            link = new URL(link, feedUrl).toString();
+        }
         let content_html = 
             item['content_from_content'] || 
             item['content_from_content_encoded'] || 
             item['content_from_description'] || 
             item['content_from_content_html'] || '';
         content_html = getText(content_html);
-        content_html = absolitifyImageUrls(content_html, item.link);
+        content_html = absolitifyImageUrls(content_html, link);
 
         searchDocuments.push({
             'title': item.title,

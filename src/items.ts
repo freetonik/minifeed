@@ -348,6 +348,10 @@ export const itemsSingle = async (c:any) => {
         <td>${item_sqid}</td>
       </tr>
       <tr>
+        <td>Item url:</td>
+        <td>${item.item_url}</td>
+      </tr>
+      <tr>
         <td>Length of description:</td>
         <td>${item.description ? item.description.length : 0}</td>
       </tr>
