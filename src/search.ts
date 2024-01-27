@@ -70,6 +70,25 @@ export const indexMultipleDocuments = async (env:any, documents: object[]) => {
   }
 }
 
+export const deleteFeedFromIndex = async (env:any, feedId: number) => {
+  const init = {
+    method: "DELETE",
+    headers: {
+      "X-TYPESENSE-API-KEY": env.TYPESENSE_API_KEY
+    },
+  };
+  
+  let results;
+  try {
+    const response = await fetch(`https://${env.TYPESENSE_CLUSTER}:443/collections/${env.TYPESENSE_ITEMS_COLLECTION}/documents/?filter_by=feed_id:=${feedId}`, init);
+    results = await gatherResponse(response);
+  } catch (e) {
+    console.log(`Error while deleting feed from index: ${e}`)
+  }
+
+  return results;
+}
+
 /**
    * gatherResponse awaits and returns a response body as a string.
    * Use await gatherResponse(..) in an async function to get the response body

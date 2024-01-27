@@ -1,6 +1,7 @@
 import { renderAddFeedForm, renderHTML, renderItemShort } from './htmltools';
 import { html, raw } from 'hono/html'
 import { feedIdToSqid, feedSqidToId } from './utils'
+import { deleteFeedFromIndex } from './search';
 
 export const feedsAll = async (c:any) => {
   const user_id = c.get('USER_ID') || -1;
@@ -215,6 +216,8 @@ export const feedsDelete = async (c:any) => {
     .prepare(`DELETE from feeds where feed_id = ?` )
     .bind(feedId)
     .run();
+
+  await deleteFeedFromIndex(c.env, feedId);
 
   return c.html(`Feed ${feedId} deleted`)
 }
