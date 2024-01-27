@@ -41,8 +41,8 @@ CREATE TABLE IF NOT EXISTS favorites (
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     user_id INTEGER,
     item_id INTEGER,
-    FOREIGN KEY (user_id) REFERENCES users(user_id),
-    FOREIGN KEY (item_id) REFERENCES items(item_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE CASCADE,
     UNIQUE (user_id, item_id)
 );
 
