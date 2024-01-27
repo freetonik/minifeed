@@ -46,11 +46,12 @@ export const feedsSingle = async (c:any) => {
       WHERE feeds.feed_id = ?
       `).bind(userId, feedId),
     c.env.DB.prepare(`
-      SELECT items.item_id, items.description, items.title AS item_title, items.pub_date, items.url AS item_url, feeds.title AS feed_title, feeds.url AS feed_url, feeds.feed_id
+      SELECT items.item_id, items.description, items.title AS item_title, items.pub_date, items.url AS item_url, feeds.title AS feed_title, feeds.url AS feed_url, feeds.feed_id, favorite_id
       FROM items 
       JOIN feeds ON items.feed_id = feeds.feed_id 
+      LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
       WHERE feeds.feed_id = ? 
-      ORDER BY items.pub_date DESC`).bind(feedId),
+      ORDER BY items.pub_date DESC`).bind(userId, feedId),
   ]);
 
   // batch[0] is feed joined with subscription status; 0 means no feed found in DB
@@ -67,7 +68,8 @@ export const feedsSingle = async (c:any) => {
         hx-swap="outerHTML">
         ${subscriptionButtonText}
       </button>
-    </span>`  : ''
+    </span>`  : '';
+  
   let list = `
   <h1>
     ${feedTitle}
@@ -82,7 +84,8 @@ export const feedsSingle = async (c:any) => {
   else {
     list += `<div>`
       batch[1].results.forEach((item: any) => {
-      list += renderItemShort(item.item_id, item.item_title, item.item_url, '', item.feed_id, item.pub_date)
+      const itemTitle = item.favorite_id ? `★ ${item.item_title}` : item.item_title;
+      list += renderItemShort(item.item_id, itemTitle, item.item_url, '', item.feed_id, item.pub_date)
     })
     list += `</div>`
   }
@@ -222,7 +225,7 @@ export const feedsDelete = async (c:any) => {
   return c.html(`Feed ${feedId} deleted`)
 }
 
-export const feedsUpdate = async (c:any) => {
+export const enqueueFeedsUpdate = async (c:any) => {
   const feedId:number = feedSqidToId(c.req.param('feed_sqid'));
   await c.env.FEED_UPDATE_QUEUE.send(
     {
@@ -233,7 +236,7 @@ export const feedsUpdate = async (c:any) => {
   return c.text("Feed update enqueued...")
 }
 
-export const feedsScrape = async (c:any) => {
+export const enqueueFeedsScrape = async (c:any) => {
   const feedId:number = feedSqidToId(c.req.param('feed_sqid'));
   await c.env.FEED_UPDATE_QUEUE.send(
     {

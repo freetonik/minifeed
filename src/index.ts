@@ -6,7 +6,7 @@ import { extract } from '@extractus/feed-extractor'
 import { stripTags } from 'bellajs'
 
 import { itemsAll, itemsMy, itemsMySubs, itemsMyFollows, itemsSingle, itemsAddToFavorites, itemsRemoveFromFavorites, itemsScrape } from './items'
-import { feedsAll, feedsSingle, feedsSubscribe, feedsUnsubscribe, feedsDelete, feedsUpdate, feedsScrape } from './feeds'
+import { feedsAll, feedsSingle, feedsSubscribe, feedsUnsubscribe, feedsDelete, enqueueFeedsUpdate, enqueueFeedsScrape } from './feeds'
 import { usersAll, usersSingle, usersFollow, usersUnfollow } from './users'
 import { loginOrCreateAccount, loginPost, accountMy, logout, signupPost } from './account'
 import { indexMultipleDocuments, search } from './search'
@@ -93,8 +93,8 @@ app.get('/feeds/:feed_sqid', feedsSingle)
 app.post('/feeds/:feed_sqid/subscribe', feedsSubscribe)
 app.post('/feeds/:feed_sqid/unsubscribe', feedsUnsubscribe)
 app.post('/feeds/:feed_sqid/delete', feedsDelete)
-app.post('/feeds/:feed_sqid/update', feedsUpdate)
-app.post('/feeds/:feed_sqid/scrape', feedsScrape)
+app.post('/feeds/:feed_sqid/update', enqueueFeedsUpdate)
+app.post('/feeds/:feed_sqid/scrape', enqueueFeedsScrape)
 
 app.get('/items/:item_sqid', itemsSingle)
 app.post('/items/:item_sqid/favorite', itemsAddToFavorites)
@@ -195,7 +195,7 @@ async function scrapeItem(env: Bindings, item_id: Number) {
     await env.DB.prepare("UPDATE items SET content_html_scraped = ? WHERE item_id = ?").bind(content, item_id).run();
 }
 
-async function scrapeAllItemsOfFeed(env: Bindings, feedId: Number) {
+async function enqueueScrapeAllItemsOfFeed(env: Bindings, feedId: Number) {
     const { results: items } = await env.DB.prepare("SELECT item_id, url FROM items WHERE feed_id = ?").bind(feedId).all();
     for (const item of items) {
         await env.FEED_UPDATE_QUEUE.send(
@@ -251,7 +251,7 @@ async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: Number) 
         } 
     });
     await indexMultipleDocuments(env, searchDocuments);
-    await scrapeAllItemsOfFeed(env, feedId);
+    await enqueueScrapeAllItemsOfFeed(env, feedId);
 }
 
 // MAIN EXPORT
@@ -274,7 +274,7 @@ export default {
             else if (message.body['type'] == 'feed_scrape') {
                 const feed_id = message.body.feed_id; 
                 try {
-                    await scrapeAllItemsOfFeed(env, feed_id);
+                    await enqueueScrapeAllItemsOfFeed(env, feed_id);
                 } catch (e: any) {
                     console.log(`Error scraping feed ${feed_id}: ${e.toString()}`);
                 }

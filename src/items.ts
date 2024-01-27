@@ -4,17 +4,19 @@ import { feedIdToSqid, itemSqidToId } from './utils'
 import { truncate } from 'bellajs'
 
 export const itemsAll = async (c:any) => {
+  const userId = c.get('USER_ID') || -1;
   const itemsPerPage = 30
   const page = Number(c.req.query('p')) || 1
   const offset = (page * itemsPerPage) - itemsPerPage
   const { results } = await c.env.DB
     .prepare(`
-      SELECT items.item_id, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title 
+      SELECT items.item_id, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title, favorite_id
       FROM items 
       JOIN feeds ON items.feed_id = feeds.feed_id
+      LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
       ORDER BY items.pub_date DESC
       LIMIT ? OFFSET ?`)
-    .bind(itemsPerPage, offset)
+    .bind(userId, itemsPerPage, offset)
     .run();
 
   let list = `<p></p>`;
@@ -22,7 +24,8 @@ export const itemsAll = async (c:any) => {
   if (!results.length) list += `<p><i>Nothing exists on minifeed yet...</i></p>`
 
   results.forEach((item: any) => {
-    list += renderItemShort(item.item_id, item.item_title, item.item_url, item.feed_title, item.feed_id, item.pub_date)
+    const itemTitle = item.favorite_id ? `★ ${item.item_title}` : item.item_title;
+    list += renderItemShort(item.item_id, itemTitle, item.item_url, item.feed_title, item.feed_id, item.pub_date)
   })
 
   if (results.length) list += `<a href="?p=${page + 1}">More</a></p>`
@@ -93,22 +96,24 @@ export const itemsMySubs = async (c:any) => {
   const userId = c.get('USER_ID')
   const { results } = await c.env.DB
     .prepare(`
-      SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id  
+      SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id
       FROM items
       JOIN subscriptions ON items.feed_id = subscriptions.feed_id
       JOIN feeds ON items.feed_id = feeds.feed_id
+      LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
       WHERE subscriptions.user_id = ?
       ORDER BY items.pub_date DESC
       LIMIT ? OFFSET ?
       `)
-    .bind(userId, itemsPerPage, offset)
+    .bind(userId, userId, itemsPerPage, offset)
     .all();
 
   let list = `<nav class="my-menu"><small><a href="/my">all</a> / <a class="active" href="/my/subs">from subscriptions</a> / <a href="/my/follows">from follows</a></small></nav>
     <div class="main">`
   if (results.length) {
     results.forEach((item: any) => {
-      list += renderItemShort(item.item_id, item.title, item.url, item.feed_title, item.feed_id, item.pub_date)
+      let title = item.favorite_id ? `★ ${item.title}` : item.title;
+      list += renderItemShort(item.item_id, title, item.url, item.feed_title, item.feed_id, item.pub_date)
     })
     list += `<p><a href="?p=${page + 1}">More</a></p></div>`
   } else {
@@ -134,23 +139,25 @@ export const itemsMyFollows = async (c:any) => {
   const userId = c.get('USER_ID')
   const { results } = await c.env.DB
     .prepare(`
-      SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id  
+      SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id
       FROM items
       JOIN subscriptions ON items.feed_id = subscriptions.feed_id
       JOIN feeds ON items.feed_id = feeds.feed_id
       JOIN followings ON subscriptions.user_id = followings.followed_user_id
+      LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
       WHERE followings.follower_user_id = ?
       ORDER BY items.pub_date DESC
       LIMIT ? OFFSET ?
       `)
-    .bind(userId, itemsPerPage, offset)
+    .bind(userId, userId, itemsPerPage, offset)
     .all();
 
   let list = `<nav class="my-menu"><small><a href="/my">all</a> / <a href="/my/subs">from subscriptions</a> / <a class="active" href="/my/follows">from follows</a></small></nav>
     <div class="main">`
   if (results.length) {
     results.forEach((item: any) => {
-      list += renderItemShort(item.item_id, item.title, item.url, item.feed_title, item.feed_id, item.pub_date)
+      const title = item.favorite_id ? `★ ${item.title}` : item.title;
+      list += renderItemShort(item.item_id, title, item.url, item.feed_title, item.feed_id, item.pub_date)
     })
     list += `<p><a href="?p=${page + 1}">More</a></p></div>`
   } else {
