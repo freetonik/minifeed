@@ -84,9 +84,7 @@ export const renderItemShort = (item_id:number, title:string, url:string, feed_t
   const itemSqid = itemIdToSqid(item_id)
 
   const feedLink = feed_title ? `<a href="/feeds/${feedSqid}">${feed_title}</a> | ` : ''
-  const summaryContent = summary ? `
-    ${summary}
-  ` : ''
+  const summaryContent = summary ? `<p class="item-summary">${summary}</p>` : ''
   
   return `
   <div class="item-short">
@@ -95,7 +93,7 @@ export const renderItemShort = (item_id:number, title:string, url:string, feed_t
     ${feedLink}
     <time>${postDate}</time> |
       <a class="no-underline no-color" href="${url}">original</a> 
-    <p>${summaryContent}</p>
+    ${summaryContent}
     </small>
   </div>
   `

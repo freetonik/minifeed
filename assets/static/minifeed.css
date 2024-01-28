@@ -193,6 +193,10 @@ footer div {
     font-weight: bold;
 }
 
+.item-short p.item-summary {
+    margin-bottom: 3em;
+}
+
 
 button, .button, a.button:visited {
   appearance: none;
@@ -402,4 +406,8 @@ hr {
     margin-top: 2em;
     background-color: #f5f9ff;
     padding: 0.3em 1.5em;
+}
+
+.related-item {
+    margin-bottom: 2em;
 }

@@ -2,6 +2,7 @@ import { renderAddFeedForm, renderHTML, renderItemShort } from './htmltools';
 import { html, raw } from 'hono/html'
 import { feedIdToSqid, feedSqidToId } from './utils'
 import { deleteFeedFromIndex } from './search';
+import { truncate } from 'bellajs'
 
 export const feedsAll = async (c:any) => {
   const user_id = c.get('USER_ID') || -1;
@@ -85,7 +86,7 @@ export const feedsSingle = async (c:any) => {
     list += `<div>`
       batch[1].results.forEach((item: any) => {
       const itemTitle = item.favorite_id ? `★ ${item.item_title}` : item.item_title;
-      list += renderItemShort(item.item_id, itemTitle, item.item_url, '', item.feed_id, item.pub_date)
+      list += renderItemShort(item.item_id, itemTitle, item.item_url, '', item.feed_id, item.pub_date, truncate(item.description, 350))
     })
     list += `</div>`
   }

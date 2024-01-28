@@ -307,7 +307,7 @@ export const itemsSingle = async (c:any) => {
   if (batch[2].results.length) {
     otherItemsBlock += `<div class="related-items"><h3>More from <a href="/feeds/${feed_sqid}"">${item.feed_title}</a>:</h3>`
       batch[2].results.forEach((related_item: any) => {
-        otherItemsBlock += `<div style="margin-bottom:2em;">`
+        otherItemsBlock += `<div class="related-item">`
         const itemTitle = related_item.favorite_id ? `★ ${related_item.item_title}` : related_item.item_title;
         otherItemsBlock += renderItemShort(related_item.item_id, itemTitle, related_item.item_url, '', related_item.feed_id, related_item.pub_date, truncate(related_item.description, 350));
         otherItemsBlock += `</div>`
