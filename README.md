@@ -17,7 +17,7 @@ npm run dev-remote
 ### Migrations
 
 ```
-npx wrangler d1 migrations create minifeed --local
+npx wrangler d1 migrations create minifeed MIGR_NAME
 npx wrangler d1 migrations apply minifeed --local
 npx wrangler d1 migrations list minifeed --local
 ```

@@ -1,7 +1,12 @@
-export const version = "0.1.6";
+export const version = "0.1.7";
 
 export const changelog = `
     <h2>Changelog</h2>
+
+    <h3>0.1.7 (28.01.2024)</h3>
+    <ul>
+        <li>Improvement: show item summaries on feed page</li>
+    </ul>
 
     <h3>0.1.6 (27.01.2024)</h3>
     <ul>

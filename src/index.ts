@@ -187,7 +187,6 @@ async function scrapeItem(env: Bindings, item_id: Number) {
         throw new Error(`Cannot fetch url: ${maeServiceUrl}`)
     }
     const articleInfo = await req.text();
-    console.log(articleInfo)
     const content = JSON.parse(articleInfo).data.content;
 
     await env.DB.prepare("UPDATE items SET content_html_scraped = ? WHERE item_id = ?").bind(content, item_id).run();

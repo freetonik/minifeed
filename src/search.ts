@@ -61,8 +61,7 @@ export const search = async (c:any) => {
   )
 }
 
-export const 
-indexMultipleDocuments = async (env:any, documents: object[]) => {
+export const indexMultipleDocuments = async (env:any, documents: object[]) => {
   const jsonlines = documents.map(item => JSON.stringify(item)).join('\n');
   const init = {
     body: jsonlines,
