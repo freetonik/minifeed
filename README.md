@@ -12,6 +12,7 @@ Env variables are in `.dev.vars`
 npm install
 npm run dev
 npm run dev-remote
+npx wrangler tail
 ```
 
 ### Migrations
