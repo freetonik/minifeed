@@ -293,9 +293,16 @@ button:-webkit-details-marker {
     height: auto;
 }
 
-.post-content code {
+.post-content code, .post-content pre {
     overflow: auto;
-    text-wrap: wrap;
+    text-wrap: scroll;
+    background-color: #f3f3f3;
+}
+
+.post-content iframe, .post-content embed {
+    max-width: 100%;
+    height: auto;
+    max-height: 30em;
 }
 
 .admin-control {
