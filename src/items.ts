@@ -249,7 +249,7 @@ export const itemsSingle = async (c:any) => {
       } else {
         contentBlock = raw(item.content_html)
       }
-    }
+    } else if (item.content_html_scraped) contentBlock = raw(item.content_html_scraped)
     else contentBlock = item.description
   }
   else contentBlock = `${truncate(item.description, 250)} <div class="flash-blue"><a href="/login">Log in</a> to view full content</div>`;
@@ -404,11 +404,9 @@ export const itemsAddToFavorites = async (c:any) => {
 
   let result;
   try {
-    console.log(`INSERT INTO favorites (user_id, itemId) VALUES (${userId}, ${itemId})`);
     result = await c.env.DB.prepare(`INSERT INTO favorites (user_id, item_id) VALUES (?, ?)`).bind(userId, itemId).run();
   } catch (e) {
     c.status(400);
-    console.log(e)
     return c.body(e);
   }
 

@@ -77,3 +77,11 @@ export function getRootUrl(url: string) {
     const parsedUrl = new URL(url);
     return `${parsedUrl.protocol}//${parsedUrl.hostname}`;
 }
+
+export function stripASCIIFormatting(str: string) {
+	return str.replace(/[|│┤┼├┌┬┐└┴┘—─\-–▬░▒▓┫]/g," ")
+}
+
+export function collapseWhitespace(str: string) { 
+	return str.replace(/\s+/g, ' ').trim() 
+}

@@ -2,7 +2,6 @@ import { Hono } from 'hono'
 import { html, raw } from 'hono/html'
 import { renderAddFeedForm, renderHTML } from './htmltools';
 import { serveStatic } from 'hono/cloudflare-workers'
-import { extract } from '@extractus/feed-extractor'
 import { stripTags } from 'bellajs'
 
 import { itemsAll, itemsMy, itemsMySubs, itemsMyFollows, itemsSingle, itemsAddToFavorites, itemsRemoveFromFavorites, itemsScrape } from './items'
@@ -10,7 +9,7 @@ import { feedsAll, feedsSingle, feedsSubscribe, feedsUnsubscribe, feedsDelete, e
 import { usersAll, usersSingle, usersFollow, usersUnfollow } from './users'
 import { loginOrCreateAccount, loginPost, accountMy, logout, signupPost } from './account'
 import { indexMultipleDocuments, search } from './search'
-import { absolitifyImageUrls, feedIdToSqid, getFeedIdByRSSUrl, getRSSLinkFromUrl, getRootUrl, getText } from './utils'
+import { absolitifyImageUrls, collapseWhitespace, feedIdToSqid, getFeedIdByRSSUrl, getRSSLinkFromUrl, getRootUrl, getText, stripASCIIFormatting } from './utils'
 import { adminMiddleware, authMiddleware, userPageMiddleware } from './middlewares';
 import { changelog } from './changelog';
 import { extractRSS } from './feed_extractor';
@@ -106,9 +105,7 @@ app.get('/users/:username', usersSingle)
 app.post('/users/:username/follow', usersFollow)
 app.post('/users/:username/unfollow', usersUnfollow)
 
-app.get('/about/changelog', async (c) => {
-    return c.html(renderHTML("Changelog | minifeed", raw(changelog)))
-});
+app.get('/about/changelog', async (c) => c.html(renderHTML("Changelog | minifeed", raw(changelog))));
 
 
 // INTERNAL FUNCTIONS
@@ -122,7 +119,7 @@ async function addFeed(c, url: string) {
     const siteUrl = (url === RSSUrl) ? attemptedSiteUrl : url
     const verified = (c.get('USER_ID') === 1) ? 1 : 0
 
-    const dbQueryResult = await c.env.DB.prepare("INSERT INTO feeds (title, url, rss_url, verified) values (?, ?, ?, ?)").bind(r.title, siteUrl, RSSUrl, verified).all()
+    const dbQueryResult = await c.env.DB.prepare("INSERT INTO feeds (title, type, url, rss_url, verified) values (?, ?, ?, ?, ?)").bind(r.title, "blog", siteUrl, RSSUrl, verified).all()
 
     if (dbQueryResult['success'] === true) {
         if (r.entries) {
@@ -151,6 +148,13 @@ async function updateAllFeeds(env: Bindings) {
     }
 }
 
+/**
+ * Updates the feed with the specified feedId by fetching the RSS content and adding new items to the database.
+ * 
+ * @param env - The environment bindings.
+ * @param feedId - The ID of the feed to update.
+ * @returns A Promise that resolves once the feed is updated.
+ */
 async function updateFeed(env: Bindings, feedId: Number) {
     // get RSS url of feed
     const { results: feeds } = await env.DB.prepare("SELECT * FROM feeds WHERE feed_id = ?").bind(feedId).all();
@@ -175,7 +179,6 @@ async function updateFeed(env: Bindings, feedId: Number) {
 }
 
 async function scrapeItem(env: Bindings, item_id: Number) {
-    // get item URL
     const { results: items } = await env.DB.prepare("SELECT url FROM items WHERE item_id = ?").bind(item_id).all();
     const item_url = String(items[0]['url']);
     console.log(`Scraping item ${item_id} (${item_url})`);
@@ -183,13 +186,22 @@ async function scrapeItem(env: Bindings, item_id: Number) {
     const maeServiceUrl = `https://mae.deno.dev/?apikey=${env.MAE_SERVICE_API_KEY}&url=${item_url}`
     try {
         req = await fetch(maeServiceUrl);
-    } catch (err) {
-        throw new Error(`Cannot fetch url: ${maeServiceUrl}`)
+    } catch (err: any) {
+        throw new Error(`Cannot fetch url: ${maeServiceUrl}, error: ${err.toString()}`)
     }
     const articleInfo = await req.text();
     const content = JSON.parse(articleInfo).data.content;
 
     await env.DB.prepare("UPDATE items SET content_html_scraped = ? WHERE item_id = ?").bind(content, item_id).run();
+}
+
+async function scrapeAndIndex(env: Bindings, item_id: Number) {
+    try {
+        await scrapeItem(env, item_id);
+    } catch (error) {
+        console.log(`scrapeAndIndex: Error scraping item: ${item_id}, continuing to index without scraped content`)
+    }
+    await indexItemById(env, item_id);
 }
 
 async function enqueueScrapeAllItemsOfFeed(env: Bindings, feedId: Number) {
@@ -204,6 +216,40 @@ async function enqueueScrapeAllItemsOfFeed(env: Bindings, feedId: Number) {
     }
 }
 
+async function indexItemById(env: Bindings, item_id: Number) {
+    const { results: items } = await env.DB.prepare(
+        `SELECT items.title, feeds.type, items.content_html, items.description, items.content_html_scraped, items.url, items.pub_date, feeds.title as feed_title, items.feed_id
+        FROM items 
+        JOIN feeds ON feeds.feed_id = items.feed_id
+        WHERE item_id = ?`
+        ).bind(item_id).all();
+
+    
+    const item = items[0];
+    let content;
+    // prefer scraped content over content_html over description
+    if (item['content_html_scraped'] && item['content_html_scraped'].length > 0) {
+        content = stripTags(item['content_html_scraped'])
+    } else if (item['content_html'] && item['content_html'].length > 0) {
+        content = stripTags(item['content_html'])
+    } else {
+        content = item['description']
+    }
+
+    const searchDocument = {
+        'title': item['title'],
+        'content': collapseWhitespace(stripASCIIFormatting(content)),
+        'type': item['type'],
+        'item_id': item_id,
+        // non-searchable fields
+        'url': item['url'],
+        'pub_date': item['pub_date'],
+        'feed_id': item['feed_id'],
+        'feed_title': item['feed_title']
+    }
+    await indexMultipleDocuments(env, [searchDocument]);
+}
+
 async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: Number) {
     if (!items.length) return
 
@@ -215,13 +261,10 @@ async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: Number) 
     const stmt = env.DB.prepare("INSERT INTO items (feed_id, title, url, pub_date, description, content_html) values (?, ?, ?, ?, ?, ?)");
     let binds: any[] = [];
     
-    let searchDocuments: any[] = [];
     items.forEach((item: any) => {
         let link = item.link || item.guid || item.id;
         // if link does not start with http, it's probably a relative link, so we need to absolutify it
-        if (!link.startsWith('http')) {
-            link = new URL(link, feedUrl).toString();
-        }
+        if (!link.startsWith('http')) link = new URL(link, feedUrl).toString();
         let content_html = 
             item['content_from_content'] || 
             item['content_from_content_encoded'] || 
@@ -230,29 +273,10 @@ async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: Number) 
         content_html = getText(content_html);
         content_html = absolitifyImageUrls(content_html, link);
 
-        searchDocuments.push({
-            'title': item.title,
-            'content': stripTags(content_html),
-            'type': 'blog',
-            // non-searchable fields
-            'url': link,
-            'pub_date': item.published,
-            'feed_id': feedId,
-            'feed_title': feedTitle
-        })
         binds.push(stmt.bind(feedId, item.title, link, item.published, item.description, content_html));
     });
 
     const resultsOfInsertion = await env.DB.batch(binds);
-    let searchDocumentsWalker = 0;
-    resultsOfInsertion.forEach((result: any) => {
-        if (result['success']) {
-            // add last_row_id to each item in searchDocuments as item_id
-            searchDocuments[searchDocumentsWalker]['item_id'] = result['meta']['last_row_id'];
-            searchDocumentsWalker += 1
-        } 
-    });
-    await indexMultipleDocuments(env, searchDocuments);
     await enqueueScrapeAllItemsOfFeed(env, feedId);
 }
 
@@ -263,7 +287,6 @@ export default {
     // consumer of queue FEED_UPDATE_QUEUE
     async queue(batch: MessageBatch<any>, env: Bindings) {
         // let messages = JSON.stringify(batch.messages);
-        console.log(`Received batch of ${batch.messages.length} messages`);
         for (const message of batch.messages) {
             if (message.body['type'] == 'feed_update') {
                 const feed_id = message.body.feed_id; 
@@ -284,7 +307,7 @@ export default {
             else if (message.body['type'] == 'item_scrape') {
                 const item_id = message.body.item_id; 
                 try {
-                    await scrapeItem(env, item_id);
+                    await scrapeAndIndex(env, item_id);
                 } catch (e: any) {
                     console.log(`Error scraping item ${item_id}: ${e.toString()}`);
                 }

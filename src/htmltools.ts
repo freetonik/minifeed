@@ -1,5 +1,5 @@
 import { html, raw } from 'hono/html'
-import { feedIdToSqid, itemIdToSqid } from './utils'
+import { collapseWhitespace, feedIdToSqid, itemIdToSqid, stripASCIIFormatting } from './utils'
 import { version } from './changelog'
 
 export const renderHTML = (
@@ -114,7 +114,7 @@ export const renderItemSearchResult = (searchResult:any) => {
   if (searchResult['highlight']['content'] && searchResult['highlight']['content']['snippet']) {
     content = searchResult['highlight']['content']['snippet']
   }
-  
+
   return `
   <div class="item-short" style="margin-top:2em">
     <a href="/items/${itemSqid}" class="item-short-title">${title}</a> <br>

@@ -28,11 +28,10 @@ export const search = async (c:any) => {
       "Content-Type": "application/json"
     },
   };
-  let response = await fetch(`https://${c.env.TYPESENSE_CLUSTER}:443/multi_search?per_page=${itemsPerPage}&page=${page}&query_by=title,content&num_typos=0`, init);
+  let response = await fetch(`https://${c.env.TYPESENSE_CLUSTER}:443/multi_search?per_page=${itemsPerPage}&page=${page}&query_by=title, content&num_typos=0`, init);
   let results = await gatherResponse(response);
   let parsedResults = JSON.parse(results);
 
-  console.log(parsedResults['results'][0].hits)
   const hasNextPage = parsedResults['results'][0]['found'] > (page * itemsPerPage)
 
   let list = `<h2>Search results for '${q}'</h2>`
@@ -72,14 +71,33 @@ export const indexMultipleDocuments = async (env:any, documents: object[]) => {
     },
   };
   
-  let results;
   try {
     const response = await fetch(`https://${env.TYPESENSE_CLUSTER}:443/collections/${env.TYPESENSE_ITEMS_COLLECTION}/documents/import?action=create`, init);
-    results = await gatherResponse(response);
+    await gatherResponse(response);
   } catch (e) {
     console.log(`Error while indexing documents: ${e}`)
   }
 }
+
+// export const reindexDocument = async (env:any, document: object) => {
+//   const documentId = 1
+//   const init = {
+//     body: JSON.stringify(document),
+//     method: "PATCH",
+//     headers: {
+//       "X-TYPESENSE-API-KEY": env.TYPESENSE_API_KEY,
+//       "Content-Type": "application/json"
+//     },
+//   };
+  
+//   let results;
+//   try {
+//     const response = await fetch(`https://${env.TYPESENSE_CLUSTER}:443/collections/${env.TYPESENSE_ITEMS_COLLECTION}/documents`, init);
+//     results = await gatherResponse(response);
+//   } catch (e) {
+//     console.log(`Error while reindexing document: ${e}`)
+//   }
+// }
 
 export const deleteFeedFromIndex = async (env:any, feedId: number) => {
   const init = {

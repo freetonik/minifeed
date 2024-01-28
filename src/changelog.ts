@@ -6,6 +6,8 @@ export const changelog = `
     <h3>0.1.7 (28.01.2024)</h3>
     <ul>
         <li>Improvement: show item summaries on feed page</li>
+        <li>Improvement: submit search index asynchronously, taking into account scraped content #28 #4</li>
+        <li>Bugfix: do not index ascii formatting in content</li>
     </ul>
 
     <h3>0.1.6 (27.01.2024)</h3>
