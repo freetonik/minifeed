@@ -1,5 +1,6 @@
 INSERT INTO users (user_id, username, password_hash, password_salt) VALUES 
-    (2, 'rakhim2', '58a3a9d3c4e5dd3cfe1304086f2485975acb65118551f5c23c296b0e33f33f44', 'd5f911d9fe8fb5278fa77a1370e77b14');
+    (1, 'rakhim', '26188a8a89fc51d6ecb7cfb09f5dae5f9c0f0fb5bdeb817e117df69243744269', '6ae24390a20de2848692925231963f7c')
+    (2, 'rakhim2', 'c1df58b9eb6047cece51fea3c948115b39eabcbc31f582851e7b09bf3118e911', '16960f4003c9d4743c498d4b2a04c5c2');
 
 INSERT INTO feeds (feed_id, type, title, url, rss_url, verified) VALUES 
     (1, 'blog', 'Rakhim blog', 'https://rakhim.org', 'https://rakhim.org/index.xml', 1),
@@ -14,4 +15,4 @@ INSERT INTO items (feed_id, title, description, content_html, url) VALUES
 INSERT INTO favorites (user_id, item_id) VALUES (1, 1);
 
 INSERT INTO followings (follower_user_id, followed_user_id) VALUES (1, 2);
-
+INSERT INTO followings (follower_user_id, followed_user_id) VALUES (2, 1);
