@@ -31,6 +31,8 @@ const app = new Hono<{ Bindings: Bindings }>()
 
 // static files
 app.get('/static/*', serveStatic({ root: './' }))
+// robots file
+app.get('/robots.txt', async (c) => c.text("User-agent: *\nAllow: /"))
 
 // middlewares
 app.use('*', authMiddleware); 
