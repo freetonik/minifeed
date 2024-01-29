@@ -33,10 +33,10 @@ export const renderHTML = (
   <meta name="description" content="">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   ${canonicalUrlBlock}
-  <link
-    rel="icon"
-    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>"
-  />
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/favicons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicons/favicon-16x16.png">
+  <link rel="manifest" href="/static/favicons/site.webmanifest">
   <link rel="stylesheet" href="/static/minifeed.css">
   <script defer src="/static/htmx.min.js"></script>
 </head>
