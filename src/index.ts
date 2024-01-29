@@ -33,6 +33,8 @@ const app = new Hono<{ Bindings: Bindings }>()
 app.get('/static/*', serveStatic({ root: './' }))
 // robots file
 app.get('/robots.txt', async (c) => c.text("User-agent: *\nAllow: /"))
+// favicon
+app.get('/favicon.ico', async (c) => c.redirect('/static/favicons/favicon.ico'))
 
 // middlewares
 app.use('*', authMiddleware); 
