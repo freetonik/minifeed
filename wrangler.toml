@@ -5,6 +5,8 @@ workers_dev = false
 route = { pattern = "minifeed.net", custom_domain = true }
 main = "src/index.ts"
 
+tail_consumers = [{service = "minifeed-tail"}]
+
 [vars]
 TYPESENSE_API_KEY_SEARCH = "GCuPvjR4vz3gvACRo2N5hpRjZnEaijKE"
 TYPESENSE_BLOG_FEEDS_COLLECTION = "blog_feeds"
