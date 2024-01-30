@@ -1,8 +1,11 @@
 import { renderAddFeedForm, renderHTML, renderItemShort } from './htmltools';
 import { html, raw } from 'hono/html'
-import { feedIdToSqid, feedSqidToId } from './utils'
+import { absolitifyImageUrls, feedIdToSqid, feedSqidToId, getFeedIdByRSSUrl, getRSSLinkFromUrl, getRootUrl, getText } from './utils'
 import { deleteFeedFromIndex } from './search';
 import { truncate } from 'bellajs'
+import { extractRSS } from './feed_extractor';
+import { Bindings } from './bindings';
+import { enqueueScrapeAllItemsOfFeed } from './queue';
 
 export const feedsAll = async (c:any) => {
   const user_id = c.get('USER_ID') || -1;
@@ -226,6 +229,57 @@ export const feedsDelete = async (c:any) => {
   return c.html(`Feed ${feedId} deleted`)
 }
 
+export const feedsNew = async (c:any) => {
+  if (!c.get('USER_ID')) return c.redirect('/login')
+    return c.html(renderHTML("Add new feed", html`${renderAddFeedForm()}`, c.get('USERNAME'), 'feeds'))
+}
+
+export const feedsNewPost = async (c:any) => {
+  const body = await c.req.parseBody();
+  const url = body['url'].toString();
+  let rssUrl;
+  try {
+      rssUrl = await addFeed(c, url); 
+  } catch (e: any) {
+      return c.html(renderHTML("Add new feed", html`${renderAddFeedForm(url, e.toString())}`, c.get('USERNAME'), 'feeds'))
+  }
+
+  // RSS url is found
+  if (rssUrl) {
+      const feedId = await getFeedIdByRSSUrl(c, rssUrl)
+      const sqid = feedIdToSqid(feedId)
+      return c.redirect(`/feeds/${sqid}`, 301)
+  }
+  return c.text("Something went wrong")
+
+}
+
+async function addFeed(c:any, url: string) {
+  let RSSUrl = await getRSSLinkFromUrl(url);
+  const r = await extractRSS(RSSUrl);
+  
+  // if url === rssUrl that means the submitted URL was RSS URL, so retrieve site URL from RSS; otherwise use submitted URL as site URL
+  const attemptedSiteUrl = (r.link && r.link.length > 0) ? r.link : getRootUrl(url)
+  const siteUrl = (url === RSSUrl) ? attemptedSiteUrl : url
+  const verified = (c.get('USER_ID') === 1) ? 1 : 0
+
+  const dbQueryResult = await c.env.DB.prepare("INSERT INTO feeds (title, type, url, rss_url, verified) values (?, ?, ?, ?, ?)").bind(r.title, "blog", siteUrl, RSSUrl, verified).all()
+
+  if (dbQueryResult['success'] === true) {
+      if (r.entries) {
+          const feedId = dbQueryResult['meta']['last_row_id'];
+          await c.env.FEED_UPDATE_QUEUE.send(
+              {
+                  'type': 'feed_update',
+                  'feed_id': feedId
+              }
+          );
+      }
+      return RSSUrl
+  }
+}
+
+
 export const enqueueFeedsUpdate = async (c:any) => {
   const feedId:number = feedSqidToId(c.req.param('feed_sqid'));
   await c.env.FEED_UPDATE_QUEUE.send(
@@ -246,4 +300,65 @@ export const enqueueFeedsScrape = async (c:any) => {
     }
   );
   return c.html('Feed scrape enqueued...')
+}
+
+
+/**
+ * Updates the feed with the specified feedId by fetching the RSS content and adding new items to the database.
+ * 
+ * @param env - The environment bindings.
+ * @param feedId - The ID of the feed to update.
+ * @returns A Promise that resolves once the feed is updated.
+ */
+export async function updateFeed(env: Bindings, feedId: Number) {
+  // get RSS url of feed
+  const { results: feeds } = await env.DB.prepare("SELECT * FROM feeds WHERE feed_id = ?").bind(feedId).all();
+  const RSSUrl = String(feeds[0]['rss_url']);
+
+  // fetch RSS content
+  const r = await extractRSS(RSSUrl);
+
+  // get URLs of existing items from DB
+  const { results: existingItems } = await env.DB.prepare("SELECT url FROM items WHERE feed_id = ?").bind(feedId).all();
+  const existingUrls = existingItems.map(obj => obj.url);
+
+  // if remote RSS entries exist
+  if (r.entries) {
+      // filter out existing ones and add them to Db
+      const newItemsToBeAdded = r.entries.filter(entry => !existingUrls.includes(entry.link));
+      if (newItemsToBeAdded.length) await addItemsToFeed(env, newItemsToBeAdded, feedId)
+      console.log(`Updated feed ${feedId} (${RSSUrl}), fetched items: ${r.entries.length}, of which new items added: ${newItemsToBeAdded.length}`)
+      return
+  }
+  console.log(`Updated feed ${feedId} (${RSSUrl}), no items fetched`)
+}
+
+async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: Number) {
+  if (!items.length) return
+
+  // get feed title
+  const { results: feeds } = await env.DB.prepare("SELECT title, url FROM feeds WHERE feed_id = ?").bind(feedId).all();
+  const feedTitle = feeds[0]['title'];
+  const feedUrl = String(feeds[0]['url']);
+
+  const stmt = env.DB.prepare("INSERT INTO items (feed_id, title, url, pub_date, description, content_html) values (?, ?, ?, ?, ?, ?)");
+  let binds: any[] = [];
+  
+  items.forEach((item: any) => {
+      let link = item.link || item.guid || item.id;
+      // if link does not start with http, it's probably a relative link, so we need to absolutify it
+      if (!link.startsWith('http')) link = new URL(link, feedUrl).toString();
+      let content_html = 
+          item['content_from_content'] || 
+          item['content_from_content_encoded'] || 
+          item['content_from_description'] || 
+          item['content_from_content_html'] || '';
+      content_html = getText(content_html);
+      content_html = absolitifyImageUrls(content_html, link);
+
+      binds.push(stmt.bind(feedId, item.title, link, item.published, item.description, content_html));
+  });
+
+  await env.DB.batch(binds);
+  await enqueueScrapeAllItemsOfFeed(env, feedId);
 }

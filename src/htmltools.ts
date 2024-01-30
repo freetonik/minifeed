@@ -79,81 +79,81 @@ export const renderHTML = (
 const dateFormatOptions:Intl.DateTimeFormatOptions = {year: 'numeric', month: 'short', day: 'numeric'};
 
 export const renderItemShort = (item_id:number, title:string, url:string, feed_title:string, feed_id:number, pub_date:string='', summary: string = '') => {
-  const postDate = new Date(pub_date).toLocaleDateString('en-UK', dateFormatOptions)
-  const feedSqid = feedIdToSqid(feed_id)
-  const itemSqid = itemIdToSqid(item_id)
+    const postDate = new Date(pub_date).toLocaleDateString('en-UK', dateFormatOptions)
+    const feedSqid = feedIdToSqid(feed_id)
+    const itemSqid = itemIdToSqid(item_id)
 
-  const feedLink = feed_title ? `<a href="/feeds/${feedSqid}">${feed_title}</a> | ` : ''
-  const summaryContent = summary ? `<p class="item-summary">${summary}</p>` : ''
-  
-  return `
-  <div class="item-short">
-    <a href="/items/${itemSqid}" class="item-short-title">${title}</a> <br>
-    <small class="muted">
-    ${feedLink}
-    <time>${postDate}</time> |
-      <a class="no-underline no-color" href="${url}">original</a> 
-    ${summaryContent}
-    </small>
-  </div>
-  `
-}
+    const feedLink = feed_title ? `<a href="/feeds/${feedSqid}">${feed_title}</a> | ` : ''
+    const summaryContent = summary ? `<p class="item-summary">${summary}</p>` : ''
+    
+    return `
+    <div class="item-short">
+      <a href="/items/${itemSqid}" class="item-short-title">${title}</a> <br>
+      <small class="muted">
+      ${feedLink}
+      <time>${postDate}</time> |
+        <a class="no-underline no-color" href="${url}">original</a> 
+      ${summaryContent}
+      </small>
+    </div>
+    `
+  }
 
 export const renderItemSearchResult = (searchResult:any) => {
-  const item = searchResult['document']
-  // item_id, title, url, feed_title, feed_id, pub_date=''
-  const postDate = new Date(item['pub_date']).toLocaleDateString('en-UK', dateFormatOptions)
-  const feedSqid = feedIdToSqid(item['feed_id'])
-  const itemSqid = itemIdToSqid(item['item_id'])
+    const item = searchResult['document']
+    // item_id, title, url, feed_title, feed_id, pub_date=''
+    const postDate = new Date(item['pub_date']).toLocaleDateString('en-UK', dateFormatOptions)
+    const feedSqid = feedIdToSqid(item['feed_id'])
+    const itemSqid = itemIdToSqid(item['item_id'])
 
-  let title = item['title'];
-  if (searchResult['highlight']['title'] && searchResult['highlight']['title']['snippet']) {
-    title = searchResult['highlight']['title']['snippet']
-  }
-  let content = '';
-  if (searchResult['highlight']['content'] && searchResult['highlight']['content']['snippet']) {
-    content = searchResult['highlight']['content']['snippet']
-  }
+    let title = item['title'];
+    if (searchResult['highlight']['title'] && searchResult['highlight']['title']['snippet']) {
+      title = searchResult['highlight']['title']['snippet']
+    }
+    let content = '';
+    if (searchResult['highlight']['content'] && searchResult['highlight']['content']['snippet']) {
+      content = searchResult['highlight']['content']['snippet']
+    }
 
-  return `
-  <div class="item-short" style="margin-top:2em">
-    <a href="/items/${itemSqid}" class="item-short-title">${title}</a> <br>
-    <small class="muted">
-      <a href="/feeds/${feedSqid}">${item['feed_title']}</a> | 
-      <time>${postDate}</time> |
-      <a class="no-underline no-color" href="${item['url']}">original</a> 
-      <br>
-      
-    </small>
-    <small>
-      <span class="search-result-snippet">
-        ${content}...
-      </span>
-    </small>
-  </div>
-  `
+    return `
+    <div class="item-short" style="margin-top:2em">
+      <a href="/items/${itemSqid}" class="item-short-title">${title}</a> <br>
+      <small class="muted">
+        <a href="/feeds/${feedSqid}">${item['feed_title']}</a> | 
+        <time>${postDate}</time> |
+        <a class="no-underline no-color" href="${item['url']}">original</a> 
+        <br>
+        
+      </small>
+      <small>
+        <span class="search-result-snippet">
+          ${content}...
+        </span>
+      </small>
+    </div>
+    `
 }
 
 export const renderAddFeedForm = (url:string = '', flash:string = '') => {
-  let flash_test = ''
-  if (flash.includes('Cannot find RSS link')) flash_test += "Cannot find RSS link on that page. Try entering direct RSS URL."
-  else if (flash.includes('UNIQUE constraint failed: feeds.rss_url')) flash_test += 'Feed already exists.'
-  else if (flash.includes('Cannot fetch url')) flash_test += 'That page does not exist.'
-  else if (flash.includes('error code 530')) flash_test += 'That page does not exist.'
-  else flash_test += flash;
+    let flash_test = ''
+    if (flash.includes('Cannot find RSS link')) flash_test += "Cannot find RSS link on that page. Try entering direct RSS URL."
+    else if (flash.includes('UNIQUE constraint failed: feeds.rss_url')) flash_test += 'Feed already exists.'
+    else if (flash.includes('Cannot fetch url')) flash_test += 'That page does not exist.'
+    else if (flash.includes('error code 530')) flash_test += 'That page does not exist.'
+    else flash_test += flash;
 
-  const flashBlock = flash ? html`<div class="flash-red">${flash_test}</div>` : ''
-  return html`
-  <h1>Add new feed</h1>
-  ${flashBlock}
-  <div class="formbg">
-    <form action="/feeds/new" method="POST">
-    <div style="margin-bottom:1em;">
-      <label for="url">Blog URL (or direct RSS URL):</label>
-      <input type="url" id="url" name="url" value="${url}" style="width: 100%;"><br>
-      </div>
-      <input type="submit" value="Add feed">
-    </form> 
-  </div>
-  `
+    const flashBlock = flash ? html`<div class="flash-red">${flash_test}</div>` : ''
+    return html`
+    <h1>Add new feed</h1>
+    ${flashBlock}
+    <div class="formbg">
+      <form action="/feeds/new" method="POST">
+      <div style="margin-bottom:1em;">
+        <label for="url">Blog URL (or direct RSS URL):</label>
+        <input type="url" id="url" name="url" value="${url}" style="width: 100%;"><br>
+        </div>
+        <input type="submit" value="Add feed">
+      </form> 
+    </div>
+    `
 }
