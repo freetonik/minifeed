@@ -7,7 +7,7 @@ import { extractRSS } from './feed_extractor';
 import { Bindings } from './bindings';
 import { enqueueScrapeAllItemsOfFeed } from './queue';
 
-export const feedsAll = async (c:any) => {
+export const blogsAll = async (c:any) => {
   const user_id = c.get('USER_ID') || -1;
   // return c.text(`User: ${user}`)
   const { results } = await c.env.DB
@@ -20,21 +20,21 @@ export const feedsAll = async (c:any) => {
 
   let list = `
   <div class="main">
-  <p style="margin-top:0"><a class="button" href="/feeds/new">+ add new feed</a></p>
+  <p style="margin-top:0"><a class="button" href="/blogs/new">+ add new blog</a></p>
   `
   results.forEach((feed: any) => {
     const sqid = feedIdToSqid(feed.feed_id);
     const subscribed = feed.subscription_id ? '(subscribed)' : '';
     list += `
     <div>
-      <a href="/feeds/${sqid}">${feed.title}</a> ${subscribed}
+      <a href="/blogs/${sqid}">${feed.title}</a> ${subscribed}
     </div>`
   })
   list += "</div>"
-  return c.html(renderHTML("All feeds | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'feeds'))
+  return c.html(renderHTML("All feeds | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'blogs'))
 }
 
-export const feedsSingle = async (c:any) => {
+export const blogsSingle = async (c:any) => {
   // TODO: we're assuming that feed always has items; if feed has 0 items, this will return 404, but maybe we want to
   // show the feed still as "processing"; use https://developers.cloudflare.com/d1/platform/client-api/#batch-statements
   const feedSqid = c.req.param('feed_sqid')
@@ -151,7 +151,7 @@ export const feedsSingle = async (c:any) => {
     `${feedTitle} | minifeed`, 
     html`${raw(list)}`,
     c.get('USERNAME'),
-    'feeds'))
+    'blogs'))
 }
 
 export const feedsSubscribe = async (c:any) => {
@@ -229,19 +229,19 @@ export const feedsDelete = async (c:any) => {
   return c.html(`Feed ${feedId} deleted`)
 }
 
-export const feedsNew = async (c:any) => {
+export const blogsNew = async (c:any) => {
   if (!c.get('USER_ID')) return c.redirect('/login')
-    return c.html(renderHTML("Add new feed", html`${renderAddFeedForm()}`, c.get('USERNAME'), 'feeds'))
+    return c.html(renderHTML("Add new blog", html`${renderAddFeedForm()}`, c.get('USERNAME'), 'blogs'))
 }
 
-export const feedsNewPost = async (c:any) => {
+export const blogsNewPost = async (c:any) => {
   const body = await c.req.parseBody();
   const url = body['url'].toString();
   let rssUrl;
   try {
       rssUrl = await addFeed(c, url); 
   } catch (e: any) {
-      return c.html(renderHTML("Add new feed", html`${renderAddFeedForm(url, e.toString())}`, c.get('USERNAME'), 'feeds'))
+      return c.html(renderHTML("Add new blog", html`${renderAddFeedForm(url, e.toString())}`, c.get('USERNAME'), 'blogs'))
   }
 
   // RSS url is found

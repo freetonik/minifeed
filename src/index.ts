@@ -3,7 +3,7 @@ import { raw } from 'hono/html';
 import { renderHTML } from './htmltools';
 import { serveStatic } from 'hono/cloudflare-workers';
 import { itemsAll, itemsMy, itemsMySubs, itemsMyFollows, itemsSingle, itemsAddToFavorites, itemsRemoveFromFavorites, itemsScrape } from './items';
-import { feedsAll, feedsSingle, feedsSubscribe, feedsUnsubscribe, feedsDelete, enqueueFeedsUpdate, enqueueFeedsScrape, feedsNew, feedsNewPost, updateFeed } from './feeds';
+import { blogsSingle, feedsSubscribe, feedsUnsubscribe, feedsDelete, enqueueFeedsUpdate, enqueueFeedsScrape, blogsNew, blogsNewPost, updateFeed, blogsAll } from './feeds';
 import { usersAll, usersSingle, usersFollow, usersUnfollow } from './users';
 import { loginOrCreateAccount, loginPost, accountMy, logout, signupPost } from './account';
 import { search } from './search';
@@ -38,7 +38,7 @@ app.get('/', (c) => {
     return c.redirect('/my')
 })
 app.get('/search', search)
-app.get('/all', itemsAll) // all posts
+app.get('/global', itemsAll) // all posts
 
 app.get('/login', loginOrCreateAccount);
 app.get('/logout', logout);
@@ -50,16 +50,24 @@ app.get('/my/account', accountMy)
 app.get('/my/subs', itemsMySubs)
 app.get('/my/follows', itemsMyFollows)
 
-app.get('/feeds', feedsAll)
-app.get('/feeds/new', feedsNew)
-app.post('/feeds/new', feedsNewPost)
+app.get('/blogs', blogsAll)
+app.get('/blogs/new', blogsNew)
+app.post('/blogs/new', blogsNewPost)
 
-app.get('/feeds/:feed_sqid', feedsSingle)
+app.get('/blogs/:feed_sqid', blogsSingle)
 app.post('/feeds/:feed_sqid/subscribe', feedsSubscribe)
 app.post('/feeds/:feed_sqid/unsubscribe', feedsUnsubscribe)
 app.post('/feeds/:feed_sqid/delete', feedsDelete)
 app.post('/feeds/:feed_sqid/update', enqueueFeedsUpdate)
 app.post('/feeds/:feed_sqid/scrape', enqueueFeedsScrape)
+
+app.get('/podcasts', (c) => {
+    return c.html(renderHTML("Podcasts | minifeed", raw("Coming soon"), c.get('USERNAME'), 'podcasts'));
+});
+
+app.get('/channels', (c) => {
+    return c.html(renderHTML("Channels | minifeed", raw("Coming soon"), c.get('USERNAME'), 'channels'));
+});
 
 app.get('/items/:item_sqid', itemsSingle)
 app.post('/items/:item_sqid/favorite', itemsAddToFavorites)

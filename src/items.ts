@@ -30,7 +30,7 @@ export const itemsAll = async (c:any) => {
     
     if (results.length) list += `<a href="?p=${page + 1}">More</a></p>`
     return c.html(
-        renderHTML("Everything | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'all')
+        renderHTML("Everything | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'global')
         )
     }
     
@@ -59,18 +59,31 @@ export const itemsMy = async (c:any) => {
     LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
     JOIN followings ON subscriptions.user_id = followings.followed_user_id
     WHERE followings.follower_user_id = ?
+
+    UNION
+
+    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id
+    FROM items
+    JOIN feeds ON items.feed_id = feeds.feed_id
+    JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
     
     ORDER BY items.pub_date DESC
     
     LIMIT ? OFFSET ?
     `)
-    .bind(userId, userId, userId, userId, itemsPerPage, offset)
+    .bind(userId, userId, userId, userId, userId, itemsPerPage, offset)
     .all();
     
-    let list = `<nav class="my-menu"><small><a href="/my" class="active">all</a> / <a href="/my/subs">from subscriptions</a> / <a href="/my/follows">from follows</a></small></nav>
-    <div class="main">`
+    let list = `
+    <nav class="my-menu"><small>
+        show <a href="/my" class="active">everything</a> /
+        <a href="/my/subs">subscriptions</a> /
+        <a href="/my/follows">favorites</a> /
+        <a href="/my/follows">friendfeed</a>
+    </small></nav>
+    <div class="main">
+    `
     if (results.length) {
-        
         results.forEach((item: any) => {
             let title = item.favorite_id ? `★ ${item.title}` : item.title;
             list += renderItemShort(item.item_id, title, item.url, item.feed_title, item.feed_id, item.pub_date)
@@ -305,7 +318,7 @@ export const itemsSingle = async (c:any) => {
 
     let otherItemsBlock = '';
     if (batch[2].results.length) {
-        otherItemsBlock += `<div class="related-items"><h3>More from <a href="/feeds/${feed_sqid}"">${item.feed_title}</a>:</h3>`
+        otherItemsBlock += `<div class="related-items"><h3>More from <a href="/blogs/${feed_sqid}"">${item.feed_title}</a>:</h3>`
         batch[2].results.forEach((related_item: any) => {
             otherItemsBlock += `<div class="related-item">`
             const itemTitle = related_item.favorite_id ? `★ ${related_item.item_title}` : related_item.item_title;
@@ -317,7 +330,7 @@ export const itemsSingle = async (c:any) => {
 
     let list = `
     <h1 style="margin-bottom: 0.25em;">${item.item_title} </h1>
-    <div style="margin-bottom:1.25em;"><small>from <a href="/feeds/${feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time></small></div>
+    <div style="margin-bottom:1.25em;"><small>from <a href="/blogs/${feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time></small></div>
 
     <a class="button" href="${item.item_url}" target="_blank">↗ open original</a>
     ${favoriteBlock}
