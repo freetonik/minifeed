@@ -12,6 +12,7 @@ import { changelog } from './changelog';
 import { Bindings } from './bindings';
 import { enqueueScrapeAllItemsOfFeed, enqueueUpdateAllFeeds } from './queue';
 import { scrapeAndIndex } from './scrape';
+import { feedback } from './feedback';
 
 const app = new Hono<{ Bindings: Bindings }>()
 
@@ -39,6 +40,7 @@ app.get('/', (c) => {
 })
 app.get('/search', search)
 app.get('/global', globalFeed)
+app.get('/feedback', feedback)
 
 app.get('/login', loginOrCreateAccount);
 app.get('/logout', logout);

@@ -70,7 +70,7 @@ export const renderHTML = (
     <footer>
         <div>
         <p><a href="/my/account" class="bold">${userBlock}</p>
-        <p>Minifeed.net (version ${version} / <a class="bold" href="/about/changelog">changelog</a> / <a class="bold" href="https://status.minifeed.net/">status</a>)</p>
+        <p>Minifeed.net (version ${version} / <a class="bold" href="/about/changelog">changelog</a> / <a class="bold" href="https://status.minifeed.net/">status</a>) <a href="/feedback" class="bold">feedback</a></p>
         </div>
     </footer>
     

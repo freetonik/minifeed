@@ -10,12 +10,12 @@ export const globalFeed = async (c:any) => {
     const offset = (page * itemsPerPage) - itemsPerPage
     const { results } = await c.env.DB
     .prepare(`
-    SELECT items.item_id, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title, favorite_id, items.description
-    FROM items 
-    JOIN feeds ON items.feed_id = feeds.feed_id
-    LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
-    ORDER BY items.pub_date DESC
-    LIMIT ? OFFSET ?`)
+        SELECT items.item_id, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title, favorite_id, items.description
+        FROM items 
+        JOIN feeds ON items.feed_id = feeds.feed_id
+        LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
+        ORDER BY items.pub_date DESC
+        LIMIT ? OFFSET ?`)
     .bind(userId, itemsPerPage, offset)
     .run();
     
@@ -31,8 +31,8 @@ export const globalFeed = async (c:any) => {
     if (results.length) list += `<a href="?p=${page + 1}">More</a></p>`
     return c.html(
         renderHTML("Global feed | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'global')
-        )
-    }
+    )
+}
     
 // // MY HOME FEED: subs + favorites + friendfeed
 export const itemsMy = async (c:any) => {
