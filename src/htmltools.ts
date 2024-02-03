@@ -72,7 +72,7 @@ export const renderHTML = (
     <footer>
         <div>
         <p><a href="/my/account" class="bold">${userBlock}</p>
-        <p>Minifeed.net (version ${version} / <a href="/about/changelog">changelog</a>) </p>
+        <p>Minifeed.net (version ${version} / <a class="bold" href="/about/changelog">changelog</a> / <a class="bold" href="https://status.minifeed.net/">status</a>)</p>
         </div>
     </footer>
     
@@ -87,7 +87,7 @@ export const renderItemShort = (item_id:number, title:string, url:string, feed_t
     const feedSqid = feedIdToSqid(feed_id)
     const itemSqid = itemIdToSqid(item_id)
     
-    const feedLink = feed_title ? `<a href="/blogs/${feedSqid}">${feed_title}</a> | ` : ''
+    const feedLink = feed_title ? `from <a href="/blogs/${feedSqid}">${feed_title}</a> | ` : ''
     const summaryContent = summary ? `<p class="item-summary">${summary}</p>` : ''
     
     return `
@@ -109,6 +109,7 @@ export const renderItemSearchResult = (searchResult:any) => {
     const postDate = new Date(item['pub_date']).toLocaleDateString('en-UK', dateFormatOptions)
     const feedSqid = feedIdToSqid(item['feed_id'])
     const itemSqid = itemIdToSqid(item['item_id'])
+    const uri_root_from_type = item['type'] === 'blog' ? 'blogs' : ''
     
     let title = item['title'];
     if (searchResult['highlight']['title'] && searchResult['highlight']['title']['snippet']) {
@@ -123,7 +124,7 @@ export const renderItemSearchResult = (searchResult:any) => {
     <div class="item-short" style="margin-top:2em">
     <a href="/items/${itemSqid}" class="item-short-title">${title}</a> <br>
     <small class="muted">
-    <a href="/feeds/${feedSqid}">${item['feed_title']}</a> | 
+    from ${item['type']} <a href="/${uri_root_from_type}/${feedSqid}">${item['feed_title']}</a> | 
     <time>${postDate}</time> |
     <a class="no-underline no-color" href="${item['url']}">original</a> 
     <br>
@@ -151,7 +152,7 @@ export const renderAddFeedForm = (url:string = '', flash:string = '') => {
     <h1>Add new feed</h1>
     ${flashBlock}
     <div class="formbg">
-    <form action="/feeds/new" method="POST">
+    <form action="/blogs/new" method="POST">
     <div style="margin-bottom:1em;">
     <label for="url">Blog URL (or direct RSS URL):</label>
     <input type="url" id="url" name="url" value="${url}" style="width: 100%;"><br>
