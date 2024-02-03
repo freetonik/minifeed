@@ -19,9 +19,9 @@
 1. check that top navigation menu always shows correct active section (white tab-like block) 
 
 
-#### "Everything" page
+#### "Global feed" page
 
-https://minifeed.net/all
+https://minifeed.net/global
 
 1. click on items' titles
 1. click on items' feed titles 
@@ -29,16 +29,16 @@ https://minifeed.net/all
 1. check dates rendered correctly
 1. check dates sorted correctly
 
-#### "Feeds" page
+#### "Blogs" page
 
-https://minifeed.net/feeds
+https://minifeed.net/blog
 
-1. click on feeds
-1. try adding new feed
+1. click on blogs
+1. try adding new blog
 
-#### Single feed page
+#### Single blog page
 
-1. open any feed page from https://minifeed.net/feeds
+1. open any blog page from https://minifeed.net/blog
 1. check `site` link opens correct external page
 1. check correct items listing (check a few random items, not all)
     - dates sorted correctly
@@ -47,7 +47,7 @@ https://minifeed.net/feeds
 
 #### Single item page
 
-1. open any item from any feed
+1. open any item from any blog
 1. check `open original` button opens correct external page
 1. check that item has text content
 1. check "More from..." block shows items from correct feed
@@ -63,7 +63,7 @@ https://minifeed.net/feeds
 1. search for any words
 2. check that results are relevant (include searched words)
 3. check that no results are found for a long, random string of characters
-4. check that pagination (clicking `More`) works when search query returns many results (e.g. search for word `a`)
+4. check that pagination (clicking `More`) works when search query returns many results (e.g. search for word `aa`)
 
 #### "Login or sign up" page https://minifeed.net/login
 
@@ -91,17 +91,17 @@ https://minifeed.net/feeds
 
 
 
-#### "My" page https://minifeed.net/my
+#### "My feed" page https://minifeed.net/my
 
 1. check sub-pages:
     - https://minifeed.net/my
-    - https://minifeed.net/my/subs
-    - https://minifeed.net/my/follows
+    - https://minifeed.net/my/subscriptions
+    - https://minifeed.net/my/friendfeed
 1. sub-pages must be empty for a new user
-1. subscribe to some feeds at https://minifeed.net/feeds
-    - sub-pages https://minifeed.net/my and https://minifeed.net/my/subs should show content now
+1. subscribe to blogs feeds at https://minifeed.net/blogs
+    - sub-pages https://minifeed.net/my and https://minifeed.net/my/subscriptions should show content now
 1. follow some users at https://minifeed.net/users
-    - sub-page https://minifeed.net/my/follows should show content now
+    - sub-page https://minifeed.net/my/friendfeed should show content now
 1. randomly unsubscribe/resubscribe and unfollow/refollow users to check that corresponding sub-pages always show correct content
 
 #### "Users" page https://minifeed.net/users
@@ -115,9 +115,9 @@ https://minifeed.net/feeds
     - Follows
     - Followers
 
-#### Single feed page
+#### Single blog page
 
-1. open any feed page from https://minifeed.net/feeds
+1. open any blog page from https://minifeed.net/blogs
 1. check `site` link opens correct external page
 1. check correct items listing (check a few random items, not all)
     - dates sorted correctly
@@ -134,11 +134,11 @@ https://minifeed.net/feeds
     - check that favorited item now shows with a star ★ symbol on all other pages
 1. check "More from..." block shows items from correct feed
 
-#### Add new feed https://minifeed.net/feeds/new
+#### Add new feed https://minifeed.net/blogs/new
 
 1. try adding wrong URLs:
     - incorrect url (does not start with `http`)
     - non-existent url (some page that returns 404)
     - existent url, but not a blog
-1. try adding a blog that already exists on minifeed at https://minifeed.net/feeds
+1. try adding a blog that already exists on minifeed at https://minifeed.net/blogs
 1. try adding new blog (find any non-trashy blog for this)

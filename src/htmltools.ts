@@ -140,14 +140,14 @@ export const renderItemSearchResult = (searchResult:any) => {
 export const renderAddFeedForm = (url:string = '', flash:string = '') => {
     let flash_test = ''
     if (flash.includes('Cannot find RSS link')) flash_test += "Cannot find RSS link on that page. Try entering direct RSS URL."
-    else if (flash.includes('UNIQUE constraint failed: feeds.rss_url')) flash_test += 'Feed already exists.'
+    else if (flash.includes('UNIQUE constraint failed: feeds.rss_url')) flash_test += 'Blog already exists.'
     else if (flash.includes('Cannot fetch url')) flash_test += 'That page does not exist.'
     else if (flash.includes('error code 530')) flash_test += 'That page does not exist.'
     else flash_test += flash;
     
     const flashBlock = flash ? html`<div class="flash-red">${flash_test}</div>` : ''
     return html`
-    <h1>Add new feed</h1>
+    <h1>Add new blog</h1>
     ${flashBlock}
     <div class="formbg">
     <form action="/blogs/new" method="POST">
@@ -155,7 +155,7 @@ export const renderAddFeedForm = (url:string = '', flash:string = '') => {
     <label for="url">Blog URL (or direct RSS URL):</label>
     <input type="url" id="url" name="url" value="${url}" style="width: 100%;"><br>
     </div>
-    <input type="submit" value="Add feed">
+    <input type="submit" value="Add blog">
     </form> 
     </div>
     `
