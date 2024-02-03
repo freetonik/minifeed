@@ -56,8 +56,6 @@ export const renderHTML = (
             <a href="/my" class="${active==='my' ? 'active' : ''}">My feed</a>
             <a href="/global" class="${active==='global' ? 'active' : ''}" style="margin-left: 0.5em">Global feed</a>
             <a href="/blogs" class="${active==='blogs' ? 'active' : ''}" style="margin-left: 0.5em">Blogs</a>
-            <a href="/podcasts" class="${active==='podcasts' ? 'active' : ''}" style="margin-left: 0.5em">Podcasts</a>
-            <a href="/channels" class="${active==='channels' ? 'active' : ''}" style="margin-left: 0.5em">Channels</a>
             <a href="/users" class="${active==='users' ? 'active' : ''}" style="margin-left: 0.5em">Users</a>
             <span class="search-form ${active==='search' ? 'active' : ''}">
             <form action="/search" method="GET">

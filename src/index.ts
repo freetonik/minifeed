@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { raw } from 'hono/html';
 import { renderHTML } from './htmltools';
 import { serveStatic } from 'hono/cloudflare-workers';
-import { itemsAll, itemsMy, itemsMySubs, itemsMyFollows, itemsSingle, itemsAddToFavorites, itemsRemoveFromFavorites, itemsScrape } from './items';
+import { globalFeed, itemsMy, itemsMySubs as itemsMySubscriptions, itemsMyFollows as itemsMyFriendfeed, itemsSingle, itemsAddToFavorites, itemsRemoveFromFavorites, itemsScrape, itemsMyFavorites } from './items';
 import { blogsSingle, feedsSubscribe, feedsUnsubscribe, feedsDelete, enqueueFeedsUpdate, enqueueFeedsScrape, blogsNew, blogsNewPost, updateFeed, blogsAll } from './feeds';
 import { usersAll, usersSingle, usersFollow, usersUnfollow } from './users';
 import { loginOrCreateAccount, loginPost, accountMy, logout, signupPost } from './account';
@@ -34,11 +34,11 @@ app.use('/items/:item_sqid/scrape', adminMiddleware);
 
 // APP ROUTES
 app.get('/', (c) => {
-    if (!c.get('USER_ID')) return c.redirect('/all');
+    if (!c.get('USER_ID')) return c.redirect('/global');
     return c.redirect('/my')
 })
 app.get('/search', search)
-app.get('/global', itemsAll) // all posts
+app.get('/global', globalFeed)
 
 app.get('/login', loginOrCreateAccount);
 app.get('/logout', logout);
@@ -46,9 +46,10 @@ app.post('/signup', signupPost);
 app.post('/login', loginPost);
 
 app.get('/my', itemsMy)
+app.get('/my/subscriptions', itemsMySubscriptions)
+app.get('/my/friendfeed', itemsMyFriendfeed)
+app.get('/my/favorites', itemsMyFavorites)
 app.get('/my/account', accountMy)
-app.get('/my/subs', itemsMySubs)
-app.get('/my/follows', itemsMyFollows)
 
 app.get('/blogs', blogsAll)
 app.get('/blogs/new', blogsNew)

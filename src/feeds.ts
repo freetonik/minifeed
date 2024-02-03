@@ -248,7 +248,7 @@ export const blogsNewPost = async (c:any) => {
   if (rssUrl) {
       const feedId = await getFeedIdByRSSUrl(c, rssUrl)
       const sqid = feedIdToSqid(feedId)
-      return c.redirect(`/feeds/${sqid}`, 301)
+      return c.redirect(`/blogs/${sqid}`, 301)
   }
   return c.text("Something went wrong")
 

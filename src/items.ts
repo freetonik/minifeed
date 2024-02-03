@@ -3,14 +3,14 @@ import { html, raw } from 'hono/html'
 import { feedIdToSqid, itemSqidToId } from './utils'
 import { truncate } from 'bellajs'
 
-export const itemsAll = async (c:any) => {
+export const globalFeed = async (c:any) => {
     const userId = c.get('USER_ID') || -1;
     const itemsPerPage = 30
     const page = Number(c.req.query('p')) || 1
     const offset = (page * itemsPerPage) - itemsPerPage
     const { results } = await c.env.DB
     .prepare(`
-    SELECT items.item_id, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title, favorite_id
+    SELECT items.item_id, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title, favorite_id, items.description
     FROM items 
     JOIN feeds ON items.feed_id = feeds.feed_id
     LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
@@ -19,22 +19,22 @@ export const itemsAll = async (c:any) => {
     .bind(userId, itemsPerPage, offset)
     .run();
     
-    let list = `<p></p>`;
+    let list = `<p style="margin-bottom: 2em"><strong>This is a global feed of all items from all blogs, podcasts and channels, in chronological order.</strong></p>`;
     
     if (!results.length) list += `<p><i>Nothing exists on minifeed yet...</i></p>`
     
     results.forEach((item: any) => {
         const itemTitle = item.favorite_id ? `★ ${item.item_title}` : item.item_title;
-        list += renderItemShort(item.item_id, itemTitle, item.item_url, item.feed_title, item.feed_id, item.pub_date)
+        list += renderItemShort(item.item_id, itemTitle, item.item_url, item.feed_title, item.feed_id, item.pub_date, truncate(item.description, 350))
     })
     
     if (results.length) list += `<a href="?p=${page + 1}">More</a></p>`
     return c.html(
-        renderHTML("Everything | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'global')
+        renderHTML("Global feed | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'global')
         )
     }
     
-// // MY HOME FEED: subs + follows
+// // MY HOME FEED: subs + favorites + friendfeed
 export const itemsMy = async (c:any) => {
     const itemsPerPage = 30
     const page = Number(c.req.query('p')) || 1
@@ -77,9 +77,9 @@ export const itemsMy = async (c:any) => {
     let list = `
     <nav class="my-menu"><small>
         show <a href="/my" class="active">everything</a> /
-        <a href="/my/subs">subscriptions</a> /
-        <a href="/my/follows">favorites</a> /
-        <a href="/my/follows">friendfeed</a>
+        <a href="/my/subscriptions">subscriptions</a> /
+        <a href="/my/favorites">favorites</a> /
+        <a href="/my/friendfeed">friendfeed</a>
     </small></nav>
     <div class="main">
     `
@@ -92,7 +92,7 @@ export const itemsMy = async (c:any) => {
     } else {
         if (page == 1) {
             
-            list += `Your home is empty :-( <br>Subscribe to some <strong><a href="/feeds">feeds</a></strong> or follow some <strong><a href="/users">users</a></strong>.`
+            list += `Your home is empty :-( <br>Subscribe to some <strong><a href="/blogs">blogs</a></strong> or follow some <strong><a href="/users">users</a></strong>.`
         }
         
         list += ` </div>`
@@ -121,8 +121,15 @@ export const itemsMySubs = async (c:any) => {
     .bind(userId, userId, itemsPerPage, offset)
     .all();
     
-    let list = `<nav class="my-menu"><small><a href="/my">all</a> / <a class="active" href="/my/subs">from subscriptions</a> / <a href="/my/follows">from follows</a></small></nav>
-    <div class="main">`
+    let list = `
+    <nav class="my-menu"><small>
+        show <a href="/my">everything</a> /
+        <a href="/my/subscriptions" class="active">subscriptions</a> /
+        <a href="/my/favorites">favorites</a> /
+        <a href="/my/friendfeed">friendfeed</a>
+    </small></nav>
+    <div class="main">
+    `
     if (results.length) {
         results.forEach((item: any) => {
             let title = item.favorite_id ? `★ ${item.title}` : item.title;
@@ -131,7 +138,7 @@ export const itemsMySubs = async (c:any) => {
         list += `<p><a href="?p=${page + 1}">More</a></p></div>`
     } else {
         if (page == 1) {
-            list += `Your have no subscriptions :-( <br>Subscribe to some <strong><a href="/feeds">feeds</a></strong>.`
+            list += `Your have no subscriptions :-( <br>Subscribe to some <strong><a href="/blogs">blogs</a></strong>.`
         }
         list += `</div>`
         
@@ -165,8 +172,15 @@ export const itemsMyFollows = async (c:any) => {
     .bind(userId, userId, itemsPerPage, offset)
     .all();
     
-    let list = `<nav class="my-menu"><small><a href="/my">all</a> / <a href="/my/subs">from subscriptions</a> / <a class="active" href="/my/follows">from follows</a></small></nav>
-    <div class="main">`
+    let list = `
+    <nav class="my-menu"><small>
+        show <a href="/my">everything</a> /
+        <a href="/my/subscriptions">subscriptions</a> /
+        <a href="/my/favorites">favorites</a> /
+        <a href="/my/friendfeed" class="active">friendfeed</a>
+    </small></nav>
+    <div class="main">
+    `
     if (results.length) {
         results.forEach((item: any) => {
             const title = item.favorite_id ? `★ ${item.title}` : item.title;
@@ -180,6 +194,49 @@ export const itemsMyFollows = async (c:any) => {
     }
     
     return c.html(renderHTML("From my follows", html`${raw(list)}`, c.get('USERNAME'), 'my'))
+}
+
+export const itemsMyFavorites = async (c:any) => {
+    const itemsPerPage = 30
+    const page = Number(c.req.query('p')) || 1
+    const offset = (page * itemsPerPage) - itemsPerPage
+    
+    const userId = c.get('USER_ID')
+    const { results } = await c.env.DB
+    .prepare(`
+    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id
+    FROM items
+    JOIN favorites ON items.item_id = favorites.item_id
+    JOIN feeds ON items.feed_id = feeds.feed_id
+    WHERE favorites.user_id = ?
+    ORDER BY items.pub_date DESC
+    LIMIT ? OFFSET ?
+    `)
+    .bind(userId, itemsPerPage, offset)
+    .all();
+    
+    let list = `
+    <nav class="my-menu"><small>
+        show <a href="/my">everything</a> /
+        <a href="/my/subscriptions">subscriptions</a> /
+        <a href="/my/favorites" class="active">favorites</a> /
+        <a href="/my/friendfeed">friendfeed</a>
+    </small></nav>
+    <div class="main">
+    `
+    if (results.length) {
+        results.forEach((item: any) => {
+            const title = item.favorite_id ? `★ ${item.title}` : item.title;
+            list += renderItemShort(item.item_id, title, item.url, item.feed_title, item.feed_id, item.pub_date)
+        })
+        list += `<p><a href="?p=${page + 1}">More</a></p></div>`
+    } else {
+        if (page == 1) {
+            list += `You haven't added anything to favorites yet :-(`
+        }
+    }
+    
+    return c.html(renderHTML("My favorites", html`${raw(list)}`, c.get('USERNAME'), 'my'))
 }
         
 export const itemsSingle = async (c:any) => {
@@ -200,16 +257,17 @@ export const itemsSingle = async (c:any) => {
     // find item
     c.env.DB.prepare(`
     SELECT 
-    items.item_id, 
-    items.title AS item_title, 
-    items.description, 
-    items.content_html, 
-    items.content_html_scraped,
-    items.pub_date, 
-    items.url AS item_url, 
-    feeds.title AS feed_title, 
-    feeds.feed_id, 
-    favorite_id 
+        items.item_id, 
+        items.title AS item_title, 
+        items.description, 
+        items.content_html, 
+        items.content_html_scraped,
+        items.pub_date, 
+        items.url AS item_url, 
+        feeds.title AS feed_title, 
+        feeds.feed_id, 
+        feeds.type,
+        favorite_id 
     FROM items 
     JOIN feeds ON items.feed_id = feeds.feed_id 
     LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
@@ -318,7 +376,7 @@ export const itemsSingle = async (c:any) => {
 
     let otherItemsBlock = '';
     if (batch[2].results.length) {
-        otherItemsBlock += `<div class="related-items"><h3>More from <a href="/blogs/${feed_sqid}"">${item.feed_title}</a>:</h3>`
+        otherItemsBlock += `<div class="related-items"><h3>More from ${item.type} <a href="/blogs/${feed_sqid}"">${item.feed_title}</a>:</h3>`
         batch[2].results.forEach((related_item: any) => {
             otherItemsBlock += `<div class="related-item">`
             const itemTitle = related_item.favorite_id ? `★ ${related_item.item_title}` : related_item.item_title;
@@ -330,16 +388,15 @@ export const itemsSingle = async (c:any) => {
 
     let list = `
     <h1 style="margin-bottom: 0.25em;">${item.item_title} </h1>
-    <div style="margin-bottom:1.25em;"><small>from <a href="/blogs/${feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time></small></div>
+    <div style="margin-bottom:1.25em;">from ${item.type} <a href="/blogs/${feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time></div>
 
-    <a class="button" href="${item.item_url}" target="_blank">↗ open original</a>
     ${favoriteBlock}
+    <a class="button" href="${item.item_url}" target="_blank">↗ open original</a>
     <hr>
     <div class="post-content">
     ${contentBlock}
 
     </div>
-
 
     ${otherItemsBlock}
     `

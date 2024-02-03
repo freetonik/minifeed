@@ -77,7 +77,7 @@ export const usersSingle = async (c:any) => {
             hx-swap="outerHTML">
             ${followButtonText}
             </button>
-            </span>`;
+            </span><hr>`;
         } else {
             list += `<div class="flash-blue">This is your public profile (<a href="/my/account">account settings</a>)</div>`
         }
@@ -86,7 +86,7 @@ export const usersSingle = async (c:any) => {
     }
     
     // user favorited these jabronis
-    list += `<hr><h2>Favorites:</h2>`
+    list += `<h2>Favorites:</h2>`
     if (!batch[4].results.length) list += `<p><i>None yet</i></p>`
     batch[4].results.forEach((item: any) => {
         list += renderItemShort(item.item_id, item.title, item.url, item.feed_title, item.feed_id, item.pub_date)
@@ -97,7 +97,7 @@ export const usersSingle = async (c:any) => {
     if (!batch[1].results.length) list += `<p><i>None yet</i></p>`
     batch[1].results.forEach((feed: any) => {
         const sqid = feedIdToSqid(feed.feed_id)
-        list += `<li><a href="/feeds/${sqid}">${feed.title}</a></li>`
+        list += `<li><a href="/blogs/${sqid}">${feed.title}</a></li>`
     })
     
     // user follows these jabronis
