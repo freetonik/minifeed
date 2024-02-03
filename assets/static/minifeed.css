@@ -102,6 +102,10 @@ header nav .search-form {
     padding-right: 0;
 }
 
+span.search-form.active {
+    padding-right: 0.75em;
+}
+
 header nav .search-form form {
     display: inline-block;
 }
