@@ -189,7 +189,7 @@ export const itemsMyFollows = async (c:any) => {
         list += `<p><a href="?p=${page + 1}">More</a></p></div>`
     } else {
         if (page == 1) {
-            list += `Your don't follow anyone, or you do, but they aren't subscribed to anything :-( <br> Go find some <strong><a href="/users">users to follow</a></strong>`
+            list += `You don't follow anyone, or you do, but they aren't subscribed to anything :-( <br> Go find some <strong><a href="/users">users to follow</a></strong>`
         }
     }
     

@@ -1,7 +1,16 @@
-export const version = "0.1.7";
+export const version = "0.1.8";
 
 export const changelog = `
     <h2>Changelog</h2>
+
+    <h3>0.1.8 (03.02.2024)</h3>
+    <ul>
+        <li>Improvement: restructure navigation, better naming and URIs</li>
+        <li>Improvement: my favorites page</li>
+        <li>Improvement: status page</li>
+        <li>Improvement: feedback page</li>
+        <li>Bugfix: favorites are now shown in My feed even if user is not subscribed to parent feed</li>
+    </ul>
 
     <h3>0.1.7 (28.01.2024)</h3>
     <ul>

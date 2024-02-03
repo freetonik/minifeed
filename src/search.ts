@@ -6,6 +6,27 @@ import { collapseWhitespace, gatherResponse, stripASCIIFormatting } from "./util
 
 export const search = async (c:any) => {
     const q = c.req.query('q');
+
+    // if query only contains spaces, return error
+    if (q.trim().length === 0) {
+        return c.html(
+            renderHTML(`Search | minifeed`, html`<div class="flash-red">Search query cannot be empty</div>`, c.get('USERNAME'), 'search', q)
+        )
+    }
+
+    // if query is over 50 characters, return error
+    if (q.length > 50) {
+        return c.html(
+            renderHTML(`Search | minifeed`, html`<div class="flash-red">Search query cannot be longer than 50 characters</div>`, c.get('USERNAME'), 'search', q)
+        )
+    }
+
+    // if query is does not contain any letters, return error
+    if (!q.match(/[a-zA-Z]/)) {
+        return c.html(
+            renderHTML(`Search | minifeed`, html`<div class="flash-red">Search query must contain at least one letter</div>`, c.get('USERNAME'), 'search', q)
+        )
+    }
     
     const itemsPerPage = 30
     const page = Number(c.req.query('p')) || 1
