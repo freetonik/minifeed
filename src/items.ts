@@ -3,7 +3,7 @@ import { html, raw } from 'hono/html'
 import { feedIdToSqid, itemSqidToId } from './utils'
 import { truncate } from 'bellajs'
 
-export const globalFeed = async (c:any) => {
+export const globalFeedHandler = async (c:any) => {
     const userId = c.get('USER_ID') || -1;
     const itemsPerPage = 30
     const page = Number(c.req.query('p')) || 1
@@ -19,7 +19,7 @@ export const globalFeed = async (c:any) => {
     .bind(userId, itemsPerPage, offset)
     .run();
     
-    let list = `<p style="margin-bottom: 2em"><strong>This is a global feed of all items from all blogs, podcasts and channels, in chronological order.</strong></p>`;
+    let list = `<p style="margin-bottom: 2em"><strong>This is a global feed of all items from all blogs in chronological order.</strong></p>`;
     
     if (!results.length) list += `<p><i>Nothing exists on minifeed yet...</i></p>`
     
@@ -35,7 +35,7 @@ export const globalFeed = async (c:any) => {
 }
     
 // // MY HOME FEED: subs + favorites + friendfeed
-export const itemsMy = async (c:any) => {
+export const myItemsHandler = async (c:any) => {
     const itemsPerPage = 30
     const page = Number(c.req.query('p')) || 1
     const offset = (page * itemsPerPage) - itemsPerPage
@@ -101,7 +101,7 @@ export const itemsMy = async (c:any) => {
     return c.html(renderHTML("My stuff | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'my'))
 }
     
-export const itemsMySubs = async (c:any) => {
+export const mySubscriptionsHandler = async (c:any) => {
     const itemsPerPage = 30
     const page = Number(c.req.query('p')) || 1
     const offset = (page * itemsPerPage) - itemsPerPage
@@ -151,7 +151,7 @@ export const itemsMySubs = async (c:any) => {
         ))
 }
     
-export const itemsMyFollows = async (c:any) => {
+export const myFollowsHandler = async (c:any) => {
     const itemsPerPage = 30
     const page = Number(c.req.query('p')) || 1
     const offset = (page * itemsPerPage) - itemsPerPage
@@ -196,7 +196,7 @@ export const itemsMyFollows = async (c:any) => {
     return c.html(renderHTML("From my follows", html`${raw(list)}`, c.get('USERNAME'), 'my'))
 }
 
-export const itemsMyFavorites = async (c:any) => {
+export const myFavoritesHandler = async (c:any) => {
     const itemsPerPage = 30
     const page = Number(c.req.query('p')) || 1
     const offset = (page * itemsPerPage) - itemsPerPage
@@ -239,7 +239,7 @@ export const itemsMyFavorites = async (c:any) => {
     return c.html(renderHTML("My favorites", html`${raw(list)}`, c.get('USERNAME'), 'my'))
 }
         
-export const itemsSingle = async (c:any) => {
+export const itemsSingleHandler = async (c:any) => {
     const item_sqid = c.req.param('item_sqid');
     const item_id:number = itemSqidToId(item_sqid)
     const user_id = c.get('USER_ID') || -1;
@@ -467,7 +467,7 @@ export const itemsSingle = async (c:any) => {
         ))
 }
                 
-export const itemsAddToFavorites = async (c:any) => {
+export const itemsAddToFavoritesHandler = async (c:any) => {
     const itemSqid = c.req.param('item_sqid')
     const itemId:number = itemSqidToId(itemSqid)
     const userId = c.get('USER_ID');
@@ -501,7 +501,7 @@ export const itemsAddToFavorites = async (c:any) => {
     `);
 }
                 
-export const itemsRemoveFromFavorites = async (c:any) => {
+export const itemsRemoveFromFavoritesHandler = async (c:any) => {
     const itemSqid = c.req.param('item_sqid')
     const itemId:number = itemSqidToId(itemSqid)
     const userId = c.get('USER_ID');
@@ -535,7 +535,7 @@ export const itemsRemoveFromFavorites = async (c:any) => {
     `);
 }
                 
-export const itemsScrape = async (c:any) => {
+export const itemsScrapeHandler = async (c:any) => {
     const itemSqid = c.req.param('item_sqid')
     const itemId:number = itemSqidToId(itemSqid)
     

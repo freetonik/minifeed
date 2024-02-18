@@ -4,7 +4,7 @@ import { stripTags } from 'bellajs'
 import { Bindings } from "./bindings";
 import { collapseWhitespace, gatherResponse, stripASCIIFormatting } from "./utils";
 
-export const search = async (c:any) => {
+export const searchHandler = async (c:any) => {
     const q = c.req.query('q');
 
     // if query only contains spaces, return error

@@ -7,7 +7,7 @@ import { extractRSS } from './feed_extractor';
 import { Bindings } from './bindings';
 import { enqueueScrapeAllItemsOfFeed } from './queue';
 
-export const blogsAll = async (c:any) => {
+export const blogsHandler = async (c:any) => {
   const user_id = c.get('USER_ID') || -1;
   // return c.text(`User: ${user}`)
   const { results } = await c.env.DB
@@ -34,7 +34,7 @@ export const blogsAll = async (c:any) => {
   return c.html(renderHTML("All feeds | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'blogs'))
 }
 
-export const blogsSingle = async (c:any) => {
+export const blogsSingleHandler = async (c:any) => {
   // TODO: we're assuming that feed always has items; if feed has 0 items, this will return 404, but maybe we want to
   // show the feed still as "processing"; use https://developers.cloudflare.com/d1/platform/client-api/#batch-statements
   const feedSqid = c.req.param('feed_sqid')
@@ -154,7 +154,7 @@ export const blogsSingle = async (c:any) => {
     'blogs'))
 }
 
-export const feedsSubscribe = async (c:any) => {
+export const feedsSubscribeHandler = async (c:any) => {
   if (!c.get('USER_ID')) return c.redirect('/login');
   const userId = c.get('USER_ID');
   const feedSqid = c.req.param('feed_sqid')
@@ -187,7 +187,7 @@ export const feedsSubscribe = async (c:any) => {
     `);
 }
 
-export const feedsUnsubscribe = async (c:any) => {
+export const feedsUnsubscribeHandler = async (c:any) => {
   if (!c.get('USER_ID')) return c.redirect('/login');
   const userId = c.get('USER_ID');
   const feedSqid = c.req.param('feed_sqid')
@@ -216,7 +216,7 @@ export const feedsUnsubscribe = async (c:any) => {
     `);
 }
 
-export const feedsDelete = async (c:any) => {
+export const feedsDeleteHandler = async (c:any) => {
   const feedId:number = feedSqidToId(c.req.param('feed_sqid'));
 
   await c.env.DB
@@ -229,12 +229,12 @@ export const feedsDelete = async (c:any) => {
   return c.html(`Feed ${feedId} deleted`)
 }
 
-export const blogsNew = async (c:any) => {
+export const blogsNewHandler = async (c:any) => {
   if (!c.get('USER_ID')) return c.redirect('/login')
     return c.html(renderHTML("Add new blog", html`${renderAddFeedForm()}`, c.get('USERNAME'), 'blogs'))
 }
 
-export const blogsNewPost = async (c:any) => {
+export const blogsNewPostHandler = async (c:any) => {
   const body = await c.req.parseBody();
   const url = body['url'].toString();
   let rssUrl;

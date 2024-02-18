@@ -2,7 +2,7 @@ import { renderHTML, renderItemShort } from './htmltools';
 import { html, raw } from 'hono/html'
 import { feedIdToSqid } from './utils';
 
-export const usersAll = async (c:any) => {
+export const usersHandler = async (c:any) => {
     const username = c.get('USERNAME');
     const { results } = await c.env.DB
     .prepare("SELECT * from users ORDER BY created ASC")
@@ -17,7 +17,7 @@ export const usersAll = async (c:any) => {
     return c.html(renderHTML("All items", html`${raw(list)}`, c.get('USERNAME'), 'users'))
 }
 
-export const usersSingle = async (c:any) => {
+export const usersSingleHandler = async (c:any) => {
     const userId = c.get('USER_ID') || "0";
     const userLoggedIn = c.get('USER_ID') ? true : false;
     const username = c.req.param('username');
@@ -120,7 +120,7 @@ export const usersSingle = async (c:any) => {
         'users'));
 }
     
-export const usersFollow = async (c:any) => {
+export const usersFollowPostHandler = async (c:any) => {
     if (!c.get('USER_ID')) return c.html('');
     const userId = c.get('USER_ID');
     const username = c.req.param('username')
@@ -155,7 +155,7 @@ export const usersFollow = async (c:any) => {
     `);
 }
 
-export const usersUnfollow = async (c:any) => {
+export const usersUnfollowPostHandler = async (c:any) => {
     if (!c.get('USER_ID')) return c.html('');
     const userId = c.get('USER_ID');
     const username = c.req.param('username')

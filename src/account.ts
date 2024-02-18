@@ -3,7 +3,7 @@ import { getCookie, getSignedCookie, setCookie, setSignedCookie, deleteCookie } 
 
 import { renderHTML, renderItemShort } from './htmltools';
 
-export const accountMy = async (c:any) => {
+export const myAccountHandler = async (c:any) => {
     const username = c.get('USERNAME');
     let list = `
     <h1>My account</h1>
@@ -17,7 +17,7 @@ export const accountMy = async (c:any) => {
     return c.html(renderHTML("My account | minifeed", html`${raw(list)}`, c.get('USERNAME'), ''))
 }
 
-export const logout = async (c:any) => {
+export const logoutHandler = async (c:any) => {
     const sessionKey = getCookie(c, 'minifeed_session');
     try {
         await c.env.DB.prepare("DELETE FROM sessions WHERE session_key = ?").bind(sessionKey).run();
@@ -28,7 +28,7 @@ export const logout = async (c:any) => {
     return c.redirect('/')
 }
 
-export const loginOrCreateAccount = async (c:any) => {
+export const loginHandler = async (c:any) => {
     if (c.get('USER_ID')) return c.redirect('/')
     
     let list = `
@@ -76,7 +76,7 @@ export const loginOrCreateAccount = async (c:any) => {
     return c.html(renderHTML("Login or create account | minifeed", html`${raw(list)}`, '', ''))
 }
 
-export const loginPost = async (c:any) => {
+export const loginPostHandler = async (c:any) => {
     const body = await c.req.parseBody();
     const username = body['username'].toString();
     const password = body['password'].toString();
@@ -117,7 +117,7 @@ export const createSessionSetCookieAndRedirect = async (c:any, userId:number, re
     return c.redirect(redirectTo)
 }
 
-export const signupPost = async (c:any) => {
+export const signupPostHandler = async (c:any) => {
     const body = await c.req.parseBody();
     const username = body['username'].toString();
     const password = body['password'].toString();

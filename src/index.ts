@@ -2,17 +2,17 @@ import { Hono } from 'hono';
 import { raw } from 'hono/html';
 import { renderHTML } from './htmltools';
 import { serveStatic } from 'hono/cloudflare-workers';
-import { globalFeed, itemsMy, itemsMySubs as itemsMySubscriptions, itemsMyFollows as itemsMyFriendfeed, itemsSingle, itemsAddToFavorites, itemsRemoveFromFavorites, itemsScrape, itemsMyFavorites } from './items';
-import { blogsSingle, feedsSubscribe, feedsUnsubscribe, feedsDelete, enqueueFeedsUpdate, enqueueFeedsScrape, blogsNew, blogsNewPost, updateFeed, blogsAll } from './feeds';
-import { usersAll, usersSingle, usersFollow, usersUnfollow } from './users';
-import { loginOrCreateAccount, loginPost, accountMy, logout, signupPost } from './account';
-import { search } from './search';
+import { globalFeedHandler, myItemsHandler, mySubscriptionsHandler, myFollowsHandler, itemsSingleHandler, itemsAddToFavoritesHandler, itemsRemoveFromFavoritesHandler, itemsScrapeHandler, myFavoritesHandler } from './items';
+import { blogsSingleHandler, feedsSubscribeHandler, feedsUnsubscribeHandler, feedsDeleteHandler, enqueueFeedsUpdate, enqueueFeedsScrape, blogsNewHandler, blogsNewPostHandler, updateFeed, blogsHandler } from './feeds';
+import { usersHandler, usersSingleHandler, usersFollowPostHandler, usersUnfollowPostHandler } from './users';
+import { loginHandler, loginPostHandler, myAccountHandler, logoutHandler, signupPostHandler } from './account';
+import { searchHandler } from './search';
 import { adminMiddleware, authMiddleware, userPageMiddleware } from './middlewares';
 import { changelog } from './changelog';
 import { Bindings } from './bindings';
 import { enqueueScrapeAllItemsOfFeed, enqueueUpdateAllFeeds } from './queue';
 import { scrapeAndIndex } from './scrape';
-import { feedback } from './feedback';
+import { feedbackHandler } from './feedback';
 
 const app = new Hono<{ Bindings: Bindings }>()
 
@@ -38,29 +38,29 @@ app.get('/', (c) => {
     if (!c.get('USER_ID')) return c.redirect('/global');
     return c.redirect('/my')
 })
-app.get('/search', search)
-app.get('/global', globalFeed)
-app.get('/feedback', feedback)
+app.get('/search', searchHandler)
+app.get('/global', globalFeedHandler)
+app.get('/feedback', feedbackHandler)
 
-app.get('/login', loginOrCreateAccount);
-app.get('/logout', logout);
-app.post('/signup', signupPost);
-app.post('/login', loginPost);
+app.get('/login', loginHandler);
+app.get('/logout', logoutHandler);
+app.post('/signup', signupPostHandler);
+app.post('/login', loginPostHandler);
 
-app.get('/my', itemsMy)
-app.get('/my/subscriptions', itemsMySubscriptions)
-app.get('/my/friendfeed', itemsMyFriendfeed)
-app.get('/my/favorites', itemsMyFavorites)
-app.get('/my/account', accountMy)
+app.get('/my', myItemsHandler)
+app.get('/my/subscriptions', mySubscriptionsHandler)
+app.get('/my/friendfeed', myFollowsHandler)
+app.get('/my/favorites', myFavoritesHandler)
+app.get('/my/account', myAccountHandler)
 
-app.get('/blogs', blogsAll)
-app.get('/blogs/new', blogsNew)
-app.post('/blogs/new', blogsNewPost)
+app.get('/blogs', blogsHandler)
+app.get('/blogs/new', blogsNewHandler)
+app.post('/blogs/new', blogsNewPostHandler)
 
-app.get('/blogs/:feed_sqid', blogsSingle)
-app.post('/feeds/:feed_sqid/subscribe', feedsSubscribe)
-app.post('/feeds/:feed_sqid/unsubscribe', feedsUnsubscribe)
-app.post('/feeds/:feed_sqid/delete', feedsDelete)
+app.get('/blogs/:feed_sqid', blogsSingleHandler)
+app.post('/feeds/:feed_sqid/subscribe', feedsSubscribeHandler)
+app.post('/feeds/:feed_sqid/unsubscribe', feedsUnsubscribeHandler)
+app.post('/feeds/:feed_sqid/delete', feedsDeleteHandler)
 app.post('/feeds/:feed_sqid/update', enqueueFeedsUpdate)
 app.post('/feeds/:feed_sqid/scrape', enqueueFeedsScrape)
 
@@ -72,15 +72,15 @@ app.get('/channels', (c) => {
     return c.html(renderHTML("Channels | minifeed", raw("Coming soon"), c.get('USERNAME'), 'channels'));
 });
 
-app.get('/items/:item_sqid', itemsSingle)
-app.post('/items/:item_sqid/favorite', itemsAddToFavorites)
-app.post('/items/:item_sqid/unfavorite', itemsRemoveFromFavorites)
-app.post('/items/:item_sqid/scrape', itemsScrape)
+app.get('/items/:item_sqid', itemsSingleHandler)
+app.post('/items/:item_sqid/favorite', itemsAddToFavoritesHandler)
+app.post('/items/:item_sqid/unfavorite', itemsRemoveFromFavoritesHandler)
+app.post('/items/:item_sqid/scrape', itemsScrapeHandler)
 
-app.get('/users', usersAll)
-app.get('/users/:username', usersSingle)
-app.post('/users/:username/follow', usersFollow)
-app.post('/users/:username/unfollow', usersUnfollow)
+app.get('/users', usersHandler)
+app.get('/users/:username', usersSingleHandler)
+app.post('/users/:username/follow', usersFollowPostHandler)
+app.post('/users/:username/unfollow', usersUnfollowPostHandler)
 
 app.get('/about/changelog', async (c) => c.html(renderHTML("Changelog | minifeed", raw(changelog))));
 
