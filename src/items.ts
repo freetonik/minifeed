@@ -1,7 +1,7 @@
 import { renderHTML, renderItemShort } from './htmltools';
 import { html, raw } from 'hono/html'
-import { feedIdToSqid, itemSqidToId } from './utils'
-import { truncate } from 'bellajs'
+import { feedIdToSqid, itemSqidToId, truncate } from './utils'
+import { enqueueItemIndex, enqueueItemScrape } from './queue';
 
 export const globalFeedHandler = async (c:any) => {
     const userId = c.get('USER_ID') || -1;
@@ -20,7 +20,6 @@ export const globalFeedHandler = async (c:any) => {
     .run();
     
     let list = `<p style="margin-bottom: 2em"><strong>This is a global feed of all items from all blogs in chronological order.</strong></p>`;
-    
     if (!results.length) list += `<p><i>Nothing exists on minifeed yet...</i></p>`
     
     results.forEach((item: any) => {
@@ -29,9 +28,7 @@ export const globalFeedHandler = async (c:any) => {
     })
     
     if (results.length) list += `<a href="?p=${page + 1}">More</a></p>`
-    return c.html(
-        renderHTML("Global feed | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'global')
-    )
+    return c.html( renderHTML("Global feed | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'global') )
 }
     
 // // MY HOME FEED: subs + favorites + friendfeed
@@ -229,12 +226,13 @@ export const myFavoritesHandler = async (c:any) => {
             const title = item.favorite_id ? `★ ${item.title}` : item.title;
             list += renderItemShort(item.item_id, title, item.url, item.feed_title, item.feed_id, item.pub_date)
         })
-        list += `<p><a href="?p=${page + 1}">More</a></p></div>`
+        list += `<p><a href="?p=${page + 1}">More</a></p>`
     } else {
         if (page == 1) {
             list += `You haven't added anything to favorites yet :-(`
         }
     }
+    list += `</div>`
     
     return c.html(renderHTML("My favorites", html`${raw(list)}`, c.get('USERNAME'), 'my'))
 }
@@ -445,12 +443,22 @@ export const itemsSingleHandler = async (c:any) => {
         
         <p>
         <button hx-post="/items/${item_sqid}/scrape"
-        hx-trigger="click"
-        hx-target="#scrape-indicator"
-        hx-swap="outerHTML">
-        scrape
+            hx-trigger="click"
+            hx-target="#scrape-indicator"
+            hx-swap="outerHTML">
+            scrape
         </button>
         <span id="scrape-indicator"></span>
+        </p>
+
+        <p>
+        <button hx-post="/items/${item_sqid}/index"
+            hx-trigger="click"
+            hx-target="#index-indicator"
+            hx-swap="outerHTML">
+            re-index
+        </button>
+        <span id="index-indicator"></span>
         </p>
         
         </div>
@@ -537,13 +545,12 @@ export const itemsRemoveFromFavoritesHandler = async (c:any) => {
                 
 export const itemsScrapeHandler = async (c:any) => {
     const itemSqid = c.req.param('item_sqid')
-    const itemId:number = itemSqidToId(itemSqid)
-    
-    await c.env.FEED_UPDATE_QUEUE.send(
-        {
-            'type': 'item_scrape',
-            'item_id': itemId
-        }
-        );
-        return c.html('Scrape queued...');
-    }
+    await enqueueItemScrape(c.env, itemSqidToId(itemSqid))
+    return c.html('Scrape queued...');
+}
+
+export const itemsIndexHandler = async (c:any) => {
+    const itemSqid = c.req.param('item_sqid');
+    await enqueueItemIndex(c.env, itemSqidToId(itemSqid));
+    return c.html('Indexing queued...');
+}

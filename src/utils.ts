@@ -2,23 +2,22 @@ import Sqids from 'sqids'
 import { getRssUrlsFromHtmlBody } from 'rss-url-finder'
 import { Context } from 'hono'
 import { decode } from 'html-entities'
-import { isObject } from 'bellajs'
 
-const idToSqid = (id:number, length:number): string => {
+const idToSqid = (id: number, length: number): string => {
   const sqids = new Sqids({minLength: length, alphabet: 'UV8E4hOJwLiXMpYBsWyQ7rNoeDgm9TGxbFI5aknAztjC2K3uZ6cldSqRv1PfH0',})
   return sqids.encode(id.toString().split('').map(char => parseInt(char, 10)))
 }
 
-const sqidToId = (sqid:string, length:number): number => {
+const sqidToId = (sqid: string, length: number): number => {
   const sqids = new Sqids({minLength: length, alphabet: 'UV8E4hOJwLiXMpYBsWyQ7rNoeDgm9TGxbFI5aknAztjC2K3uZ6cldSqRv1PfH0',})
   if(sqid.length != length) return 0;
   return parseInt(sqids.decode(sqid).join(''), 10)
 }
 
-export const feedIdToSqid = (feedId:number): string => idToSqid(feedId, 5)
-export const feedSqidToId = (feedSqid:string): number => sqidToId(feedSqid, 5)
-export const itemIdToSqid = (itemId:number): string => idToSqid(itemId, 10)
-export const itemSqidToId = (itemSqid:string): number => sqidToId(itemSqid, 10)
+export const feedIdToSqid = (feedId: number): string => idToSqid(feedId, 5)
+export const feedSqidToId = (feedSqid: string): number => sqidToId(feedSqid, 5)
+export const itemIdToSqid = (itemId: number): string => idToSqid(itemId, 10)
+export const itemSqidToId = (itemSqid: string): number => sqidToId(itemSqid, 10)
 
 export async function getRSSLinkFromUrl(url: string) {
     let req;
@@ -63,6 +62,13 @@ export async function getFeedIdByRSSUrl(c: Context, rssUrl: string) {
 export const getText = (val:any) => {
     const txt = isObject(val) ? (val._text || val['#text'] || val._cdata || val.$t) : val
     return txt ? decode(String(txt).trim()) : ''
+}
+const ob2Str = (val: any) => {
+    return {}.toString.call(val)
+  }
+
+export const isObject = (val: any) => {
+    return ob2Str(val) === '[object Object]' && !Array.isArray(val)
 }
 
 /**
@@ -137,3 +143,23 @@ export async function gatherResponse(response: Response) {
     }
   }
   
+
+export const truncate = (s:string, len = 140) => {
+    const txt = s.toString()
+    const txtlen = txt.length
+    if (txtlen <= len) return txt
+
+    const subtxt = txt.substring(0, len).trim()
+    const subtxtArr = subtxt.split(' ')
+    const subtxtLen = subtxtArr.length
+    if (subtxtLen > 1) {
+        subtxtArr.pop()
+        return subtxtArr.map((word: string) => word.trim()).join(' ') + '...'
+    }
+    return subtxt.substring(0, len - 3) + '...'
+}
+
+
+export const stripTags = (s:string) => {
+    return s.toString().replace(/(<([^>]+)>)/ig, '').trim()
+}

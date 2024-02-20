@@ -14,3 +14,75 @@
 // WHERE followings.follower_user_id = ?
 
 // ```
+
+// export const indexMultipleDocuments = async (env:any, documents: object[]) => {
+//     const jsonlines = documents.map(item => JSON.stringify(item)).join('\n');
+//     const init = {
+//         body: jsonlines,
+//         method: "POST",
+//         headers: {
+//             "X-TYPESENSE-API-KEY": env.TYPESENSE_API_KEY,
+//             "Content-Type": "text/plain"
+//         },
+//     };
+    
+//     try {
+//         const response = await fetch(`https://${env.TYPESENSE_CLUSTER}:443/collections/${env.TYPESENSE_ITEMS_COLLECTION}/documents/import?action=create`, init);
+//         await gatherResponse(response);
+//     } catch (e) {
+//         console.log(`Error while indexing documents: ${e}`)
+//     }
+// }
+
+// export const upsertMultipleDocuments = async (env:any, documents: object[]) => {
+//     const jsonlines = documents.map(item => JSON.stringify(item)).join('\n');
+//     const init = {
+//         body: jsonlines,
+//         method: "POST",
+//         headers: {
+//             "X-TYPESENSE-API-KEY": env.TYPESENSE_API_KEY,
+//             "Content-Type": "text/plain"
+//         },
+//     };
+    
+//     try {
+//         const response = await fetch(`https://${env.TYPESENSE_CLUSTER}:443/collections/${env.TYPESENSE_ITEMS_COLLECTION}/documents/import?action=upsert`, init);
+//         await gatherResponse(response);
+//     } catch (e) {
+//         console.log(`Error while upserting documents: ${e}`)
+//     }
+// }
+
+// export async function indexItemById(env: Bindings, item_id: Number) {
+//     const { results: items } = await env.DB.prepare(
+//         `SELECT items.title, feeds.type, items.content_html, items.description, items.content_html_scraped, items.url, items.pub_date, feeds.title as feed_title, items.feed_id
+//         FROM items 
+//         JOIN feeds ON feeds.feed_id = items.feed_id
+//         WHERE item_id = ?`
+//         ).bind(item_id).all();
+        
+        
+//     const item = items[0];
+//     let content;
+//     // prefer scraped content over content_html over description
+//     if (item['content_html_scraped'] && item['content_html_scraped'].length > 0) {
+//         content = stripTags(item['content_html_scraped'])
+//     } else if (item['content_html'] && item['content_html'].length > 0) {
+//         content = stripTags(item['content_html'])
+//     } else {
+//         content = item['description']
+//     }
+    
+//     const searchDocument = {
+//         'title': item['title'],
+//         'content': collapseWhitespace(stripASCIIFormatting(content)),
+//         'type': item['type'],
+//         'item_id': item_id,
+//         // non-searchable fields
+//         'url': item['url'],
+//         'pub_date': item['pub_date'],
+//         'feed_id': item['feed_id'],
+//         'feed_title': item['feed_title']
+//     }
+//     await indexMultipleDocuments(env, [searchDocument]);
+// }

@@ -1,8 +1,7 @@
 import { html, raw } from "hono/html";
 import { renderHTML, renderItemSearchResult } from "./htmltools";
-import { stripTags } from 'bellajs'
 import { Bindings } from "./bindings";
-import { collapseWhitespace, gatherResponse, stripASCIIFormatting } from "./utils";
+import { collapseWhitespace, gatherResponse, stripASCIIFormatting, stripTags } from "./utils";
 
 export const searchHandler = async (c:any) => {
     const q = c.req.query('q');
@@ -83,27 +82,29 @@ export const searchHandler = async (c:any) => {
         renderHTML(`${q} | minifeed`, html`${raw(list)}`, c.get('USERNAME'), 'search', q)
         )
     }
-    
-export const indexMultipleDocuments = async (env:any, documents: object[]) => {
-    const jsonlines = documents.map(item => JSON.stringify(item)).join('\n');
+
+////////////////////////////////
+// SEARCH INDEX MANAGEMENT /////
+export const upsertSingleDocument = async (env: Bindings, document: object) => {
+    const json = JSON.stringify(document);
     const init = {
-        body: jsonlines,
+        body: json,
         method: "POST",
         headers: {
             "X-TYPESENSE-API-KEY": env.TYPESENSE_API_KEY,
-            "Content-Type": "text/plain"
+            "Content-Type": "application/json"
         },
     };
     
     try {
-        const response = await fetch(`https://${env.TYPESENSE_CLUSTER}:443/collections/${env.TYPESENSE_ITEMS_COLLECTION}/documents/import?action=create`, init);
+        const response = await fetch(`https://${env.TYPESENSE_CLUSTER}:443/collections/${env.TYPESENSE_ITEMS_COLLECTION}/documents/import?action=upsert`, init);
         await gatherResponse(response);
     } catch (e) {
-        console.log(`Error while indexing documents: ${e}`)
+        console.log(`Error while upserting document: ${e}`)
     }
 }
     
-export const deleteFeedFromIndex = async (env:any, feedId: number) => {
+export const deleteFeedFromIndex = async (env: Bindings, feedId: number) => {
     const init = {
         method: "DELETE",
         headers: {
@@ -121,38 +122,56 @@ export const deleteFeedFromIndex = async (env:any, feedId: number) => {
     
     return results;
 }
-    
-export async function indexItemById(env: Bindings, item_id: Number) {
+
+// Upserts the search index for a single item
+export async function updateItemIndex(env: Bindings, item_id: number) {
+    type ItemsFeedsRowPartial = {
+        title: string;
+        type: string;
+        content_html: string;
+        description: string;
+        content_html_scraped: string;
+        url: string;
+        pub_date: string;
+        feed_title: string;
+        feed_id: number;
+    }
     const { results: items } = await env.DB.prepare(
         `SELECT items.title, feeds.type, items.content_html, items.description, items.content_html_scraped, items.url, items.pub_date, feeds.title as feed_title, items.feed_id
         FROM items 
         JOIN feeds ON feeds.feed_id = items.feed_id
         WHERE item_id = ?`
-        ).bind(item_id).all();
-        
+        ).bind(item_id).all<ItemsFeedsRowPartial>();
         
     const item = items[0];
     let content;
     // prefer scraped content over content_html over description
-    if (item['content_html_scraped'] && item['content_html_scraped'].length > 0) {
-        content = stripTags(item['content_html_scraped'])
-    } else if (item['content_html'] && item['content_html'].length > 0) {
-        content = stripTags(item['content_html'])
-    } else {
-        content = item['description']
-    }
-    
+    if (item['content_html_scraped'] && item['content_html_scraped'].length > 0) content = stripTags(item['content_html_scraped'])
+    else if (item['content_html'] && item['content_html'].length > 0)            content = stripTags(item['content_html'])
+    else                                                                         content = item['description'];
+
     const searchDocument = {
+        // we provide explicit id so it will be used as id in the typesense index
+        'id': item_id.toString(),
+        // searchable fields
         'title': item['title'],
         'content': collapseWhitespace(stripASCIIFormatting(content)),
         'type': item['type'],
-        'item_id': item_id,
         // non-searchable fields
         'url': item['url'],
         'pub_date': item['pub_date'],
         'feed_id': item['feed_id'],
         'feed_title': item['feed_title']
     }
-    await indexMultipleDocuments(env, [searchDocument]);
+
+    await upsertSingleDocument(env, searchDocument);
 }
-    
+
+// at some point we need to use bulk indexing, but it needs to be controllable with up to 40 documents per request
+export async function updateFeedIndex(env: Bindings, feed_id: number) {
+    type ItemsRowPartial = {
+        item_id: number;
+    }
+    const { results: items } = await env.DB.prepare(`SELECT item_id FROM items WHERE feed_id = ?`).bind(feed_id).all<ItemsRowPartial>();
+    for (const item of items) await updateItemIndex(env, item['item_id']);
+}

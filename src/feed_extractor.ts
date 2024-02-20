@@ -1,6 +1,6 @@
 import { extract } from "@extractus/feed-extractor";
 
-export const extractRSS = async(RSSUrl:string) => {
+export async function extractRSS (RSSUrl:string) {
     return await extract(RSSUrl, {
 		descriptionMaxLen: 0,
 		getExtraEntryFields: (feedEntry) => {
@@ -18,7 +18,12 @@ export const extractRSS = async(RSSUrl:string) => {
 				// for JSON format
 				content_html: content_from_content_html,
 
-			} = feedEntry
+			} = feedEntry as {
+				description: string,
+				content: string,
+				"content:encoded": string,
+				content_html: string
+			};
 			return {
 				content_from_description, content_from_content_encoded, content_from_content, content_from_content_html
 			}

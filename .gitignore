@@ -9,3 +9,4 @@ package-lock.json
 yarn.lock
 pnpm-lock.yaml
 data/init_data_prod.sql
+docs

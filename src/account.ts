@@ -1,7 +1,6 @@
-import { html, raw } from 'hono/html'
-import { getCookie, getSignedCookie, setCookie, setSignedCookie, deleteCookie } from 'hono/cookie'
-
-import { renderHTML, renderItemShort } from './htmltools';
+import { html, raw } from 'hono/html';
+import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
+import { renderHTML } from './htmltools';
 
 export const myAccountHandler = async (c:any) => {
     const username = c.get('USERNAME');
@@ -29,7 +28,7 @@ export const logoutHandler = async (c:any) => {
 }
 
 export const loginHandler = async (c:any) => {
-    if (c.get('USER_ID')) return c.redirect('/')
+    if (c.get('USER_ID')) return c.redirect('/my')
     
     let list = `
     <form action="/login" method="POST">
@@ -106,16 +105,7 @@ export const loginPostHandler = async (c:any) => {
     return c.text("Wrong password")
 }
 
-export const createSessionSetCookieAndRedirect = async (c:any, userId:number, redirectTo = '/') => {
-    const sessionKey = randomHash(16);
-    try {
-        await c.env.DB.prepare("INSERT INTO sessions (user_id, session_key) values (?, ?)").bind(userId, sessionKey).run();
-    } catch (err) {
-        return c.text(err);
-    }
-    setCookie(c, 'minifeed_session', sessionKey, {path: '/', secure: true, httpOnly: true, maxAge: 34560000, sameSite: 'Strict', })
-    return c.redirect(redirectTo)
-}
+
 
 export const signupPostHandler = async (c:any) => {
     const body = await c.req.parseBody();
@@ -137,6 +127,17 @@ export const signupPostHandler = async (c:any) => {
         }
     }
     else return c.text("Absolutely invalid and wrong invitation code")
+}
+
+const createSessionSetCookieAndRedirect = async (c:any, userId:number, redirectTo = '/') => {
+    const sessionKey = randomHash(16);
+    try {
+        await c.env.DB.prepare("INSERT INTO sessions (user_id, session_key) values (?, ?)").bind(userId, sessionKey).run();
+    } catch (err) {
+        return c.text(err);
+    }
+    setCookie(c, 'minifeed_session', sessionKey, {path: '/', secure: true, httpOnly: true, maxAge: 34560000, sameSite: 'Strict', })
+    return c.redirect(redirectTo)
 }
 
 async function hashPassword(password:string, salt:string) {

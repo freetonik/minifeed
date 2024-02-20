@@ -13,6 +13,7 @@ npm install
 npm run dev
 npm run dev-remote
 npx wrangler tail
+npm run unused-exports
 ```
 
 ### Migrations

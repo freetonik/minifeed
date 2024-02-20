@@ -106,7 +106,7 @@ export const renderItemSearchResult = (searchResult:any) => {
     // item_id, title, url, feed_title, feed_id, pub_date=''
     const postDate = new Date(item['pub_date']).toLocaleDateString('en-UK', dateFormatOptions)
     const feedSqid = feedIdToSqid(item['feed_id'])
-    const itemSqid = itemIdToSqid(item['item_id'])
+    const itemSqid = itemIdToSqid(item['id'])
     const uri_root_from_type = item['type'] === 'blog' ? 'blogs' : ''
     
     let title = item['title'];
