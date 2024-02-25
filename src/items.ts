@@ -40,7 +40,7 @@ export const myItemsHandler = async (c:any) => {
     const userId = c.get('USER_ID')
     const { results } = await c.env.DB
     .prepare(`
-    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id
+    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id, items.description
     FROM items
     JOIN subscriptions ON items.feed_id = subscriptions.feed_id
     JOIN feeds ON items.feed_id = feeds.feed_id
@@ -49,7 +49,7 @@ export const myItemsHandler = async (c:any) => {
     
     UNION
     
-    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id  
+    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id, items.description  
     FROM items
     JOIN subscriptions ON items.feed_id = subscriptions.feed_id
     JOIN feeds ON items.feed_id = feeds.feed_id
@@ -59,7 +59,7 @@ export const myItemsHandler = async (c:any) => {
 
     UNION
 
-    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id
+    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id, items.description
     FROM items
     JOIN feeds ON items.feed_id = feeds.feed_id
     JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
@@ -72,7 +72,7 @@ export const myItemsHandler = async (c:any) => {
     .all();
     
     let list = `
-    <nav class="my-menu"><small>
+    <nav class="my-menu container"><small>
         show <a href="/my" class="active">everything</a> /
         <a href="/my/subscriptions">subscriptions</a> /
         <a href="/my/favorites">favorites</a> /
@@ -80,12 +80,15 @@ export const myItemsHandler = async (c:any) => {
     </small></nav>
     <div class="main">
     `
+    let items = ``;
     if (results.length) {
+        items += `<div class="items">`
         results.forEach((item: any) => {
             let title = item.favorite_id ? `★ ${item.title}` : item.title;
-            list += renderItemShort(item.item_id, title, item.url, item.feed_title, item.feed_id, item.pub_date)
+            items += renderItemShort(item.item_id, title, item.url, item.feed_title, item.feed_id, item.pub_date, truncate(item.description, 350))
         })
-        list += `<p><a href="?p=${page + 1}">More</a></p></div>`
+        items += `</div>`
+        list += `${items}<p><a href="?p=${page + 1}">More</a></p></div>`
     } else {
         if (page == 1) {
             
@@ -239,7 +242,7 @@ export const myFavoritesHandler = async (c:any) => {
         
 export const itemsSingleHandler = async (c:any) => {
     const item_sqid = c.req.param('item_sqid');
-    const item_id:number = itemSqidToId(item_sqid)
+    const item_id:number = itemSqidToId(item_sqid);
     const user_id = c.get('USER_ID') || -1;
     const user_logged_in = user_id != -1;
 
@@ -553,4 +556,30 @@ export const itemsIndexHandler = async (c:any) => {
     const itemSqid = c.req.param('item_sqid');
     await enqueueItemIndex(c.env, itemSqidToId(itemSqid));
     return c.html('Indexing queued...');
+}
+
+export const itemsPreviewHandler = async (c:any) => {
+    const item_sqid = c.req.param('item_sqid');
+    const item_id:number = itemSqidToId(item_sqid);
+    const { results } = await c.env.DB.prepare(`SELECT description, content_html, content_html_scraped FROM items WHERE item_id = ?`).bind(item_id).run();
+    let result = '';
+    if (results) {
+        const item = results[0];
+        if (item.content_html) {
+            if (item.content_html_scraped) {
+                if (item.content_html.length > item.content_html_scraped.length * 0.65) {
+                    result = raw(item.content_html)
+                } else {
+                    result = raw(item.content_html_scraped)
+                }
+            } else {
+                result = raw(item.content_html)
+            }
+        } else if (item.content_html_scraped) result = raw(item.content_html_scraped)
+        else result = item.description
+
+        const hidePreview = ``
+        return c.html(hidePreview + result);
+    }
+    return c.html('No content found');
 }

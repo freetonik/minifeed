@@ -83,21 +83,40 @@ const dateFormatOptions:Intl.DateTimeFormatOptions = {year: 'numeric', month: 's
 export const renderItemShort = (item_id:number, title:string, url:string, feed_title:string, feed_id:number, pub_date:string='', summary: string = '') => {
     const postDate = new Date(pub_date).toLocaleDateString('en-UK', dateFormatOptions)
     const feedSqid = feedIdToSqid(feed_id)
-    const itemSqid = itemIdToSqid(item_id)
+    const item_sqid = itemIdToSqid(item_id)
     
     const feedLink = feed_title ? `from <a href="/blogs/${feedSqid}">${feed_title}</a> | ` : ''
     const summaryContent = summary ? `<p class="item-summary">${summary}</p>` : ''
     
     return `
-    <div class="item-short">
-    <a href="/items/${itemSqid}" class="item-short-title">${title}</a> <br>
-    <small class="muted">
-    ${feedLink}
-    <time>${postDate}</time> |
-    <a class="no-underline no-color" href="${url}">original</a> 
-    ${summaryContent}
-    </small>
+    <div class="item-short" id="item-${item_sqid}">
+        <a href="/items/${item_sqid}" class="item-short-title">${title}</a> <br>
+        ${summaryContent}
+        <div class="metadata muted">
+            ${feedLink}
+            <time>${postDate}</time> |
+            <a class="no-underline no-color" href="${url}">original</a> |
+            <a class="item-preview-link"
+                href="!#"
+                hx-get="/items/${item_sqid}/preview"
+                hx-trigger="click"
+                hx-on::after-request="let a=document.getElementById('item-${item_sqid}'); a.scrollIntoView({ behavior: 'smooth'}); a.classList.toggle('expanded');"
+                hx-target="#item-${item_sqid}-preview">
+                quick preview...
+            </a>
+            <span class="item-hide-preview-link link" 
+                hx-on:click="let x=document.getElementById('item-${item_sqid}'); x.scrollIntoView({ behavior: 'smooth'}); x.classList.toggle('expanded');">
+                hide preview...
+            </span>
+        </div>
+        <div class="item-preview" id="item-${item_sqid}-preview">
+        <span class="item-hide-preview-link link" 
+                hx-on:click="let x=document.getElementById('item-${item_sqid}'); x.scrollIntoView({ behavior: 'smooth'}); x.classList.toggle('expanded');">
+                hide preview...
+            </span>
+        </div>
     </div>
+    
     `
 }
 

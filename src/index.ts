@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { raw } from 'hono/html';
 import { renderHTML } from './htmltools';
 import { serveStatic } from 'hono/cloudflare-workers';
-import { globalFeedHandler, myItemsHandler, mySubscriptionsHandler, myFollowsHandler, itemsSingleHandler, itemsAddToFavoritesHandler, itemsRemoveFromFavoritesHandler, itemsScrapeHandler, myFavoritesHandler, itemsIndexHandler } from './items';
+import { globalFeedHandler, myItemsHandler, mySubscriptionsHandler, myFollowsHandler, itemsSingleHandler, itemsAddToFavoritesHandler, itemsRemoveFromFavoritesHandler, itemsScrapeHandler, myFavoritesHandler, itemsIndexHandler, itemsPreviewHandler } from './items';
 import { blogsSingleHandler, feedsSubscribeHandler, feedsUnsubscribeHandler, feedsDeleteHandler, feedsUpdateHandler, feedsScrapeHandler, blogsNewHandler, blogsNewPostHandler, updateFeed, blogsHandler, feedsIndexHandler } from './feeds';
 import { usersHandler, usersSingleHandler, usersFollowPostHandler, usersUnfollowPostHandler } from './users';
 import { loginHandler, loginPostHandler, myAccountHandler, logoutHandler, signupPostHandler } from './account';
@@ -27,6 +27,7 @@ app.use('/feeds/:feed_sqid/subscribe', userPageMiddleware);
 app.use('/feeds/:feed_sqid/unsubscribe', userPageMiddleware);
 app.use('/items/:feed_sqid/favorite', userPageMiddleware);
 app.use('/items/:feed_sqid/unfavorite', userPageMiddleware);
+app.use('/items/:item_sqid/preview', userPageMiddleware);
 
 // all routes below this line require admin privileges
 app.use('/feeds/:feed_sqid/delete', adminMiddleware);
@@ -78,6 +79,7 @@ app.get('/channels', (c: any) => {
 });
 
 app.get('/items/:item_sqid', itemsSingleHandler)
+app.get('/items/:item_sqid/preview', itemsPreviewHandler)
 app.post('/items/:item_sqid/favorite', itemsAddToFavoritesHandler)
 app.post('/items/:item_sqid/unfavorite', itemsRemoveFromFavoritesHandler)
 app.post('/items/:item_sqid/scrape', itemsScrapeHandler)
