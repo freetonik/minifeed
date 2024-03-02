@@ -94,7 +94,8 @@ export const blogsSingleHandler = async (c:any) => {
 
     if (c.get('USER_ID') == 1) {
       list += `
-      <div class="admin-control">
+      <p style="text-align:center;"><a class="no-underline" href="#hidden">🦎</a></p>
+      <div class="admin-control" id="hidden">
       <table>
         <tr>
           <td>Feed id:</td>

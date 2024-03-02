@@ -424,3 +424,6 @@ hr {
 .related-item {
     margin-bottom: 2em;
 }
+
+.admin-control#hidden{ display: none; }
+.admin-control#hidden:target{ display: block; }

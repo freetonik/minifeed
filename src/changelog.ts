@@ -1,7 +1,12 @@
-export const version = "0.1.8";
+export const version = "0.1.9";
 
 export const changelog = `
     <h2>Changelog</h2>
+
+    <h3>0.1.9 (03.02.2024)</h3>
+    <ul>
+        <li>Bugfix: failed scraping does not affect indexing</li>
+    </ul>
 
     <h3>0.1.8 (03.02.2024)</h3>
     <ul>

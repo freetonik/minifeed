@@ -40,7 +40,7 @@ export const myItemsHandler = async (c:any) => {
     const userId = c.get('USER_ID')
     const { results } = await c.env.DB
     .prepare(`
-    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id
+    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id, items.description
     FROM items
     JOIN subscriptions ON items.feed_id = subscriptions.feed_id
     JOIN feeds ON items.feed_id = feeds.feed_id
@@ -49,7 +49,7 @@ export const myItemsHandler = async (c:any) => {
     
     UNION
     
-    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id  
+    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id, items.description  
     FROM items
     JOIN subscriptions ON items.feed_id = subscriptions.feed_id
     JOIN feeds ON items.feed_id = feeds.feed_id
@@ -59,7 +59,7 @@ export const myItemsHandler = async (c:any) => {
 
     UNION
 
-    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id
+    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id, items.description
     FROM items
     JOIN feeds ON items.feed_id = feeds.feed_id
     JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
@@ -83,7 +83,7 @@ export const myItemsHandler = async (c:any) => {
     if (results.length) {
         results.forEach((item: any) => {
             let title = item.favorite_id ? `★ ${item.title}` : item.title;
-            list += renderItemShort(item.item_id, title, item.url, item.feed_title, item.feed_id, item.pub_date)
+            list += renderItemShort(item.item_id, title, item.url, item.feed_title, item.feed_id, item.pub_date, truncate(item.description, 350))
         })
         list += `<p><a href="?p=${page + 1}">More</a></p></div>`
     } else {
@@ -405,7 +405,8 @@ export const itemsSingleHandler = async (c:any) => {
         if (item.content_html_scraped && show_content_html_over_scraped) show_content_html_over_scraped_block = `yes`
         else if (item.content_html_scraped && !show_content_html_over_scraped) show_content_html_over_scraped_block = `no`;
         list += `
-        <div class="admin-control">
+        <p style="text-align:center;"><a class="no-underline" href="#hidden">🦎</a></p>
+        <div class="admin-control" id="hidden">
         <table>
         <tr>
         <td>Item ID:</td>
