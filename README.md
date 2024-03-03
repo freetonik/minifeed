@@ -31,6 +31,8 @@ npm run deploy
 npx wrangler d1 migrations list minifeed --local
 npx wrangler d1 execute minifeed --local --file=./data/fake_data.sql
 npx wrangler d1 execute minifeed --local --command="SELECT * FROM Items"
+
+npx wrangler d1 execute minifeed --command="SELECT COUNT(item_id) FROM Items"
 ```
 
 ### TODO

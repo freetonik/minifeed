@@ -14,7 +14,7 @@ export const usersHandler = async (c:any) => {
         else list += `<div><a href="/users/${user.username}">${user.username}</a></div>`
     })
     list += "</div>"
-    return c.html(renderHTML("All items", html`${raw(list)}`, c.get('USERNAME'), 'users'))
+    return c.html(renderHTML("Users", html`${raw(list)}`, c.get('USERNAME'), 'users'))
 }
 
 export const usersSingleHandler = async (c:any) => {

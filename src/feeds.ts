@@ -27,7 +27,7 @@ export const blogsHandler = async (c:any) => {
         </div>`
     })
     list += "</div>"
-    return c.html(renderHTML("All feeds | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'blogs'))
+    return c.html(renderHTML("Blogs | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'blogs'))
 }
 
 export const blogsSingleHandler = async (c:any) => {

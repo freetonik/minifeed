@@ -95,7 +95,7 @@ export const myItemsHandler = async (c:any) => {
         list += ` </div>`
     }
     
-    return c.html(renderHTML("My stuff | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'my'))
+    return c.html(renderHTML("My feed | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'my'))
 }
     
 export const mySubscriptionsHandler = async (c:any) => {
@@ -190,7 +190,7 @@ export const myFollowsHandler = async (c:any) => {
         }
     }
     
-    return c.html(renderHTML("From my follows", html`${raw(list)}`, c.get('USERNAME'), 'my'))
+    return c.html(renderHTML("My subscriptions", html`${raw(list)}`, c.get('USERNAME'), 'my'))
 }
 
 export const myFavoritesHandler = async (c:any) => {
