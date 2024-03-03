@@ -141,7 +141,7 @@ export const mySubscriptionsHandler = async (c:any) => {
         
     }
     return c.html(renderHTML(
-        "From my subscriptions", 
+        "My subscriptions", 
         html`${raw(list)}`,
         c.get('USERNAME'),
         'my'
@@ -190,7 +190,7 @@ export const myFollowsHandler = async (c:any) => {
         }
     }
     
-    return c.html(renderHTML("My subscriptions", html`${raw(list)}`, c.get('USERNAME'), 'my'))
+    return c.html(renderHTML("My friendfeed", html`${raw(list)}`, c.get('USERNAME'), 'my'))
 }
 
 export const myFavoritesHandler = async (c:any) => {
