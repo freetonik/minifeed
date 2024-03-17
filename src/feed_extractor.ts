@@ -18,14 +18,18 @@ export async function extractRSS (RSSUrl:string) {
 				// for JSON format
 				content_html: content_from_content_html,
 
+				//
+				pubdate: pubdate
+
 			} = feedEntry as {
 				description: string,
 				content: string,
 				"content:encoded": string,
-				content_html: string
+				content_html: string,
+				pubdate: string
 			};
 			return {
-				content_from_description, content_from_content_encoded, content_from_content, content_from_content_html
+				content_from_description, content_from_content_encoded, content_from_content, content_from_content_html, pubdate
 			}
 		}
 	});

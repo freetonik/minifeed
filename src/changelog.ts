@@ -1,7 +1,12 @@
-export const version = "0.1.9";
+export const version = "0.2.0";
 
 export const changelog = `
     <h2>Changelog</h2>
+
+    <h3>0.2.0 (17.03.2024)</h3>
+    <ul>
+        <li>Bugfix: non-standard dates in RSS feeds are now parsed properly.</li>
+    </ul>
 
     <h3>0.1.9 (03.02.2024)</h3>
     <ul>

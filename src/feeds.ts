@@ -353,6 +353,8 @@ async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: number) 
       let link = item.link || item.guid || item.id;
       // if link does not start with http, it's probably a relative link, so we need to absolutify it
       if (!link.startsWith('http')) link = new URL(link, feedUrl).toString();
+      // if date was not properly parsed, try to parse it (expects 'pubdate' to be retrieved by feed_extractor's extractRSS function)
+      if (!item.published) item.published = new Date(item.pubdate).toISOString();
       let content_html = 
           item['content_from_content'] || 
           item['content_from_content_encoded'] || 
