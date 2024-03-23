@@ -291,23 +291,30 @@ export async function feedsIndexHandler(c:any) {
 // FEED FUNCTIONS (NOT ROUTE HANDLERS)
 
 async function addFeed(env: Bindings, url: string, verified: boolean = false) {
-  let RSSUrl: string = await getRSSLinkFromUrl(url);
-  const r = await extractRSS(RSSUrl);
-  
-  // if url === rssUrl that means the submitted URL was RSS URL, so retrieve site URL from RSS; otherwise use submitted URL as site URL
-  const attemptedSiteUrl = (r.link && r.link.length > 0) ? r.link : getRootUrl(url)
-  const siteUrl = (url === RSSUrl) ? attemptedSiteUrl : url
-  const verified_as_int = verified ? 1 : 0;
+    let RSSUrl: string = await getRSSLinkFromUrl(url);
+    const r = await extractRSS(RSSUrl);
+    
+    // if url === rssUrl that means the submitted URL was RSS URL, so retrieve site URL from RSS; otherwise use submitted URL as site URL
+    const attemptedSiteUrl = (r.link && r.link.length > 0) ? r.link : getRootUrl(url)
+    const siteUrl = (url === RSSUrl) ? attemptedSiteUrl : url
+    const verified_as_int = verified ? 1 : 0;
 
-  const dbQueryResult = await env.DB.prepare("INSERT INTO feeds (title, type, url, rss_url, verified) values (?, ?, ?, ?, ?)").bind(r.title, "blog", siteUrl, RSSUrl, verified_as_int).all()
-
-  if (dbQueryResult['success'] === true) {
-      if (r.entries) {
-          const feed_id: number = dbQueryResult['meta']['last_row_id'];
-          await enqueueFeedUpdate(env, feed_id)
-      }
-      return RSSUrl
-  }
+    try {
+        const dbQueryResult = await env.DB.prepare("INSERT INTO feeds (title, type, url, rss_url, verified) values (?, ?, ?, ?, ?)").bind(r.title, "blog", siteUrl, RSSUrl, verified_as_int).all()
+        if (dbQueryResult['success'] === true) {
+            if (r.entries) {
+                const feed_id: number = dbQueryResult['meta']['last_row_id'];
+                await enqueueFeedUpdate(env, feed_id)
+            }
+            return RSSUrl
+        }
+    } catch (e: any) {
+        if (e.toString().includes('UNIQUE constraint failed: feeds.rss_url')) {
+            return RSSUrl
+        } else {
+            throw e
+        }
+    }
 }
 
 
