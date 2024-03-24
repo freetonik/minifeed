@@ -44,6 +44,7 @@ main {
     max-width: 900px;
     padding: 1em 1.5em 2em 1.5em;
     margin: 0 auto;
+    overflow-wrap: break-word;
 }
 
 .main {
