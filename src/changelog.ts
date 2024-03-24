@@ -1,4 +1,4 @@
-export const version = "0.2.0";
+export const version = "0.2.1";
 
 export const changelog = `
     <h2>Changelog</h2>
@@ -6,6 +6,7 @@ export const changelog = `
     <h3>0.2.1 (23.03.2024)</h3>
     <ul>
         <li>Attempting to add an existing feed/blog now redirects to it instead of just showing a warning message.</li>
+        <li>Bugfix: cookie policy changed so that session cookie can be read when redirecting from another site.</li>
     </ul>
 
     <h3>0.2.0 (17.03.2024)</h3>

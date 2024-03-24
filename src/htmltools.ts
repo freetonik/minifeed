@@ -59,7 +59,7 @@ export const renderHTML = (
             <a href="/users" class="${active==='users' ? 'active' : ''}" style="margin-left: 0.5em">Users</a>
             <span class="search-form ${active==='search' ? 'active' : ''}">
             <form action="/search" method="GET">
-                <input type="text" name="q" placeholder="Search..." size="22" minlength="2" value="${searchQuery}">
+                <input type="text" name="q" placeholder="Search..." size="22" minlength="2" autocomplete="off" value="${searchQuery}">
             </form>
             </span>
         </nav>

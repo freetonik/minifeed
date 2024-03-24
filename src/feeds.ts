@@ -347,31 +347,35 @@ export async function updateFeed(env: Bindings, feedId: number) {
 }
 
 async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: number) {
-  if (!items.length) return;
+    if (!items.length) return;
 
-  // get feed title
-  const { results: feeds } = await env.DB.prepare("SELECT title, url FROM feeds WHERE feed_id = ?").bind(feedId).all();
-  const feedUrl = String(feeds[0]['url']);
+    // get feed title
+    const { results: feeds } = await env.DB.prepare("SELECT title, url FROM feeds WHERE feed_id = ?").bind(feedId).all();
+    const feedUrl = String(feeds[0]['url']);
 
-  const stmt = env.DB.prepare("INSERT INTO items (feed_id, title, url, pub_date, description, content_html) values (?, ?, ?, ?, ?, ?)");
-  let binds: any[] = [];
+    const stmt = env.DB.prepare("INSERT INTO items (feed_id, title, url, pub_date, description, content_html) values (?, ?, ?, ?, ?, ?)");
+    let binds: any[] = [];
   
-  items.forEach((item: any) => {
-      let link = item.link || item.guid || item.id;
-      // if link does not start with http, it's probably a relative link, so we need to absolutify it
-      if (!link.startsWith('http')) link = new URL(link, feedUrl).toString();
-      // if date was not properly parsed, try to parse it (expects 'pubdate' to be retrieved by feed_extractor's extractRSS function)
-      if (!item.published) item.published = new Date(item.pubdate).toISOString();
-      let content_html = 
-          item['content_from_content'] || 
-          item['content_from_content_encoded'] || 
-          item['content_from_description'] || 
-          item['content_from_content_html'] || '';
-      content_html = getText(content_html);
-      content_html = absolitifyImageUrls(content_html, link);
+    items.forEach((item: any) => {
+        let link = item.link || item.guid || item.id;
+        // if link does not start with http, it's probably a relative link, so we need to absolutify it
+        if (!link.startsWith('http')) link = new URL(link, feedUrl).toString();
+        // if date was not properly parsed, try to parse it (expects 'pubdate' to be retrieved by feed_extractor's extractRSS function)
+        if (!item.published) item.published = new Date(item.pubdate).toISOString();
 
-      binds.push(stmt.bind(feedId, item.title, link, item.published, item.description, content_html));
-  });
+        let content_html = 
+            item['content_from_content'] || 
+            item['content_from_content_encoded'] || 
+            item['content_from_description'] || 
+            item['content_from_content_html'] || '';
+        
+        content_html = getText(content_html);
+        content_html = absolitifyImageUrls(content_html, link);
+
+        console.log(content_html)
+
+        binds.push(stmt.bind(feedId, item.title, link, item.published, item.description, content_html));
+    });
 
   const insert_results = await env.DB.batch(binds);
   for (const result of insert_results) {
