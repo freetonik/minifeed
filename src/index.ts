@@ -14,7 +14,8 @@ import { enqueueScrapeAllItemsOfFeed, enqueueUpdateAllFeeds } from './queue';
 import { scrapeItem } from './scrape';
 import { feedbackHandler } from './feedback';
 
-const app = new Hono<{ Bindings: Bindings }>()
+const app = new Hono<{ Bindings: Bindings }>({strict: false})
+
 
 app.get('/static/*', serveStatic({ root: './' }))
 app.get('/robots.txt', async (c) => c.text("User-agent: *\nAllow: /"))
@@ -36,6 +37,14 @@ app.use('/feeds/:feed_sqid/index', adminMiddleware);
 
 app.use('/items/:item_sqid/scrape', adminMiddleware);
 app.use('/items/:item_sqid/index', adminMiddleware);
+
+app.notFound((c) => {
+    return c.html(renderHTML("404 | minifeed",  raw(`<div class="flash-blue">Page not found.</div>`), c.get('USERNAME')));
+})
+
+app.onError((err, c) => {
+    return c.html(renderHTML("Error | minifeed",  raw(`<div class="flash-red">ERROR: ${err}.</div>`), c.get('USERNAME')));
+})
 
 // APP ROUTES
 app.get('/', (c: any) => {
