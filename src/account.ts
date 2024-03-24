@@ -136,7 +136,7 @@ const createSessionSetCookieAndRedirect = async (c:any, userId:number, redirectT
     } catch (err) {
         return c.text(err);
     }
-    setCookie(c, 'minifeed_session', sessionKey, {path: '/', secure: true, httpOnly: true, maxAge: 34560000, sameSite: 'Strict', })
+    setCookie(c, 'minifeed_session', sessionKey, {path: '/', secure: true, httpOnly: true, maxAge: 34560000 })
     return c.redirect(redirectTo)
 }
 
