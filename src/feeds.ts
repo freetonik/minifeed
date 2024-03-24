@@ -1,6 +1,6 @@
 import { renderAddFeedForm, renderHTML, renderItemShort } from './htmltools';
 import { html, raw } from 'hono/html'
-import { absolitifyImageUrls, feedIdToSqid, feedSqidToId, getFeedIdByRSSUrl, getRSSLinkFromUrl, getRootUrl, getText, truncate } from './utils'
+import { feedIdToSqid, feedSqidToId, getFeedIdByRSSUrl, getRSSLinkFromUrl, getRootUrl, getText, stripTags, truncate } from './utils'
 import { deleteFeedFromIndex } from './search';
 import { extractRSS } from './feed_extractor';
 import { Bindings } from './bindings';
@@ -370,11 +370,9 @@ async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: number) 
             item['content_from_content_html'] || '';
         
         content_html = getText(content_html);
-        content_html = absolitifyImageUrls(content_html, link);
+        // content_html = absolitifyImageUrls(content_html, link); // let's not bother?
 
-        console.log(content_html)
-
-        binds.push(stmt.bind(feedId, item.title, link, item.published, item.description, content_html));
+        binds.push(stmt.bind(feedId, item.title, link, item.published, stripTags(item.description), content_html));
     });
 
   const insert_results = await env.DB.batch(binds);

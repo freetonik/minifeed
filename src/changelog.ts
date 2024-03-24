@@ -11,6 +11,7 @@ export const changelog = `
         <li>Bugfix: cookie policy changed so that session cookie can be read when redirecting from another site.</li>
         <li>Bugfix: wrong autocompletion in the search field removed.</li>
         <li>Bugfix: trailing slash in url is now acceptable.</li>
+        <li>Bugfix: items with empty description now get description from scraped content.</li>
     </ul>
 
     <h3>0.2.0 (17.03.2024)</h3>
