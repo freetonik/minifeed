@@ -186,7 +186,7 @@ export const myFollowsHandler = async (c:any) => {
         list += `<p><a href="?p=${page + 1}">More</a></p></div>`
     } else {
         if (page == 1) {
-            list += `You don't follow anyone, or you do, but they aren't subscribed to anything :-( <br> Go find some <strong><a href="/users">users to follow</a></strong>`
+            list += `You don't follow anyone, or you do, but they aren't subscribed to anything :-( <br> <strong><a href="/users">View all users</a></strong>.`
         }
     }
     
@@ -321,7 +321,7 @@ export const itemsSingleHandler = async (c:any) => {
         } else if (item.content_html_scraped) contentBlock = raw(item.content_html_scraped)
         else contentBlock = item.description
     }
-    else contentBlock = `${truncate(item.description, 250)} <div class="flash-blue"><a href="/login">Log in</a> to view full content</div>`;
+    else contentBlock = `${truncate(item.description, 250)} <div class="flash-blue"><a href="/login">Log in</a> and subscribe to this blog to view full content</div>`;
 
     let favoriteBlock = '';
     let subscriptionBlock = '';
@@ -370,6 +370,8 @@ export const itemsSingleHandler = async (c:any) => {
             </button>
             </span>`
         }
+    } else {
+        favoriteBlock = `<span id="favorite"> <button title="Log in to favorite" disabled> ☆ favorite </button> </span>`
     }
 
     let otherItemsBlock = '';
@@ -470,7 +472,7 @@ export const itemsSingleHandler = async (c:any) => {
         `${item.item_title} | ${item.feed_title} | minifeed`, 
         html`${raw(list)}`,
         c.get('USERNAME'),
-        'feeds',
+        'blogs',
         '',
         item.item_url
         ))

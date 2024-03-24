@@ -52,14 +52,16 @@ export const renderHTML = (
         </div>
         </div>
         
-        <nav aria-label="Site sections">
-            <a href="/my" class="${active==='my' ? 'active' : ''}">My feed</a>
-            <a href="/global" class="${active==='global' ? 'active' : ''}" style="margin-left: 0.5em">Global feed</a>
-            <a href="/blogs" class="${active==='blogs' ? 'active' : ''}" style="margin-left: 0.5em">Blogs</a>
-            <a href="/users" class="${active==='users' ? 'active' : ''}" style="margin-left: 0.5em">Users</a>
+        <nav aria-label="Site navigation">
+            <div class="main-sections" aria-label="Site sections">
+                <a href="/my" class="${active==='my' ? 'active' : ''}">My&nbsp;feed</a>
+                <a href="/global" class="${active==='global' ? 'active' : ''}" style="margin-left: 0.5em">Global&nbsp;feed</a>
+                <a href="/blogs" class="${active==='blogs' ? 'active' : ''}" style="margin-left: 0.5em">Blogs</a>
+                <a href="/users" class="${active==='users' ? 'active' : ''}" style="margin-left: 0.5em">Users</a>
+            </div>
             <span class="search-form ${active==='search' ? 'active' : ''}">
             <form action="/search" method="GET">
-                <input type="text" name="q" placeholder="Search..." size="22" minlength="2" autocomplete="off" value="${searchQuery}">
+                <input type="text" name="q" placeholder="Search..." minlength="2" autocomplete="off" value="${searchQuery}">
             </form>
             </span>
         </nav>
@@ -70,7 +72,7 @@ export const renderHTML = (
     <footer>
         <div>
         <p><a href="/my/account" class="bold">${userBlock}</p>
-        <p>Minifeed.net (version ${version} / <a class="bold" href="/about/changelog">changelog</a> / <a class="bold" href="https://status.minifeed.net/">status</a>) <a href="/feedback" class="bold">feedback</a></p>
+        <p>Minifeed.net v.${version} / <a class="bold" href="/about/changelog">changelog</a> / <a class="bold" href="https://status.minifeed.net/">status</a> / <a href="/feedback" class="bold">feedback</a></p>
         </div>
     </footer>
     

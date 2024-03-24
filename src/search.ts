@@ -7,7 +7,7 @@ export const searchHandler = async (c:any) => {
     const q = c.req.query('q');
 
     // if query only contains spaces, return error
-    if (q.trim().length === 0) {
+    if (!q || q.trim().length === 0) {
         return c.html(
             renderHTML(`Search | minifeed`, html`<div class="flash-red">Search query cannot be empty</div>`, c.get('USERNAME'), 'search', q)
         )
