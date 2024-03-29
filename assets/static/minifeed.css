@@ -7,9 +7,13 @@
 
     --color-text: #000;
     --color-blue: #052962;
+    --color-blue-light: #e9f2ff;
+    --color-blue-superlight: #f5f9ff;
+    --color-green: #05620F;
+    --color-red: #620529;
+    
+    --color-brown: #623E05;
     --color-gray: #555;
-    --color-red: #ed7647;
-    --color-yellow: #fdd000;
     --color-bg: #fff;
     --color-highlight: #ebebeb;
 
@@ -96,6 +100,18 @@ header {
         margin-bottom: 0.75em !important;
         max-width: 100% !important;
     }
+    .blog-summary .summary-header {
+        flex-direction: column !important;
+    }
+    .blog-summary .summary-header h2 {
+        margin-bottom: 0.5em !important;
+    }
+    .item-actions {
+        flex-direction: column-reverse !important;
+    }
+    .item-actions div {
+        margin-bottom: 0.25em;
+    }
     
 }
 
@@ -154,6 +170,8 @@ header .active {
     font-weight: bold;
     background-color: var(--color-bg);
     color: var(--color-text);
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
 }
 
 header .topline {
@@ -225,6 +243,7 @@ footer div {
 
 .item-short {
     margin-bottom: 1em;
+    margin-bottom: 2em;
 }
 
 .item-short a.item-short-title {
@@ -232,8 +251,14 @@ footer div {
 }
 
 .item-short p.item-summary {
-    margin-bottom: 2em;
+    
     margin-top: 0.5em;
+}
+
+.item-actions {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
 }
 
 
@@ -241,7 +266,7 @@ button, .button, a.button:visited {
   appearance: none;
   background-color: #FAFBFC;
   border: 1px solid rgba(27, 31, 35, 0.15) !important;
-  border-radius: 6px;
+  border-radius: 4px;
   box-shadow: rgba(27, 31, 35, 0.04) 0 1px 0, rgba(255, 255, 255, 0.25) 0 1px 0 inset;
   box-sizing: border-box;
   color: #24292E;
@@ -293,6 +318,36 @@ button:before {
 button:-webkit-details-marker {
   display: none;
 }
+
+button.subscribed {
+    background-color: var(--color-green);
+    color: white;
+    box-shadow: none;
+    min-width: 9em;
+}
+
+button.subscribe {
+    min-width: 9em;
+}
+
+button.subscribe .unsubscribe-text,
+button.subscribed .unsubscribe-text {
+    display: none;
+}
+
+button.subscribed:hover .subscribed-text {
+    display: none;
+}
+  
+button.subscribed:hover .unsubscribe-text {
+    display: inline;
+}
+
+
+button.subscribed:hover {
+    background-color: var(--color-red);
+}
+
 
 .bold {
     font-weight: bold;
@@ -399,33 +454,64 @@ button:-webkit-details-marker {
     margin-bottom: 0.5em;
 }
 
-.flash-blue {
+.flash {
     margin-top: 1em;
-    background-color: #e9f2ff;
+    border: 1px solid var(--color-blue);
+    border-bottom: 3px solid var(--color-blue);
     padding: 1em;
-    border: 1px solid #052962;
-    border-bottom: 3px solid #052962;
+}
+
+.flash-blue {
+    background-color: var(--color-blue-light);
 }
 
 .flash-red {
-    margin-top: 1em;
     background-color: var(--color-red);
-    padding: 1em;
-    border: 1px solid #052962;
-    border-bottom: 3px solid #052962;
+    color:white;
 }
 
 hr {
     border: 0;
-    border-top: 1px solid var(--color-gray);
+    border-top: 1px solid var(--color-blue);
     margin: 2em 0;
+}
+
+.blog-summary {
+    border-radius: 4px;
+    margin-bottom: 2em;
+    border: 1px solid #05296336;
+    box-shadow: rgba(149, 157, 165, 0.15) 0px 8px 24px;
+    padding: 0.5em 1.5em 0.75em;
+    transition-duration: 0.25s;
+}
+
+.blog-summary:hover {
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+    transition-duration: 0.25s;
+}
+
+.blog-summary ul {
+    margin-top: 0.75em;
+}
+
+.blog-summary .summary-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 1em;
+}
+
+.blog-summary .summary-header h2 {
+    margin: 0;
 }
 
 .related-items {
     margin-top: 2em;
-    border: 1px solid var(--color-gray);
-    background-color: #f5f9ff;
-    padding: 0.3em 1.5em;
+    border-radius: 4px;
+    border: 1px solid #05296336;
+    background-color: var(--color-blue-superlight);
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+    padding: 0.3em 1.5em 0.7em;
 }
 
 .related-item {
@@ -436,7 +522,7 @@ hr {
 /* ADMIN CONTROLS */
 
 .admin-control {
-    background-color: var(--color-yellow);
+    background-color: var(--color-blue-light);
     padding: 1em;
     margin-top: 2em;
 }

@@ -24,6 +24,12 @@ npx wrangler d1 migrations apply minifeed --local
 npx wrangler d1 migrations list minifeed --local
 ```
 
+Removing a migration from the list of applied:
+
+```
+npx wrangler d1 execute minifeed --local --command="DELETE FROM d1_migrations WHERE id=2"
+```
+
 ### Deployment
 
 ```

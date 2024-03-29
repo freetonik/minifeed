@@ -321,7 +321,7 @@ export const itemsSingleHandler = async (c:any) => {
         } else if (item.content_html_scraped) contentBlock = raw(item.content_html_scraped)
         else contentBlock = item.description
     }
-    else contentBlock = `${truncate(item.description, 250)} <div class="flash-blue"><a href="/login">Log in</a> and subscribe to this blog to view full content</div>`;
+    else contentBlock = `${truncate(item.description, 250)} <div class="flash flash-blue"><a href="/login">Log in</a> and subscribe to this blog to view full content</div>`;
 
     let favoriteBlock = '';
     let subscriptionBlock = '';
@@ -351,20 +351,23 @@ export const itemsSingleHandler = async (c:any) => {
         
         if (user_is_subscribed) {
             subscriptionBlock = `
-            <span id="subscription">
+            <span id="subscription-${feed_sqid}">
             <button hx-post="/feeds/${feed_sqid}/unsubscribe"
+            class="subscribed"
             hx-trigger="click"
-            hx-target="#subscription"
+            hx-target="#subscription-${feed_sqid}"
             hx-swap="outerHTML">
-            unsubscribe
+            <span class="subscribed-text">subscribed</span>
+            <span class="unsubscribe-text">unsubscribe</span>
             </button>
             </span>`
         } else {
             subscriptionBlock = `
-            <span id="subscription">
+            <span id="subscription-${feed_sqid}">
             <button hx-post="/feeds/${feed_sqid}/subscribe"
+            class="subscribe"
             hx-trigger="click"
-            hx-target="#subscription"
+            hx-target="#subscription-${feed_sqid}"
             hx-swap="outerHTML">
             subscribe
             </button>
@@ -372,11 +375,12 @@ export const itemsSingleHandler = async (c:any) => {
         }
     } else {
         favoriteBlock = `<span id="favorite"> <button title="Log in to favorite" disabled> ☆ favorite </button> </span>`
+        subscriptionBlock = `<span id="subscription"> <button disabled title="Login to subscribe"> <span>subscribe</span> </button> </span>`
     }
 
     let otherItemsBlock = '';
     if (batch[2].results.length) {
-        otherItemsBlock += `<div class="related-items"><h3>More from ${item.type} <a href="/blogs/${feed_sqid}"">${item.feed_title}</a>:</h3>`
+        otherItemsBlock += `<div class="related-items"><h4>More from ${item.type} <a href="/blogs/${feed_sqid}"">${item.feed_title}</a>:</h4>`
         batch[2].results.forEach((related_item: any) => {
             otherItemsBlock += `<div class="related-item">`
             const itemTitle = related_item.favorite_id ? `★ ${related_item.item_title}` : related_item.item_title;
@@ -389,9 +393,15 @@ export const itemsSingleHandler = async (c:any) => {
     let list = `
     <h1 style="margin-bottom: 0.25em;">${item.item_title} </h1>
     <div style="margin-bottom:1.25em;">from ${item.type} <a href="/blogs/${feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time></div>
-
-    ${favoriteBlock}
-    <a class="button" href="${item.item_url}" target="_blank">↗ open original</a>
+    <div class="item-actions">
+        <div>
+        ${favoriteBlock}
+        <a class="button" href="${item.item_url}" target="_blank">↗ open original</a>
+        </div>
+        <div>
+        ${subscriptionBlock}
+        </div>
+    </div>
     <hr>
     <div class="post-content">
     ${contentBlock}

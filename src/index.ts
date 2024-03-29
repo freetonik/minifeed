@@ -39,11 +39,11 @@ app.use('/items/:item_sqid/scrape', adminMiddleware);
 app.use('/items/:item_sqid/index', adminMiddleware);
 
 app.notFound((c) => {
-    return c.html(renderHTML("404 | minifeed",  raw(`<div class="flash-blue">Page not found.</div>`), c.get('USERNAME')));
+    return c.html(renderHTML("404 | minifeed",  raw(`<div class="flash flash-blue">Page not found.</div>`), c.get('USERNAME')));
 })
 
 app.onError((err, c) => {
-    return c.html(renderHTML("Error | minifeed",  raw(`<div class="flash-red">ERROR: ${err}.</div>`), c.get('USERNAME')));
+    return c.html(renderHTML("Error | minifeed",  raw(`<div class="flash flash-red">ERROR: ${err}.</div>`), c.get('USERNAME')));
 })
 
 // APP ROUTES

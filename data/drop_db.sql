@@ -3,6 +3,7 @@ DROP TABLE IF EXISTS subscriptions;
 DROP TABLE IF EXISTS favorites;
 
 DROP TABLE IF EXISTS items;
+DROP TABLE IF EXISTS items_top_cache;
 DROP TABLE IF EXISTS feeds;
 
 DROP TABLE IF EXISTS sessions;

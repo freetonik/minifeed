@@ -1,6 +1,6 @@
 import { renderAddFeedForm, renderHTML, renderItemShort } from './htmltools';
 import { html, raw } from 'hono/html'
-import { feedIdToSqid, feedSqidToId, getFeedIdByRSSUrl, getRSSLinkFromUrl, getRootUrl, getText, stripTags, truncate } from './utils'
+import { feedIdToSqid, feedSqidToId, getFeedIdByRSSUrl, getRSSLinkFromUrl, getRootUrl, getText, itemIdToSqid, stripTags, truncate } from './utils'
 import { deleteFeedFromIndex } from './search';
 import { extractRSS } from './feed_extractor';
 import { Bindings } from './bindings';
@@ -10,23 +10,59 @@ import { enqueueIndexAllItemsOfFeed, enqueueFeedUpdate, enqueueItemScrape, enque
 // ROUTE HANDLERS //////////////////////////////////////////////////////////////////////////////////////////////////////
 export const blogsHandler = async (c:any) => {
     const user_id = c.get('USER_ID') || -1;
+    const userLoggedIn = user_id != -1;
     const { results } = await c.env.DB
     .prepare(`
-    SELECT feeds.feed_id, feeds.title, subscriptions.subscription_id from feeds 
+    SELECT feeds.feed_id, feeds.title, subscriptions.subscription_id, items_top_cache.content from feeds 
+    LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
     LEFT JOIN subscriptions on feeds.feed_id = subscriptions.feed_id AND subscriptions.user_id = ?`
     ).bind(user_id)
     .run();
     
-    let list = `<div class="main"><p style="margin-top:0"><a class="button" href="/blogs/new">+ add new blog</a></p>`
+    let list = `<div class="main">`
     results.forEach((feed: any) => {
         const sqid = feedIdToSqid(feed.feed_id);
-        const subscribed = feed.subscription_id ? '(subscribed)' : '';
+
+        const subscriptionAction = feed.subscription_id ? "unsubscribe" : "subscribe";
+        const subscriptionButtonText = feed.subscription_id ? "subscribed" : "subscribe";
+        const subscriptionBlock = userLoggedIn ?
+        `<div><span id="subscription-${sqid}">
+            <button hx-post="/feeds/${sqid}/${subscriptionAction}"
+            class="${subscriptionButtonText}"
+            hx-trigger="click"
+            hx-target="#subscription-${sqid}"
+            hx-swap="outerHTML">
+            <span class="subscribed-text">${subscriptionButtonText}</span>
+            <span class="unsubscribe-text">unsubscribe</span>
+            </button>
+        </span></div>` 
+        : 
+        `<div><span id="subscription">
+            <button disabled title="Login to subscribe">
+            <span>${subscriptionButtonText}</span>
+            </button>
+        </span></div>`;
+
+        const top_items = JSON.parse(feed.content);
+        let top_items_list = '';
+
+        if (top_items) {
+          top_items_list += '<ul>'
+          top_items.forEach((item: any) => {
+            top_items_list += `<li><a href="/items/${item.item_sqid}">${item.title}</a></li>`
+          });
+          top_items_list += `<li><i>and <a href="/blogs/${sqid}">more...</a></i></li></ul>`
+        }
         list += `
-        <div>
-            <a href="/blogs/${sqid}">${feed.title}</a> ${subscribed}
+        <div class="blog-summary">
+            <div class="summary-header">
+                <div><h2><a class="no-color" href="/blogs/${sqid}">${feed.title}</a> </h2></div>
+                ${subscriptionBlock}
+            </div>
+            ${top_items_list}
         </div>`
     })
-    list += "</div>"
+    list += `<div style="margin-top:2em;text-align:center;"><a class="button" href="/blogs/new">+ add new blog</a></div></div>`
     return c.html(renderHTML("Blogs | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'blogs'))
 }
 
@@ -61,16 +97,25 @@ export const blogsSingleHandler = async (c:any) => {
     const feedTitle = batch[0].results[0]['title']
     const feedUrl = batch[0].results[0]['url']
     const rssUrl = batch[0].results[0]['rss_url']
-    const subscriptionButtonText = batch[0].results[0]['subscription_id'] ? "unsubscribe" : "subscribe";
+    const subscriptionAction = batch[0].results[0]['subscription_id'] ? "unsubscribe" : "subscribe";
+    const subscriptionButtonText = batch[0].results[0]['subscription_id'] ? "subscribed" : "subscribe";
     const subscriptionBlock = userLoggedIn ? `
       <span id="subscription">
-        <button hx-post="/feeds/${feedSqid}/${subscriptionButtonText}"
+        <button hx-post="/feeds/${feedSqid}/${subscriptionAction}"
+          class="${subscriptionButtonText}"
           hx-trigger="click"
           hx-target="#subscription"
           hx-swap="outerHTML">
-          ${subscriptionButtonText}
+          <span class="subscribed-text">${subscriptionButtonText}</span>
+        <span class="unsubscribe-text">unsubscribe</span>
         </button>
-      </span>`  : '';
+      </span>`  : `
+      <span id="subscription">
+        <button disabled title="Login to subscribe">
+            <span>${subscriptionButtonText}</span>
+        </button>
+      </span>
+      `;
     
     let list = `
     <h1>
@@ -181,14 +226,16 @@ export const feedsSubscribeHandler = async (c:any) => {
   if (result.success) {
     c.status(201);
     return c.html(`
-      <span id="subscription">
-        <button hx-post="/feeds/${feedSqid}/unsubscribe"
-          hx-trigger="click"
-          hx-target="#subscription"
-          hx-swap="outerHTML">
-          unsubscribe
-        </button>
-      </span>
+      <span id="subscription-${feedSqid}">
+            <button hx-post="/feeds/${feedSqid}/unsubscribe"
+            class="subscribed"
+            hx-trigger="click"
+            hx-target="#subscription-${feedSqid}"
+            hx-swap="outerHTML">
+            <span class="subscribed-text">subscribed</span>
+            <span class="unsubscribe-text">unsubscribe</span>
+            </button>
+        </span>
     `);
   }
   return c.html(`
@@ -216,10 +263,11 @@ export const feedsUnsubscribeHandler = async (c:any) => {
   }
   c.status(201);
   return c.html(`
-      <span id="subscription">
+      <span id="subscription-${feedSqid}">
         <button hx-post="/feeds/${feedSqid}/subscribe"
+          class="subscribe"
           hx-trigger="click"
-          hx-target="#subscription"
+          hx-target="#subscription-${feedSqid}"
           hx-swap="outerHTML">
           subscribe
         </button>
@@ -339,7 +387,10 @@ export async function updateFeed(env: Bindings, feedId: number) {
   // if remote RSS entries exist
   if (r.entries) {
       const newItemsToBeAdded = r.entries.filter(entry => !existingUrls.includes(entry.link)); // filter out existing ones and add them to Db
-      if (newItemsToBeAdded.length) await addItemsToFeed(env, newItemsToBeAdded, feedId)
+      if (newItemsToBeAdded.length) {
+        await addItemsToFeed(env, newItemsToBeAdded, feedId);
+        await regenerateTopItemsCacheForFeed(env, feedId);
+      }
       console.log(`Updated feed ${feedId} (${RSSUrl}), fetched items: ${r.entries.length}, of which new items added: ${newItemsToBeAdded.length}`)
       return
   }
@@ -383,4 +434,14 @@ async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: number) 
           await enqueueItemScrape(env, result.meta.last_row_id);
       }
   }
+}
+
+async function regenerateTopItemsCacheForFeed(env: Bindings, feedId: number) {
+  const { results: items } = await env.DB.prepare("SELECT item_id, title FROM items WHERE feed_id = ? ORDER BY items.pub_date DESC LIMIT 5").bind(feedId).all();
+  items.forEach((item:any) => {
+      item.item_sqid = itemIdToSqid(item.item_id)
+      delete item.item_id
+  })
+  await env.DB.prepare("REPLACE INTO items_top_cache (feed_id, content) values (?, ?)").bind(feedId, JSON.stringify(items)).run();
+  console.log(items)
 }

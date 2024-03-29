@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS items_top_cache (
+	item_cache_id INTEGER PRIMARY KEY,
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	feed_id INTEGER UNIQUE NOT NULL, 
+    content TEXT,
+	FOREIGN KEY(feed_id) REFERENCES feeds(feed_id) ON DELETE CASCADE
+);
+-- Migration number: 0001 	 2024-03-29T09:06:31.201Z

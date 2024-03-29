@@ -79,7 +79,7 @@ export const usersSingleHandler = async (c:any) => {
             </button>
             </span><hr>`;
         } else {
-            list += `<div class="flash-blue">This is your public profile (<a href="/my/account">account settings</a>)</div>`
+            list += `<div class="flash flash-blue">This is your public profile (<a href="/my/account">account settings</a>)</div>`
         }
     } else {
         list += `<p><i>Once logged in, you'll be able to follow users and read their feeds on your home page.</i></p>`

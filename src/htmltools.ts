@@ -93,12 +93,12 @@ export const renderItemShort = (item_id:number, title:string, url:string, feed_t
     return `
     <div class="item-short">
     <a href="/items/${itemSqid}" class="item-short-title">${title}</a> <br>
-    <small class="muted">
+    <div class="muted">
     ${feedLink}
     <time>${postDate}</time> |
     <a class="no-underline no-color" href="${url}">original</a> 
     ${summaryContent}
-    </small>
+    </div>
     </div>
     `
 }
@@ -147,7 +147,7 @@ export const renderAddFeedForm = (url:string = '', flash:string = '') => {
     else if (flash.includes('error code 530')) flash_test += 'That page does not exist.'
     else flash_test += flash;
     
-    const flashBlock = flash ? html`<div class="flash-red">${flash_test}</div>` : ''
+    const flashBlock = flash ? html`<div class="flash flash-red">${flash_test}</div>` : ''
     return html`
     <h1>Add new blog</h1>
     ${flashBlock}
