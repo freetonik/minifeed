@@ -94,9 +94,9 @@ export const renderItemShort = (item_id:number, title:string, url:string, feed_t
     <div class="item-short">
     <a href="/items/${itemSqid}" class="item-short-title">${title}</a> <br>
     <div class="muted">
-    ${feedLink}
+    <small>${feedLink}
     <time>${postDate}</time> |
-    <a class="no-underline no-color" href="${url}">original</a> 
+    <a class="no-underline no-color" href="${url}">original</a> </small>
     ${summaryContent}
     </div>
     </div>
