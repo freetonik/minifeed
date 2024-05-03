@@ -9,3 +9,4 @@ DROP TABLE IF EXISTS feeds;
 DROP TABLE IF EXISTS sessions;
 DROP TABLE IF EXISTS users;
 
+DROP TABLE IF EXISTS email_verification;
