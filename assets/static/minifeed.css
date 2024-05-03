@@ -382,7 +382,9 @@ button.subscribed:hover {
     color: var(--color-gray) !important;
 }
 
-.post-content img {
+.post-content img,
+.post-content video,
+.post-content iframe {
     max-width: 100%;
     height: auto;
 }
