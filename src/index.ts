@@ -5,7 +5,7 @@ import { serveStatic } from 'hono/cloudflare-workers';
 import { globalFeedHandler, myItemsHandler, mySubscriptionsHandler, myFollowsHandler, itemsSingleHandler, itemsAddToFavoritesHandler, itemsRemoveFromFavoritesHandler, itemsScrapeHandler, myFavoritesHandler, itemsIndexHandler } from './items';
 import { blogsSingleHandler, feedsSubscribeHandler, feedsUnsubscribeHandler, feedsDeleteHandler, feedsUpdateHandler, feedsScrapeHandler, blogsNewHandler, blogsNewPostHandler, updateFeed, blogsHandler, feedsIndexHandler } from './feeds';
 import { usersHandler, usersSingleHandler, usersFollowPostHandler, usersUnfollowPostHandler } from './users';
-import { loginHandler, loginPostHandler, myAccountHandler, logoutHandler, signupPostHandler } from './account';
+import { loginHandler, loginPostHandler, myAccountHandler, logoutHandler, signupPostHandler, myAccountVerifyEmailHandler } from './account';
 import { searchHandler, updateFeedIndex, updateItemIndex, upsertSingleDocument } from './search';
 import { adminMiddleware, authMiddleware, userPageMiddleware } from './middlewares';
 import { changelog } from './changelog';
@@ -65,6 +65,7 @@ app.get('/my/subscriptions', mySubscriptionsHandler)
 app.get('/my/friendfeed', myFollowsHandler)
 app.get('/my/favorites', myFavoritesHandler)
 app.get('/my/account', myAccountHandler)
+app.get('/verify_email', myAccountVerifyEmailHandler)
 
 app.get('/blogs', blogsHandler)
 app.get('/blogs/new', blogsNewHandler)

@@ -1,6 +1,7 @@
 import { html, raw } from 'hono/html';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import { renderHTML } from './htmltools';
+import { sendEmail } from './email';
 
 export const myAccountHandler = async (c:any) => {
     const username = c.get('USERNAME');
@@ -13,7 +14,35 @@ export const myAccountHandler = async (c:any) => {
     <p style="margin-top:3em;">
     <a style="padding: 0.75em; border: 1px solid; background-color: #9c0000; color: white;" href="/logout">Log out</a>
     </p>`
-    return c.html(renderHTML("My account | minifeed", html`${raw(list)}`, c.get('USERNAME'), ''))
+    return c.html(renderHTML("My account | minifeed", html`${raw(list)}`, username, ''))
+}
+
+export const myAccountVerifyEmailHandler = async (c:any) => {
+    const code = c.req.query('code');
+    const username = c.get('USERNAME');
+    const result = await c.env.DB.prepare("SELECT * from email_verification WHERE verification_code = ?").bind(code).run();
+    
+    if (!result.results.length) {
+        return c.html(renderHTML(
+            "Email verification | minifeed", 
+            html`<div class="flash flash-red">Email verification code is invalid or has been used already.</div>`, 
+            username, ''));
+    }
+    
+    const userId = result.results[0]['user_id'];
+    await c.env.DB.prepare("UPDATE users SET email_verified = 1 WHERE user_id = ?").bind(userId).run();
+    await c.env.DB.prepare("DELETE FROM email_verification WHERE verification_code = ?").bind(code).run();
+
+    let message = `Email verified!`;
+    if (username) {
+        message += ` You can now go to <a href="/my">your feed</a>... Or anywhere else, really.`;
+    } else {
+        message += ` You can now <a href="/login">log in</a>.`;
+    }
+    return c.html(renderHTML(
+        "Email verification | minifeed", 
+        html`<div class="flash flash-blue">Email verified!</div>`, 
+        username, ''));
 }
 
 export const logoutHandler = async (c:any) => {
@@ -64,6 +93,11 @@ export const loginHandler = async (c:any) => {
     </div>
     
     <div style="margin-bottom:2em;">
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required />
+    </div>
+
+    <div style="margin-bottom:2em;">
     <label for="invitation_code">Invitation code:</label>
     <input type="text" id="invitation_code" name="invitation_code" required />
     </div>
@@ -106,27 +140,36 @@ export const loginPostHandler = async (c:any) => {
 }
 
 
-
 export const signupPostHandler = async (c:any) => {
     const body = await c.req.parseBody();
     const username = body['username'].toString();
     const password = body['password'].toString();
-    const invitationCode = body['invitation_code'].toString();
+    const email = body['email'].toString();
+    const invitation_code = body['invitation_code'].toString();
     
-    if (invitationCode === 'RJDKBA') {
-        if (!checkUsername(username)) return c.text("Invalid username");
-        
-        const salt = randomHash(32);
-        const passwordHashed = await hashPassword(password, salt);
-        try {
-            await c.env.DB.prepare("INSERT INTO users (username, password_hash, password_salt) values (?, ?, ?)").bind(username, passwordHashed, salt).run();
-            const userId = (await c.env.DB.prepare("SELECT users.user_id FROM users WHERE username = ?").bind(username).run()).results[0]['user_id'];
-            return await createSessionSetCookieAndRedirect(c, userId);
-        } catch (err) {
-            return c.text(err);
-        }
+    if (invitation_code !== 'ARUEHW') return c.text("Invalid invitation code");
+
+    if (!checkUsername(username)) return c.text("Invalid username");
+    if (password.length < 8) return c.text("Password too short");
+    if (!checkEmail(email)) return c.text("Invalid email");
+
+
+    const salt = randomHash(32);
+    const passwordHashed = await hashPassword(password, salt);
+    try {
+        await c.env.DB.prepare("INSERT INTO users (username, email, password_hash, password_salt) values (?, ?, ?, ?)").bind(username, email, passwordHashed, salt).run();
+        const userId = (await c.env.DB.prepare("SELECT users.user_id FROM users WHERE username = ?").bind(username).run()).results[0]['user_id'];
+
+        const email_verification_code = randomHash(32);
+        await c.env.DB.prepare("INSERT INTO email_verification (user_id, verification_code) values (?, ?)").bind(userId, email_verification_code).run();
+        const emailVerificationLink = `${c.env.ENVIRONMENT == 'dev' ? 'http://localhost:8787' : 'https://minifeed.net'}/verify_email?code=${email_verification_code}`;
+        const emailBody = `Welcome to minifeed, ${username}! Please verify your email by clicking <a href="${emailVerificationLink}">here</a>.`;
+
+        await sendEmail(email, username, 'no-reply@minifeed.net', 'Welcome to minifeed', emailBody, c.env.ENVIRONMENT == 'dev');
+        return await createSessionSetCookieAndRedirect(c, userId);
+    } catch (err) {
+        return c.text(err);
     }
-    else return c.text("Absolutely invalid and wrong invitation code")
 }
 
 const createSessionSetCookieAndRedirect = async (c:any, userId:number, redirectTo = '/') => {
@@ -159,4 +202,8 @@ function randomHash (len:number):string {
 
 function checkUsername(username:string) {
     return /^[a-zA-Z0-9_]{3,16}$/.test(username);
+}
+
+function checkEmail(email:string) {
+    return /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email);
 }
