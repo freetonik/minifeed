@@ -421,7 +421,6 @@ async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: number) 
             item['content_from_content_html'] || '';
         
         content_html = getText(content_html);
-        // content_html = absolitifyImageUrls(content_html, link); // let's not bother?
 
         binds.push(stmt.bind(feedId, item.title, link, item.published, stripTags(item.description), content_html));
     });

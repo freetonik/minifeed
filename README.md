@@ -56,10 +56,23 @@ npx wrangler d1 execute minifeed --command="SELECT COUNT(item_id) FROM Items"
 - [x] full-text search
 - [x] search form and pretty results
 - [ ] refactor rendering functions
-- [ ] decide whether: 
+- [x] decide whether: 
     1. parse RSS better by getting content and description separately; content is optional in feeds; sometimes description is encoded
     2. get each article content separately via extractus (probably better idea, because this is needed anyway + will result in better search; this requires stripping HTML tags from the doc though); but this doesn't always work, see https://antonz.org/go-1-22/ for example
 - [ ] request for post, voted and commented by users
 - [ ] download images?
 - [x] summary for posts
 - [ ] re-check typesense api keys leak
+
+### TODO: remove uniqueness constraint from items url
+
+```
+npx wrangler d1 execute minifeed --local --command="CREATE TABLE IF NOT EXISTS items2 ( item_id INTEGER PRIMARY KEY, created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, feed_id INTEGER NOT NULL, title TEXT NOT NULL, description TEXT, content_html TEXT, content_html_scraped TEXT, url TEXT NOT NULL, pub_date TIMESTAMP, FOREIGN KEY(feed_id) REFERENCES feeds(feed_id) ON DELETE CASCADE );"
+
+npx wrangler d1 execute minifeed --local --command="INSERT INTO items2 SELECT * FROM items;"
+
+npx wrangler d1 execute minifeed --local --command="SELECT * from items2"
+
+npx wrangler d1 execute minifeed --command="ALTER TABLE items RENAME TO items_old;"
+npx wrangler d1 execute minifeed --command="ALTER TABLE items2 RENAME TO items;"
+```
