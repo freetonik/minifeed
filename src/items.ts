@@ -156,7 +156,7 @@ export const myFollowsHandler = async (c:any) => {
     const userId = c.get('USER_ID')
     const { results } = await c.env.DB
     .prepare(`
-    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id
+    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id, items.description
     FROM items
     JOIN subscriptions ON items.feed_id = subscriptions.feed_id
     JOIN feeds ON items.feed_id = feeds.feed_id
@@ -181,7 +181,7 @@ export const myFollowsHandler = async (c:any) => {
     if (results.length) {
         results.forEach((item: any) => {
             const title = item.favorite_id ? `★ ${item.title}` : item.title;
-            list += renderItemShort(item.item_id, title, item.url, item.feed_title, item.feed_id, item.pub_date)
+            list += renderItemShort(item.item_id, title, item.url, item.feed_title, item.feed_id, item.pub_date, truncate(item.description, 350))
         })
         list += `<p><a href="?p=${page + 1}">More</a></p></div>`
     } else {
@@ -201,7 +201,7 @@ export const myFavoritesHandler = async (c:any) => {
     const userId = c.get('USER_ID')
     const { results } = await c.env.DB
     .prepare(`
-    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id
+    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id, items.description
     FROM items
     JOIN favorites ON items.item_id = favorites.item_id
     JOIN feeds ON items.feed_id = feeds.feed_id
@@ -224,7 +224,7 @@ export const myFavoritesHandler = async (c:any) => {
     if (results.length) {
         results.forEach((item: any) => {
             const title = item.favorite_id ? `★ ${item.title}` : item.title;
-            list += renderItemShort(item.item_id, title, item.url, item.feed_title, item.feed_id, item.pub_date)
+            list += renderItemShort(item.item_id, title, item.url, item.feed_title, item.feed_id, item.pub_date, truncate(item.description, 350))
         })
         list += `<p><a href="?p=${page + 1}">More</a></p>`
     } else {

@@ -1,7 +1,13 @@
-export const version = "0.2.2";
+export const version = "0.2.3";
 
 export const changelog = `
     <h2>Changelog</h2>
+
+    <h3>0.2.3 (09.05.2024)</h3>
+    <ul>
+        <li>Bugfix: RSS feeds with non-unique item URLs are now processed correctly.</li>
+        <li>Adaptive layout improvements for mobile devices.</li>
+    </ul>
 
     <h3>0.2.2 (29.03.2024)</h3>
     <ul>
