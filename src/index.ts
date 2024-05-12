@@ -98,7 +98,7 @@ app.get('/users/:username', usersSingleHandler)
 app.post('/users/:username/follow', usersFollowPostHandler)
 app.post('/users/:username/unfollow', usersUnfollowPostHandler)
 
-app.get('/about/changelog', async (c) => c.html(renderHTML("Changelog | minifeed", raw(changelog))));
+app.get('/about/changelog', async (c) => c.html(renderHTML("Changelog | minifeed", raw(changelog), c.get('USERNAME'))));
 
 // MAIN EXPORT
 export default {
