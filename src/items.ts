@@ -248,7 +248,7 @@ export const recordAllItemSqidsHandler  = async (c:any) => {
     let list = '';
     
     for (const item of results) {
-        if (item.item_sqid == undefined) {
+        if (item.item_sqid == 0) {
             const item_sqid = itemIdToSqid(item.item_id)
             await c.env.DB.prepare("UPDATE items SET item_sqid = ? WHERE item_id = ?").bind(item_sqid, item.item_id).run();
             list += `${item.item_id} → ${item_sqid}</br>`
@@ -269,7 +269,7 @@ export const recordAllBlogSqidsHandler  = async (c:any) => {
     let list = '';
     
     for (const feed of results) {
-        if (feed.feed_sqid == undefined) {
+        if (feed.feed_sqid == 0) {
             const feed_sqid = feedIdToSqid(feed.feed_id)
             await c.env.DB.prepare("UPDATE feeds SET feed_sqid = ? WHERE feed_id = ?").bind(feed_sqid, feed.feed_id).run();
             list += `${feed.feed_id} → ${feed_sqid}</br>`
