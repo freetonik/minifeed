@@ -1,0 +1,4 @@
+-- Migration number: 0004 	 2024-07-18T12:33:08.403Z
+
+ALTER TABLE items ADD COLUMN item_sqid TEXT DEFAULT 0;
+ALTER TABLE feeds ADD COLUMN feed_sqid TEXT DEFAULT 0;
