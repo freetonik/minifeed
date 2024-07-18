@@ -1,6 +1,6 @@
 import { renderHTML, renderItemShort } from './htmltools';
 import { html, raw } from 'hono/html'
-import { feedIdToSqid, itemSqidToId, truncate } from './utils'
+import { feedIdToSqid, itemIdToSqid, itemSqidToId, truncate } from './utils'
 import { enqueueItemIndex, enqueueItemScrape } from './queue';
 
 export const globalFeedHandler = async (c:any) => {
@@ -236,7 +236,50 @@ export const myFavoritesHandler = async (c:any) => {
     
     return c.html(renderHTML("My favorites", html`${raw(list)}`, c.get('USERNAME'), 'my'))
 }
+
+export const recordAllItemSqidsHandler  = async (c:any) => {
+    
+    const { results } = await c.env.DB
+    .prepare(`
+        SELECT items.item_id, items.item_sqid
+        FROM items`)
+    .run();
+    
+    let list = '';
+    
+    for (const item of results) {
+        if (item.item_sqid == undefined) {
+            const item_sqid = itemIdToSqid(item.item_id)
+            await c.env.DB.prepare("UPDATE items SET item_sqid = ? WHERE item_id = ?").bind(item_sqid, item.item_id).run();
+            list += `${item.item_id} → ${item_sqid}</br>`
+        }
         
+    }
+    
+    return c.html( renderHTML("Global feed | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'global') )
+}
+
+export const recordAllBlogSqidsHandler  = async (c:any) => {
+    const { results } = await c.env.DB
+    .prepare(`
+        SELECT feeds.feed_id, feeds.feed_sqid
+        FROM feeds`)
+    .run();
+    
+    let list = '';
+    
+    for (const feed of results) {
+        if (feed.feed_sqid == undefined) {
+            const feed_sqid = feedIdToSqid(feed.feed_id)
+            await c.env.DB.prepare("UPDATE feeds SET feed_sqid = ? WHERE feed_id = ?").bind(feed_sqid, feed.feed_id).run();
+            list += `${feed.feed_id} → ${feed_sqid}</br>`
+        }
+        
+    }
+    
+    return c.html( renderHTML("Global feed | minifeed", html`${raw(list)}`, c.get('USERNAME'), 'global') )
+}
+
 export const itemsSingleHandler = async (c:any) => {
     const item_sqid = c.req.param('item_sqid');
     const item_id:number = itemSqidToId(item_sqid)

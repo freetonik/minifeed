@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { raw } from 'hono/html';
 import { renderHTML } from './htmltools';
 import { serveStatic } from 'hono/cloudflare-workers';
-import { globalFeedHandler, myItemsHandler, mySubscriptionsHandler, myFollowsHandler, itemsSingleHandler, itemsAddToFavoritesHandler, itemsRemoveFromFavoritesHandler, itemsScrapeHandler, myFavoritesHandler, itemsIndexHandler } from './items';
+import { globalFeedHandler, myItemsHandler, mySubscriptionsHandler, myFollowsHandler, itemsSingleHandler, itemsAddToFavoritesHandler, itemsRemoveFromFavoritesHandler, itemsScrapeHandler, myFavoritesHandler, itemsIndexHandler, recordAllItemSqidsHandler, recordAllBlogSqidsHandler } from './items';
 import { blogsSingleHandler, feedsSubscribeHandler, feedsUnsubscribeHandler, feedsDeleteHandler, feedsUpdateHandler, feedsScrapeHandler, blogsNewHandler, blogsNewPostHandler, updateFeed, blogsHandler, feedsIndexHandler } from './feeds';
 import { usersHandler, usersSingleHandler, usersFollowPostHandler, usersUnfollowPostHandler } from './users';
 import { loginHandler, loginPostHandler, myAccountHandler, logoutHandler, signupPostHandler, myAccountVerifyEmailHandler } from './account';
@@ -37,6 +37,8 @@ app.use('/feeds/:feed_sqid/index', adminMiddleware);
 
 app.use('/items/:item_sqid/scrape', adminMiddleware);
 app.use('/items/:item_sqid/index', adminMiddleware);
+app.use('/items/record_all_sqids', adminMiddleware);
+app.use('/blogs/record_all_sqids', adminMiddleware);
 
 app.notFound((c) => {
     return c.html(renderHTML("404 | minifeed",  raw(`<div class="flash flash-blue">Page not found.</div>`), c.get('USERNAME')));
@@ -70,7 +72,7 @@ app.get('/verify_email', myAccountVerifyEmailHandler)
 app.get('/blogs', blogsHandler)
 app.get('/blogs/new', blogsNewHandler)
 app.post('/blogs/new', blogsNewPostHandler)
-
+app.get('/blogs/record_all_sqids', recordAllBlogSqidsHandler)
 app.get('/blogs/:feed_sqid', blogsSingleHandler)
 app.post('/feeds/:feed_sqid/subscribe', feedsSubscribeHandler)
 app.post('/feeds/:feed_sqid/unsubscribe', feedsUnsubscribeHandler)
@@ -86,6 +88,7 @@ app.get('/podcasts', (c: any) => {
 app.get('/channels', (c: any) => {
     return c.html(renderHTML("Channels | minifeed", raw("Coming soon"), c.get('USERNAME'), 'channels'));
 });
+app.get('/items/record_all_sqids', recordAllItemSqidsHandler)
 
 app.get('/items/:item_sqid', itemsSingleHandler)
 app.post('/items/:item_sqid/favorite', itemsAddToFavoritesHandler)
