@@ -3,7 +3,7 @@
 ALTER TABLE users ADD COLUMN email TEXT;
 ALTER TABLE users ADD COLUMN email_verified BOOLEAN NOT NULL DEFAULT FALSE;
 
-CREATE TABLE IF NOT EXISTS email_verification (
+CREATE TABLE IF NOT EXISTS email_verifications (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
     verification_code TEXT NOT NULL,
