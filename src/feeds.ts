@@ -1,6 +1,6 @@
 import { renderAddFeedForm, renderHTML, renderItemShort } from './htmltools';
 import { html, raw } from 'hono/html'
-import { feedIdToSqid, feedSqidToId, getFeedIdByRSSUrl, getRSSLinkFromUrl, getRootUrl, getText, itemIdToSqid, stripTags, truncate } from './utils'
+import { extractItemUrl, feedIdToSqid, feedSqidToId, getFeedIdByRSSUrl, getRSSLinkFromUrl, getRootUrl, getText, itemIdToSqid, stripTags, truncate } from './utils'
 import { deleteFeedFromIndex } from './search';
 import { extractRSS } from './feed_extractor';
 import { Bindings } from './bindings';
@@ -394,6 +394,7 @@ export async function updateFeed(env: Bindings, feedId: number) {
   // get RSS url of feed
   const { results: feeds } = await env.DB.prepare("SELECT * FROM feeds WHERE feed_id = ?").bind(feedId).all();
   const RSSUrl = String(feeds[0]['rss_url']);
+  const feedUrl = String(feeds[0]['url']);
 
   const r = await extractRSS(RSSUrl); // fetch RSS content
 
@@ -403,7 +404,7 @@ export async function updateFeed(env: Bindings, feedId: number) {
 
   // if remote RSS entries exist
   if (r.entries) {
-      const newItemsToBeAdded = r.entries.filter(entry => !existingUrls.includes(entry.link)); // filter out existing ones and add them to Db
+      const newItemsToBeAdded = r.entries.filter(entry => !existingUrls.includes(extractItemUrl(entry, feedUrl))); // filter out existing ones and add them to Db
       if (newItemsToBeAdded.length) {
         await addItemsToFeed(env, newItemsToBeAdded, feedId);
         await regenerateTopItemsCacheForFeed(env, feedId);
@@ -425,9 +426,7 @@ async function addItemsToFeed(env: Bindings, items: Array<any>, feedId: number) 
     let binds: any[] = [];
   
     items.forEach((item: any) => {
-        let link = item.link || item.guid || item.id;
-        // if link does not start with http, it's probably a relative link, so we need to absolutify it
-        if (!link.startsWith('http')) link = new URL(link, feedUrl).toString();
+        let link = extractItemUrl(item, feedUrl);
         // if date was not properly parsed, try to parse it (expects 'pubdate' to be retrieved by feed_extractor's extractRSS function)
         if (!item.published) item.published = new Date(item.pubdate).toISOString();
 
