@@ -60,7 +60,7 @@ export const myItemsHandler = async (c: any) => {
   const userId = c.get("USER_ID");
   const { results } = await c.env.DB.prepare(
     `
-    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id, items.description
+    SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
     FROM items
     JOIN subscriptions ON items.feed_id = subscriptions.feed_id
     JOIN feeds ON items.feed_id = feeds.feed_id
@@ -69,7 +69,7 @@ export const myItemsHandler = async (c: any) => {
 
     UNION
 
-    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id, items.description
+    SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
     FROM items
     JOIN subscriptions ON items.feed_id = subscriptions.feed_id
     JOIN feeds ON items.feed_id = feeds.feed_id
@@ -79,7 +79,7 @@ export const myItemsHandler = async (c: any) => {
 
     UNION
 
-    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id, items.description
+    SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
     FROM items
     JOIN feeds ON items.feed_id = feeds.feed_id
     JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
@@ -105,11 +105,11 @@ export const myItemsHandler = async (c: any) => {
     results.forEach((item: any) => {
       let title = item.favorite_id ? `★ ${item.title}` : item.title;
       list += renderItemShort(
-        item.item_id,
+        item.item_sqid,
         title,
         item.url,
         item.feed_title,
-        item.feed_id,
+        item.feed_sqid,
         item.pub_date,
         item.description,
       );
@@ -141,7 +141,7 @@ export const mySubscriptionsHandler = async (c: any) => {
   const userId = c.get("USER_ID");
   const { results } = await c.env.DB.prepare(
     `
-    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id, items.description
+    SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
     FROM items
     JOIN subscriptions ON items.feed_id = subscriptions.feed_id
     JOIN feeds ON items.feed_id = feeds.feed_id
@@ -167,11 +167,11 @@ export const mySubscriptionsHandler = async (c: any) => {
     results.forEach((item: any) => {
       let title = item.favorite_id ? `★ ${item.title}` : item.title;
       list += renderItemShort(
-        item.item_id,
+        item.item_sqid,
         title,
         item.url,
         item.feed_title,
-        item.feed_id,
+        item.feed_sqid,
         item.pub_date,
         item.description,
       );
@@ -196,7 +196,7 @@ export const myFollowsHandler = async (c: any) => {
   const userId = c.get("USER_ID");
   const { results } = await c.env.DB.prepare(
     `
-    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id, items.description
+    SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
     FROM items
     JOIN subscriptions ON items.feed_id = subscriptions.feed_id
     JOIN feeds ON items.feed_id = feeds.feed_id
@@ -223,11 +223,11 @@ export const myFollowsHandler = async (c: any) => {
     results.forEach((item: any) => {
       const title = item.favorite_id ? `★ ${item.title}` : item.title;
       list += renderItemShort(
-        item.item_id,
+        item.item_sqid,
         title,
         item.url,
         item.feed_title,
-        item.feed_id,
+        item.feed_sqid,
         item.pub_date,
         item.description,
       );
@@ -252,7 +252,7 @@ export const myFavoritesHandler = async (c: any) => {
   const userId = c.get("USER_ID");
   const { results } = await c.env.DB.prepare(
     `
-    SELECT items.item_id, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_id as feed_id, favorite_id, items.description
+    SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
     FROM items
     JOIN favorites ON items.item_id = favorites.item_id
     JOIN feeds ON items.feed_id = feeds.feed_id
@@ -277,11 +277,11 @@ export const myFavoritesHandler = async (c: any) => {
     results.forEach((item: any) => {
       const title = item.favorite_id ? `★ ${item.title}` : item.title;
       list += renderItemShort(
-        item.item_id,
+        item.item_sqid,
         title,
         item.url,
         item.feed_title,
-        item.feed_id,
+        item.feed_sqid,
         item.pub_date,
         item.description,
       );
