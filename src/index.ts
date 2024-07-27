@@ -84,35 +84,6 @@ app.use("/feeds/:feed_sqid/index", adminMiddleware);
 app.use("/items/:item_sqid/scrape", adminMiddleware);
 app.use("/items/:item_sqid/index", adminMiddleware);
 
-app.get("truncateItemDescriptions/:offset", async (c: any) => {
-  const offset = c.req.param("offset");
-  const { results } = await c.env.DB.prepare(
-    "SELECT item_id, description FROM items limit 500 offset ?",
-  )
-    .bind(offset)
-    .all();
-
-  let list = "";
-
-  for (const item of results) {
-    if (item.description.length > 350) {
-      list += `${item.item_id} - ${item.description.length}<br>`;
-      const truncated_description = truncate(item.description, 350);
-      // const truncated_description =
-      //   item.description + item.description + item.description;
-      await c.env.DB.prepare(
-        "UPDATE items SET description = ? WHERE item_id = ?",
-      )
-        .bind(truncated_description, item.item_id)
-        .run();
-    } else {
-      list += `${item.item_id} - ${item.description.length} - no change<br>`;
-    }
-  }
-
-  return c.html(renderHTML("!", raw(list), c.get("USERNAME")));
-});
-
 // app.get("/populate", async (c: any) => {
 //   const feed_id = 1;
 //   for (let i = 0; i < 1000; i++) {
