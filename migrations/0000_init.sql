@@ -1,8 +1,8 @@
 CREATE TABLE IF NOT EXISTS users (
-    user_id INTEGER PRIMARY KEY, 
+    user_id INTEGER PRIMARY KEY,
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    username TEXT UNIQUE NOT NULL, 
-    password_hash TEXT, 
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT,
     password_salt TEXT
 );
 
@@ -15,11 +15,11 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 CREATE TABLE IF NOT EXISTS feeds (
-    feed_id INTEGER PRIMARY KEY, 
+    feed_id INTEGER PRIMARY KEY,
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    type TEXT NOT NULL, 
-    title TEXT NOT NULL, 
-    url TEXT UNIQUE NOT NULL, 
+    type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    url TEXT UNIQUE NOT NULL,
     rss_url TEXT UNIQUE NOT NULL,
     verified INTEGER DEFAULT 0 NOT NULL
 );
@@ -27,12 +27,12 @@ CREATE TABLE IF NOT EXISTS feeds (
 CREATE TABLE IF NOT EXISTS items (
 	item_id INTEGER PRIMARY KEY,
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-	feed_id INTEGER NOT NULL, 
-	title TEXT NOT NULL, 
+	feed_id INTEGER NOT NULL,
+	title TEXT NOT NULL,
     description TEXT,
     content_html TEXT,
     content_html_scraped TEXT,
-	url TEXT UNIQUE NOT NULL, 
+	url TEXT NOT NULL,
     pub_date TIMESTAMP,
 	FOREIGN KEY(feed_id) REFERENCES feeds(feed_id) ON DELETE CASCADE
 );

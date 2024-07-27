@@ -30,6 +30,11 @@ Removing a migration from the list of applied:
 npx wrangler d1 execute minifeed --local --command="DELETE FROM d1_migrations WHERE id=2"
 ```
 
+### Show table info
+
+`SELECT * FROM sqlite_schema WHERE name='favorites'`
+`PRAGMA foreign_key_list('favorites');`
+
 ### Deployment
 
 ```
@@ -56,7 +61,7 @@ npx wrangler d1 execute minifeed --command="SELECT COUNT(item_id) FROM Items"
 - [x] full-text search
 - [x] search form and pretty results
 - [ ] refactor rendering functions
-- [x] decide whether: 
+- [x] decide whether:
     1. parse RSS better by getting content and description separately; content is optional in feeds; sometimes description is encoded
     2. get each article content separately via extractus (probably better idea, because this is needed anyway + will result in better search; this requires stripping HTML tags from the doc though); but this doesn't always work, see https://antonz.org/go-1-22/ for example
 - [ ] request for post, voted and commented by users
