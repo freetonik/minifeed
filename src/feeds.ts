@@ -446,7 +446,7 @@ async function addFeed(env: Bindings, url: string, verified: boolean = false) {
         // update feed_sqid
         const feed_sqid = feedIdToSqid(feed_id);
         await env.DB.prepare("UPDATE feeds SET feed_sqid = ? WHERE feed_id = ?")
-          .bind(feed_sqid)
+          .bind(feed_sqid, feed_id)
           .run();
 
         await enqueueFeedUpdate(env, feed_id);
