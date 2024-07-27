@@ -442,6 +442,13 @@ async function addFeed(env: Bindings, url: string, verified: boolean = false) {
     if (dbQueryResult["success"] === true) {
       if (r.entries) {
         const feed_id: number = dbQueryResult["meta"]["last_row_id"];
+
+        // update feed_sqid
+        const feed_sqid = feedIdToSqid(feed_id);
+        await env.DB.prepare("UPDATE feeds SET feed_sqid = ? WHERE feed_id = ?")
+          .bind(feed_sqid)
+          .run();
+
         await enqueueFeedUpdate(env, feed_id);
       }
       return RSSUrl;
