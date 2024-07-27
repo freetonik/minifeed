@@ -189,7 +189,6 @@ export const stripTags = (s: string) => {
 
 export const extractItemUrl = (item: any, feedUrl: string) => {
   let link = item.link || item.guid || item.id;
-  console.log(item);
   // if link does not start with http, it's probably a relative link, so we need to absolutify it
   if (!link.startsWith("http")) link = new URL(link, feedUrl).toString();
   return link;

@@ -640,9 +640,7 @@ export const itemsSingleHandler = async (c: any) => {
 export const itemsAddToFavoritesHandler = async (c: any) => {
   const itemSqid = c.req.param("item_sqid");
   const itemId: number = itemSqidToId(itemSqid);
-  console.log("itemid", itemId);
   const userId = c.get("USER_ID");
-  console.log("userId", userId);
 
   let result;
   try {
@@ -652,7 +650,6 @@ export const itemsAddToFavoritesHandler = async (c: any) => {
       .bind(userId, itemId)
       .run();
   } catch (e) {
-    console.log(e);
     c.status(400);
     return c.body(e);
   }

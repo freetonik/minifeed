@@ -585,5 +585,4 @@ async function regenerateTopItemsCacheForFeed(env: Bindings, feedId: number) {
   )
     .bind(feedId, JSON.stringify(items))
     .run();
-  console.log(items);
 }
