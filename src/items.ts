@@ -319,7 +319,6 @@ export const itemsSingleHandler = async (c: any) => {
     c.env.DB.prepare(
       `
     SELECT
-        items.item_id,
         items.title AS item_title,
         items.description,
         items.content_html,
@@ -327,7 +326,7 @@ export const itemsSingleHandler = async (c: any) => {
         items.pub_date,
         items.url AS item_url,
         feeds.title AS feed_title,
-        feeds.feed_id,
+        feeds.feed_sqid,
         feeds.type,
         favorite_id
     FROM items
@@ -346,12 +345,11 @@ export const itemsSingleHandler = async (c: any) => {
         WHERE item_id = ?
         )
         SELECT
-        items.item_id,
+        items.item_sqid,
         items.title AS item_title,
         items.description,
         items.pub_date,
         items.url AS item_url,
-        items.feed_id,
         favorite_id
         FROM items
         JOIN FeedInfo fi ON items.feed_id = fi.feed_id
@@ -376,7 +374,7 @@ export const itemsSingleHandler = async (c: any) => {
     "en-UK",
     date_format_opts,
   );
-  const feed_sqid = feedIdToSqid(item.feed_id);
+  // const feed_sqid = feedIdToSqid(item.feed_id);
 
   let contentBlock;
   if (user_logged_in) {
@@ -425,11 +423,11 @@ export const itemsSingleHandler = async (c: any) => {
 
     if (user_is_subscribed) {
       subscriptionBlock = `
-            <span id="subscription-${feed_sqid}">
-            <button hx-post="/feeds/${feed_sqid}/unsubscribe"
+            <span id="subscription-${item.feed_sqid}">
+            <button hx-post="/feeds/${item.feed_sqid}/unsubscribe"
             class="subscribed"
             hx-trigger="click"
-            hx-target="#subscription-${feed_sqid}"
+            hx-target="#subscription-${item.feed_sqid}"
             hx-swap="outerHTML">
             <span class="subscribed-text">subscribed</span>
             <span class="unsubscribe-text">unsubscribe</span>
@@ -437,11 +435,11 @@ export const itemsSingleHandler = async (c: any) => {
             </span>`;
     } else {
       subscriptionBlock = `
-            <span id="subscription-${feed_sqid}">
-            <button hx-post="/feeds/${feed_sqid}/subscribe"
+            <span id="subscription-${item.feed_sqid}">
+            <button hx-post="/feeds/${item.feed_sqid}/subscribe"
             class="subscribe"
             hx-trigger="click"
-            hx-target="#subscription-${feed_sqid}"
+            hx-target="#subscription-${item.feed_sqid}"
             hx-swap="outerHTML">
             subscribe
             </button>
@@ -454,18 +452,18 @@ export const itemsSingleHandler = async (c: any) => {
 
   let otherItemsBlock = "";
   if (batch[2].results.length) {
-    otherItemsBlock += `<div class="related-items"><h4>More from ${item.type} <a href="/blogs/${feed_sqid}"">${item.feed_title}</a>:</h4>`;
+    otherItemsBlock += `<div class="related-items"><h4>More from ${item.type} <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a>:</h4>`;
     batch[2].results.forEach((related_item: any) => {
       otherItemsBlock += `<div class="related-item">`;
       const itemTitle = related_item.favorite_id
         ? `★ ${related_item.item_title}`
         : related_item.item_title;
       otherItemsBlock += renderItemShort(
-        related_item.item_id,
+        related_item.item_sqid,
         itemTitle,
         related_item.item_url,
         "",
-        related_item.feed_id,
+        "",
         related_item.pub_date,
         related_item.description,
       );
@@ -476,7 +474,7 @@ export const itemsSingleHandler = async (c: any) => {
 
   let list = `
     <h1 style="margin-bottom: 0.25em;">${item.item_title} </h1>
-    <div style="margin-bottom:1.25em;">from ${item.type} <a href="/blogs/${feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time></div>
+    <div style="margin-bottom:1.25em;">from ${item.type} <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time></div>
     <div class="item-actions">
         <div>
         ${favoriteBlock}
