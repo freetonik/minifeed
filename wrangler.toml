@@ -15,7 +15,7 @@ TYPESENSE_ITEMS_COLLECTION = "items"
 bucket = "./assets"
 
 [[d1_databases]]
-binding = "DB" # available in your Worker on env.DB
+binding = "DB"                                       # available in your Worker on env.DB
 database_name = "minifeed"
 database_id = "d059129a-d855-4e39-ae1f-64e92b9c40a1"
 
@@ -25,8 +25,8 @@ binding = "FEED_UPDATE_QUEUE"
 
 [[queues.consumers]]
 queue = "feed-update"
-max_batch_size = 1 # optional: defaults to 10
+max_batch_size = 1    # optional: defaults to 10
 max_batch_timeout = 5 # optional: defaults to 5 seconds
 
 [triggers]
-crons = [ "*/30 * * * *" ]
+crons = ["*/30 * * * *"]

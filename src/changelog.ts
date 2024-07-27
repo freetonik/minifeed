@@ -108,4 +108,4 @@ export const changelog = `
         <li>Initial release</li>
         <li>Subscribe to feeds</li>
     </ul>
-`
+`;

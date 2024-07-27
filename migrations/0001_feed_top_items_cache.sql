@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS items_top_cache (
 	item_cache_id INTEGER PRIMARY KEY,
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-	feed_id INTEGER UNIQUE NOT NULL, 
+	feed_id INTEGER UNIQUE NOT NULL,
     content TEXT,
 	FOREIGN KEY(feed_id) REFERENCES feeds(feed_id) ON DELETE CASCADE
 );
