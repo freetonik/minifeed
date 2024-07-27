@@ -57,7 +57,7 @@ import { Bindings } from "./bindings";
 import { enqueueScrapeAllItemsOfFeed, enqueueUpdateAllFeeds } from "./queue";
 import { scrapeItem } from "./scrape";
 import { feedbackHandler } from "./feedback";
-import { itemIdToSqid } from "./utils";
+import { itemIdToSqid, truncate } from "./utils";
 
 const app = new Hono<{ Bindings: Bindings }>({ strict: false });
 
@@ -84,44 +84,73 @@ app.use("/feeds/:feed_sqid/index", adminMiddleware);
 app.use("/items/:item_sqid/scrape", adminMiddleware);
 app.use("/items/:item_sqid/index", adminMiddleware);
 
-app.get("/populate", async (c: any) => {
-  const feed_id = 1;
-  for (let i = 0; i < 1000; i++) {
-    const title =
-      (Math.random() + 1).toString(36).substring(7) +
-      " " +
-      (Math.random() + 1).toString(36).substring(7);
+app.get("truncateItemDescriptions/:offset", async (c: any) => {
+  const offset = c.req.param("offset");
+  const { results } = await c.env.DB.prepare(
+    "SELECT item_id, description FROM items limit 500 offset ?",
+  )
+    .bind(offset)
+    .all();
 
-    const url = `https://example.com/${title}`;
-    const pub_date = new Date().toISOString();
-    const description = title.repeat(
-      (Math.floor(Math.random() * 10) + 1) * Math.floor(Math.random() * 3) + 1,
-    );
-    const content_html = title.repeat(
-      (Math.floor(Math.random() * 100) + 1) * Math.floor(Math.random() * 10) +
-        1,
-    );
+  let list = "";
 
-    const insert_results = await c.env.DB.prepare(
-      "INSERT INTO items (feed_id, title, url, pub_date, description, content_html) values (?, ?, ?, ?, ?, ?)",
-    )
-      .bind(feed_id, title, url, pub_date, description, content_html)
-      .run();
-
-    const item_id = insert_results.meta.last_row_id;
-    const item_sqid = itemIdToSqid(item_id);
-    await c.env.DB.prepare("UPDATE items SET item_sqid = ? WHERE item_id = ?")
-      .bind(item_sqid, item_id)
-      .run();
+  for (const item of results) {
+    if (item.description.length > 350) {
+      list += `${item.item_id} - ${item.description.length}<br>`;
+      const truncated_description = truncate(item.description, 350);
+      // const truncated_description =
+      //   item.description + item.description + item.description;
+      await c.env.DB.prepare(
+        "UPDATE items SET description = ? WHERE item_id = ?",
+      )
+        .bind(truncated_description, item.item_id)
+        .run();
+    } else {
+      list += `${item.item_id} - ${item.description.length} - no change<br>`;
+    }
   }
-  return c.html(
-    renderHTML(
-      "!",
-      raw(`<div class="flash flash-blue">Done.</div>`),
-      c.get("USERNAME"),
-    ),
-  );
+
+  return c.html(renderHTML("!", raw(list), c.get("USERNAME")));
 });
+
+// app.get("/populate", async (c: any) => {
+//   const feed_id = 1;
+//   for (let i = 0; i < 1000; i++) {
+//     const title =
+//       (Math.random() + 1).toString(36).substring(7) +
+//       " " +
+//       (Math.random() + 1).toString(36).substring(7);
+
+//     const url = `https://example.com/${title}`;
+//     const pub_date = new Date().toISOString();
+//     const description = title.repeat(
+//       (Math.floor(Math.random() * 10) + 1) * Math.floor(Math.random() * 3) + 1,
+//     );
+//     const content_html = title.repeat(
+//       (Math.floor(Math.random() * 100) + 1) * Math.floor(Math.random() * 10) +
+//         1,
+//     );
+
+//     const insert_results = await c.env.DB.prepare(
+//       "INSERT INTO items (feed_id, title, url, pub_date, description, content_html) values (?, ?, ?, ?, ?, ?)",
+//     )
+//       .bind(feed_id, title, url, pub_date, description, content_html)
+//       .run();
+
+//     const item_id = insert_results.meta.last_row_id;
+//     const item_sqid = itemIdToSqid(item_id);
+//     await c.env.DB.prepare("UPDATE items SET item_sqid = ? WHERE item_id = ?")
+//       .bind(item_sqid, item_id)
+//       .run();
+//   }
+//   return c.html(
+//     renderHTML(
+//       "!",
+//       raw(`<div class="flash flash-blue">Done.</div>`),
+//       c.get("USERNAME"),
+//     ),
+//   );
+// });
 
 app.notFound((c) => {
   return c.html(
