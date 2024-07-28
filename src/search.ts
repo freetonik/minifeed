@@ -215,7 +215,7 @@ export async function updateItemIndex(env: Bindings, item_id: number) {
     feed_sqid: item["feed_sqid"],
     feed_title: item["feed_title"],
   };
-
+  console.log(`Upserting document: ${item_id.toString()} - ${item["title"]}`);
   await upsertSingleDocument(env, searchDocument);
 }
 
@@ -230,4 +230,26 @@ export async function updateFeedIndex(env: Bindings, feed_id: number) {
     .bind(feed_id)
     .all<ItemsRowPartial>();
   for (const item of items) await updateItemIndex(env, item["item_id"]);
+}
+
+export async function getCollection(env: Bindings) {
+  const init = {
+    method: "GET",
+    headers: {
+      "X-TYPESENSE-API-KEY": env.TYPESENSE_API_KEY,
+    },
+  };
+
+  let results;
+  try {
+    const response = await fetch(
+      `https://${env.TYPESENSE_CLUSTER}:443/collections/${env.TYPESENSE_ITEMS_COLLECTION}`,
+      init,
+    );
+    results = await gatherResponse(response);
+  } catch (e) {
+    console.log(`Error while getting collection: ${e}`);
+  }
+
+  return JSON.parse(results);
 }

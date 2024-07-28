@@ -20,6 +20,7 @@ import {
   enqueueFeedUpdate,
   enqueueItemScrape,
   enqueueScrapeAllItemsOfFeed,
+  enqueueRebuildFeedTopItemsCache,
 } from "./queue";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -420,6 +421,28 @@ export async function feedsIndexHandler(c: any) {
   return c.html("Feed index enqueued...");
 }
 
+export async function feedsGlobalIndexHandler(c: any) {
+  const feeds = await c.env.DB.prepare("SELECT feed_id FROM feeds").all();
+  for (const feed of feeds.results) {
+    await enqueueIndexAllItemsOfFeed(c.env, feed.feed_id);
+  }
+  return c.html("Feed index enqueued FOR ALL FEEDS...");
+}
+
+export async function feedsCacheRebuildHandler(c: any) {
+  const feed_id: number = feedSqidToId(c.req.param("feed_sqid"));
+  await enqueueRebuildFeedTopItemsCache(c.env, feed_id);
+  return c.html("Feed cache rebuild enqueued...");
+}
+
+export async function feedsGlobalCacheRebuildHandler(c: any) {
+  const feeds = await c.env.DB.prepare("SELECT feed_id FROM feeds").all();
+  for (const feed of feeds.results) {
+    await enqueueRebuildFeedTopItemsCache(c.env, feed.feed_id);
+  }
+  return c.html("Feed cache rebuild enqueued FOR ALL FEEDS...");
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // FEED FUNCTIONS (NOT ROUTE HANDLERS)
 
@@ -570,7 +593,10 @@ async function addItemsToFeed(
   }
 }
 
-async function regenerateTopItemsCacheForFeed(env: Bindings, feedId: number) {
+export async function regenerateTopItemsCacheForFeed(
+  env: Bindings,
+  feedId: number,
+) {
   const { results: items } = await env.DB.prepare(
     "SELECT item_id, title FROM items WHERE feed_id = ? ORDER BY items.pub_date DESC LIMIT 5",
   )

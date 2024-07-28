@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { raw } from "hono/html";
 import { renderHTML } from "./htmltools";
 import { serveStatic } from "hono/cloudflare-workers";
+import { adminHandler } from "./admin";
 import {
   globalFeedHandler,
   myItemsHandler,
@@ -26,6 +27,10 @@ import {
   updateFeed,
   blogsHandler,
   feedsIndexHandler,
+  regenerateTopItemsCacheForFeed,
+  feedsCacheRebuildHandler,
+  feedsGlobalIndexHandler,
+  feedsGlobalCacheRebuildHandler,
 } from "./feeds";
 import {
   usersHandler,
@@ -57,7 +62,6 @@ import { Bindings } from "./bindings";
 import { enqueueScrapeAllItemsOfFeed, enqueueUpdateAllFeeds } from "./queue";
 import { scrapeItem } from "./scrape";
 import { feedbackHandler } from "./feedback";
-import { itemIdToSqid, truncate } from "./utils";
 
 const app = new Hono<{ Bindings: Bindings }>({ strict: false });
 
@@ -80,9 +84,14 @@ app.use("/feeds/:feed_sqid/delete", adminMiddleware);
 app.use("/feeds/:feed_sqid/update", adminMiddleware);
 app.use("/feeds/:feed_sqid/scrape", adminMiddleware);
 app.use("/feeds/:feed_sqid/index", adminMiddleware);
+app.use("/feeds/:feed_sqid/rebuild_cache", adminMiddleware);
+app.use("/feeds/index", adminMiddleware);
+app.use("/feeds/rebuild_cache", adminMiddleware);
 
 app.use("/items/:item_sqid/scrape", adminMiddleware);
 app.use("/items/:item_sqid/index", adminMiddleware);
+
+app.use("/admin", adminMiddleware);
 
 // app.get("/populate", async (c: any) => {
 //   const feed_id = 1;
@@ -148,6 +157,7 @@ app.get("/", (c: any) => {
   if (!c.get("USER_ID")) return c.redirect("/global");
   return c.redirect("/my");
 });
+app.get("/admin", adminHandler);
 app.get("/search", searchHandler);
 app.get("/global", globalFeedHandler);
 app.get("/feedback", feedbackHandler);
@@ -170,10 +180,14 @@ app.post("/blogs/new", blogsNewPostHandler);
 app.get("/blogs/:feed_sqid", blogsSingleHandler);
 app.post("/feeds/:feed_sqid/subscribe", feedsSubscribeHandler);
 app.post("/feeds/:feed_sqid/unsubscribe", feedsUnsubscribeHandler);
+
 app.post("/feeds/:feed_sqid/delete", feedsDeleteHandler);
 app.post("/feeds/:feed_sqid/update", feedsUpdateHandler);
 app.post("/feeds/:feed_sqid/scrape", feedsScrapeHandler);
 app.post("/feeds/:feed_sqid/index", feedsIndexHandler);
+app.post("/feeds/:feed_sqid/rebuild_cache", feedsCacheRebuildHandler);
+app.post("/feeds/index", feedsGlobalIndexHandler);
+app.post("/feeds/rebuild_cache", feedsGlobalCacheRebuildHandler);
 
 app.get("/podcasts", (c: any) => {
   return c.html(
@@ -229,6 +243,7 @@ export default {
             );
           }
           break;
+
         case "feed_scrape":
           try {
             await enqueueScrapeAllItemsOfFeed(env, message.body.feed_id);
@@ -238,6 +253,7 @@ export default {
             );
           }
           break;
+
         case "item_scrape":
           try {
             await scrapeItem(env, message.body.item_id);
@@ -247,6 +263,7 @@ export default {
             );
           }
           break;
+
         case "item_index":
           try {
             await updateItemIndex(env, message.body.item_id);
@@ -256,12 +273,23 @@ export default {
             );
           }
           break;
+
         case "feed_index":
           try {
             await updateFeedIndex(env, message.body.feed_id);
           } catch (e: any) {
             console.log(
               `Error indexing feed ${message.body.feed_id}: ${e.toString()}`,
+            );
+          }
+          break;
+
+        case "feed_update_top_items_cache":
+          try {
+            await regenerateTopItemsCacheForFeed(env, message.body.feed_id);
+          } catch (e: any) {
+            console.log(
+              `Error regenerating top items cache for feed ${message.body.feed_id}: ${e.toString()}`,
             );
           }
           break;

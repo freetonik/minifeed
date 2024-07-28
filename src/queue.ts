@@ -23,6 +23,16 @@ export async function enqueueUpdateAllFeeds(env: Bindings) {
   }
 }
 
+export async function enqueueRebuildFeedTopItemsCache(
+  env: Bindings,
+  feed_id: number,
+) {
+  await env.FEED_UPDATE_QUEUE.send({
+    type: "feed_update_top_items_cache",
+    feed_id: feed_id,
+  });
+}
+
 ///////////////////////////////
 // SCRAPES ////////////////////
 export async function enqueueScrapeAllItemsOfFeed(
