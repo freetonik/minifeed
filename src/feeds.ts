@@ -414,12 +414,12 @@ async function addFeed(env: Bindings, url: string, verified: boolean = false) {
 export async function updateFeed(env: Bindings, feedId: number) {
   // get RSS url of feed
   const { results: feeds } = await env.DB.prepare(
-    "SELECT * FROM feeds WHERE feed_id = ?",
+    "SELECT rss_url FROM feeds WHERE feed_id = ?",
   )
     .bind(feedId)
     .all();
   const RSSUrl = String(feeds[0]["rss_url"]);
-  const feedUrl = String(feeds[0]["url"]);
+  console.log(`Updating feed ${feedId} (${RSSUrl})`);
 
   const r = await extractRSS(RSSUrl); // fetch RSS content
 
@@ -434,7 +434,7 @@ export async function updateFeed(env: Bindings, feedId: number) {
   // if remote RSS entries exist
   if (r.entries) {
     const newItemsToBeAdded = r.entries.filter(
-      (entry) => !existingUrls.includes(extractItemUrl(entry, feedUrl)),
+      (entry) => !existingUrls.includes(extractItemUrl(entry, RSSUrl)),
     ); // filter out existing ones and add them to Db
     if (newItemsToBeAdded.length) {
       await addItemsToFeed(env, newItemsToBeAdded, feedId);
@@ -457,7 +457,7 @@ async function addItemsToFeed(
 
   // get feed title
   const { results: feeds } = await env.DB.prepare(
-    "SELECT title, url FROM feeds WHERE feed_id = ?",
+    "SELECT title, rss_url FROM feeds WHERE feed_id = ?",
   )
     .bind(feedId)
     .all();
