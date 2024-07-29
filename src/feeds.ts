@@ -366,7 +366,7 @@ export async function feedsGlobalCacheRebuildHandler(c: any) {
 // FEED FUNCTIONS (NOT ROUTE HANDLERS)
 
 async function addFeed(env: Bindings, url: string, verified: boolean = false) {
-  let RSSUrl: string = await getRSSLinkFromUrl(url);
+  const RSSUrl: string = await getRSSLinkFromUrl(url);
   const r = await extractRSS(RSSUrl);
 
   // if url === rssUrl that means the submitted URL was RSS URL, so retrieve site URL from RSS; otherwise use submitted URL as site URL
@@ -461,7 +461,7 @@ async function addItemsToFeed(
   )
     .bind(feedId)
     .all();
-  const feedUrl = String(feeds[0]["url"]);
+  const feedRSSUrl = String(feeds[0]["rss_url"]);
 
   const stmt = env.DB.prepare(
     "INSERT INTO items (feed_id, title, url, pub_date, description, content_html) values (?, ?, ?, ?, ?, ?)",
@@ -469,7 +469,7 @@ async function addItemsToFeed(
   let binds: any[] = [];
 
   items.forEach((item: any) => {
-    let link = extractItemUrl(item, feedUrl);
+    let link = extractItemUrl(item, feedRSSUrl);
     // if date was not properly parsed, try to parse it (expects 'pubdate' to be retrieved by feed_extractor's extractRSS function)
     if (!item.published) item.published = new Date(item.pubdate).toISOString();
 
