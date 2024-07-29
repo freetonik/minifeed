@@ -48,20 +48,6 @@ export const blogsHandler = async (c: any) => {
       ? "subscribed"
       : "subscribe";
 
-    let deleteButtonBlock = "";
-    if (c.get("USER_ID") == 1) {
-      deleteButtonBlock = `
-            <span><button hx-post="/feeds/${sqid}/delete"
-              hx-confirm="Sure?"
-              hx-trigger="click"
-              hx-target="#delete-indicator"
-              hx-swap="outerHTML">
-              delete
-            </button>
-            <span id="delete-indicator"></span></span>
-          `;
-    }
-
     const subscriptionBlock = userLoggedIn
       ? `<div><span id="subscription-${sqid}">
             <button hx-post="/feeds/${sqid}/${subscriptionAction}"
@@ -72,7 +58,6 @@ export const blogsHandler = async (c: any) => {
             <span class="subscribed-text">${subscriptionButtonText}</span>
             <span class="unsubscribe-text">unsubscribe</span>
             </button>
-            ${deleteButtonBlock}
         </span></div>`
       : `<div><span id="subscription">
             <button disabled title="Login to subscribe">
