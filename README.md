@@ -56,17 +56,23 @@ npx wrangler d1 execute minifeed --command="SELECT COUNT(item_id) FROM Items"
 - [x] pagination
 - [x] user sign up
 - [ ] youtube channels
-- [ ] custom 404 pages
+- [x] custom 404 pages
 - [ ] click to add note
 - [x] full-text search
 - [x] search form and pretty results
 - [ ] refactor rendering functions
+- [x] don't show items in lists until they have sqids
 - [x] decide whether:
     1. parse RSS better by getting content and description separately; content is optional in feeds; sometimes description is encoded
     2. get each article content separately via extractus (probably better idea, because this is needed anyway + will result in better search; this requires stripping HTML tags from the doc though); but this doesn't always work, see https://antonz.org/go-1-22/ for example
 - [ ] request for post, voted and commented by users
 - [ ] download images?
 - [x] summary for posts
+- [ ] get blog description from RSS feed (optionally)
+- [ ] validate feed before adding it:
+  - has title
+  - has entries
+  - entry has link
 - [ ] re-check typesense api keys leak
 
 ### TODO: remove uniqueness constraint from items url

@@ -14,6 +14,7 @@ export const globalFeedHandler = async (c: any) => {
         FROM items
         JOIN feeds ON items.feed_id = feeds.feed_id
         LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
+        WHERE items.item_sqid IS NOT 0
         ORDER BY items.pub_date DESC
         LIMIT ? OFFSET ?`,
   )
@@ -65,7 +66,7 @@ export const myItemsHandler = async (c: any) => {
     JOIN subscriptions ON items.feed_id = subscriptions.feed_id
     JOIN feeds ON items.feed_id = feeds.feed_id
     LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
-    WHERE subscriptions.user_id = ?
+    WHERE items.item_sqid IS NOT 0 AND subscriptions.user_id = ?
 
     UNION
 
@@ -75,7 +76,7 @@ export const myItemsHandler = async (c: any) => {
     JOIN feeds ON items.feed_id = feeds.feed_id
     LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
     JOIN followings ON subscriptions.user_id = followings.followed_user_id
-    WHERE followings.follower_user_id = ?
+    WHERE items.item_sqid IS NOT 0 AND followings.follower_user_id = ?
 
     UNION
 
@@ -83,6 +84,7 @@ export const myItemsHandler = async (c: any) => {
     FROM items
     JOIN feeds ON items.feed_id = feeds.feed_id
     JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
+    WHERE items.item_sqid IS NOT 0
 
     ORDER BY items.pub_date DESC
 
@@ -146,7 +148,7 @@ export const mySubscriptionsHandler = async (c: any) => {
     JOIN subscriptions ON items.feed_id = subscriptions.feed_id
     JOIN feeds ON items.feed_id = feeds.feed_id
     LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
-    WHERE subscriptions.user_id = ?
+    WHERE items.item_sqid IS NOT 0 AND subscriptions.user_id = ?
     ORDER BY items.pub_date DESC
     LIMIT ? OFFSET ?
     `,
@@ -202,7 +204,7 @@ export const myFollowsHandler = async (c: any) => {
     JOIN feeds ON items.feed_id = feeds.feed_id
     JOIN followings ON subscriptions.user_id = followings.followed_user_id
     LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
-    WHERE followings.follower_user_id = ?
+    WHERE items.item_sqid IS NOT 0 AND followings.follower_user_id = ?
     ORDER BY items.pub_date DESC
     LIMIT ? OFFSET ?
     `,
@@ -256,7 +258,7 @@ export const myFavoritesHandler = async (c: any) => {
     FROM items
     JOIN favorites ON items.item_id = favorites.item_id
     JOIN feeds ON items.feed_id = feeds.feed_id
-    WHERE favorites.user_id = ?
+    WHERE items.item_sqid IS NOT 0 AND favorites.user_id = ?
     ORDER BY items.pub_date DESC
     LIMIT ? OFFSET ?
     `,
@@ -319,6 +321,7 @@ export const itemsSingleHandler = async (c: any) => {
     c.env.DB.prepare(
       `
     SELECT
+        items.item_id,
         items.title AS item_title,
         items.description,
         items.content_html,

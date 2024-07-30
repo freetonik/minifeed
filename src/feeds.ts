@@ -121,7 +121,7 @@ export const blogsSingleHandler = async (c: any) => {
           FROM items
           JOIN feeds ON items.feed_id = feeds.feed_id
           LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
-          WHERE feeds.feed_id = ?
+          WHERE items.item_sqid IS NOT 0 AND feeds.feed_id = ?
           ORDER BY items.pub_date DESC`,
     ).bind(userId, feedId),
   ]);
