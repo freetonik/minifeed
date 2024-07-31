@@ -107,7 +107,7 @@ export const blogsSingleHandler = async (c: any) => {
   const batch = await c.env.DB.batch([
     c.env.DB.prepare(
       `
-          SELECT feeds.title, feeds.url, feeds.rss_url, subscriptions.subscription_id, feeds.verified
+          SELECT feeds.title, feeds.url, feeds.rss_url, subscriptions.subscription_id, feeds.verified, feeds.description
           FROM feeds
           LEFT JOIN subscriptions on feeds.feed_id = subscriptions.feed_id AND subscriptions.user_id = ?
           WHERE feeds.feed_id = ?
@@ -129,6 +129,7 @@ export const blogsSingleHandler = async (c: any) => {
   // batch[0] is feed joined with subscription status; 0 means no feed found in DB
   if (!batch[0].results.length) return c.notFound();
   const feedTitle = batch[0].results[0]["title"];
+
   const feedUrl = batch[0].results[0]["url"];
   const rssUrl = batch[0].results[0]["rss_url"];
   const subscriptionAction = batch[0].results[0]["subscription_id"]
@@ -156,12 +157,15 @@ export const blogsSingleHandler = async (c: any) => {
         </button>
       </span>
       `;
+  const feedDescriptionBlock = batch[0].results[0]["description"]
+    ? `<p>${batch[0].results[0]["description"]}</p>`
+    : "";
 
   let list = `
     <h1>
       ${feedTitle}
       <small>(<a href="${feedUrl}">site</a> / <a href="${rssUrl}">rss</a>)</small>
-    </h1>
+    </h1><p>${feedDescriptionBlock}</p>
     ${subscriptionBlock}
     <hr style="margin:2em 0;">
     `;
@@ -414,14 +418,25 @@ async function addFeed(env: Bindings, url: string, verified: boolean = false) {
 export async function updateFeed(env: Bindings, feedId: number) {
   // get RSS url of feed
   const { results: feeds } = await env.DB.prepare(
-    "SELECT rss_url FROM feeds WHERE feed_id = ?",
+    "SELECT rss_url, description FROM feeds WHERE feed_id = ?",
   )
     .bind(feedId)
     .all();
   const RSSUrl = String(feeds[0]["rss_url"]);
+  const description = String(feeds[0]["description"]);
   console.log(`Updating feed ${feedId} (${RSSUrl})`);
 
   const r = await extractRSS(RSSUrl); // fetch RSS content
+
+  if (
+    r.description &&
+    r.description.length > 7 &&
+    description != r.description
+  ) {
+    await env.DB.prepare("UPDATE feeds SET description = ? WHERE feed_id = ?")
+      .bind(r.description, feedId)
+      .run();
+  }
 
   // get URLs of existing items from DB
   const { results: existingItems } = await env.DB.prepare(

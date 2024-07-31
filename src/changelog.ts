@@ -1,8 +1,12 @@
-export const version = "0.2.4";
+export const version = "0.2.5";
 
 export const changelog = `
     <h2>Changelog</h2>
 
+    <h3>0.2.5 (31.07.2024)</h3>
+    <ul>
+        <li>Blog descriptions are now fetched and stored.</li>
+    </ul>
 
     <h3>0.2.4 (28.07.2024)</h3>
     <ul>
