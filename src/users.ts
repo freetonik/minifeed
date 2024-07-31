@@ -23,15 +23,16 @@ export const usersHandler = async (c: any) => {
 
 export const usersSingleHandler = async (c: any) => {
   const userId = c.get("USER_ID") || "0";
+  const currentUsername = c.get("USERNAME");
+
   const userLoggedIn = c.get("USER_ID") ? true : false;
   const username = c.req.param("username");
   const batch = await c.env.DB.batch([
     // who this user is and if he is followed by current user batch[0]
     c.env.DB.prepare(
       `
-        SELECT users.user_id, users.username, followings.following_id
+        SELECT users.user_id, users.username
         FROM users
-        LEFT JOIN followings on users.user_id = followings.followed_user_id
         WHERE users.username = ?`,
     ).bind(username),
 
@@ -78,28 +79,7 @@ export const usersSingleHandler = async (c: any) => {
 
   if (!batch[0].results.length) return c.notFound();
 
-  const followButtonText = batch[0].results[0]["following_id"]
-    ? "unfollow"
-    : "follow";
-
-  let list = `<h1>${username}</h1>`;
-  if (userLoggedIn) {
-    if (userId != batch[0].results[0]["user_id"]) {
-      list += `
-            <span id="follow">
-            <button hx-post="/users/${username}/${followButtonText}"
-            hx-trigger="click"
-            hx-target="#follow"
-            hx-swap="outerHTML">
-            ${followButtonText}
-            </button>
-            </span><hr>`;
-    } else {
-      list += `<div class="flash flash-blue">This is your public profile (<a href="/my/account">account settings</a>)</div>`;
-    }
-  } else {
-    list += `<p><i>Once logged in, you'll be able to follow users and read their feeds on your home page.</i></p>`;
-  }
+  let list = "";
 
   // user favorited these jabronis
   list += `<h2>Favorites:</h2>`;
@@ -131,10 +111,35 @@ export const usersSingleHandler = async (c: any) => {
   });
 
   list += `<hr><h2>Followers:</h2>`;
+  let followButtonText = "follow";
   if (!batch[3].results.length) list += `<p><i>None yet</i></p>`;
   batch[3].results.forEach((user: any) => {
+    followButtonText =
+      user.follower === currentUsername ? "unfollow" : "follow";
     list += `<li><a href="${user.follower}">${user.follower}</a></li>`;
   });
+
+  let top_block = `<h1>@${username}</h1>`;
+
+  if (userLoggedIn) {
+    if (userId != batch[0].results[0]["user_id"]) {
+      top_block += `
+            <span id="follow">
+            <button hx-post="/users/${username}/${followButtonText}"
+            hx-trigger="click"
+            hx-target="#follow"
+            hx-swap="outerHTML">
+            ${followButtonText}
+            </button>
+            </span><hr>`;
+    } else {
+      top_block += `<div class="flash flash-blue">This is your public profile (<a href="/my/account">account settings</a>)</div>`;
+    }
+  } else {
+    top_block += `<p><i>Once logged in, you'll be able to follow users and read their feeds on your home page.</i></p>`;
+  }
+
+  list = top_block + list;
 
   return c.html(
     renderHTML(

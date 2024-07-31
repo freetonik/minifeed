@@ -9,10 +9,10 @@
     --color-blue: #052962;
     --color-blue-light: #e9f2ff;
     --color-blue-superlight: #f5f9ff;
-    --color-green: #05620F;
+    --color-green: #05620f;
     --color-red: #620529;
-    
-    --color-brown: #623E05;
+
+    --color-brown: #623e05;
     --color-gray: #555;
     --color-bg: #fff;
     --color-highlight: #ebebeb;
@@ -54,7 +54,6 @@ main {
 .main {
     padding: 2em 0;
 }
-
 
 main a,
 main a:visited {
@@ -112,11 +111,10 @@ header {
     .item-actions div {
         margin-bottom: 0.25em;
     }
-    
 }
 
 @media screen and (max-width: 380px) {
-    header  {
+    header {
         font-size: smaller;
     }
 }
@@ -137,7 +135,7 @@ header nav .main-sections a:first-child:not(.active) {
     padding-left: 0;
 }
 
-header nav a, 
+header nav a,
 header nav .search-form {
     color: var(--color-bg);
     text-decoration: none;
@@ -200,7 +198,6 @@ header .topline .logo {
 header .topline .logo a {
     color: var(--color-bg);
     text-decoration: none;
-
 }
 
 /* nav.my-menu {
@@ -226,7 +223,6 @@ footer {
     margin-top: 3em;
 }
 
-
 footer a {
     text-decoration: none;
 }
@@ -251,7 +247,6 @@ footer div {
 }
 
 .item-short p.item-summary {
-    
     margin-top: 0.5em;
 }
 
@@ -261,62 +256,70 @@ footer div {
     justify-content: space-between;
 }
 
-
-button, .button, a.button:visited {
-  appearance: none;
-  background-color: #FAFBFC;
-  border: 1px solid rgba(27, 31, 35, 0.15) !important;
-  border-radius: 4px;
-  box-shadow: rgba(27, 31, 35, 0.04) 0 1px 0, rgba(255, 255, 255, 0.25) 0 1px 0 inset;
-  box-sizing: border-box;
-  color: #24292E;
-  cursor: pointer;
-  display: inline-block;
-  font-family: -apple-system, system-ui, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 20px;
-  list-style: none;
-  padding: 6px 16px;
-  position: relative;
-  transition: background-color 0.2s cubic-bezier(0.3, 0, 0.5, 1);
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: manipulation;
-  vertical-align: middle;
-  white-space: nowrap;
-  word-wrap: break-word;
+button,
+.button,
+a.button:visited {
+    appearance: none;
+    background-color: #fafbfc;
+    border: 1px solid rgba(27, 31, 35, 0.15) !important;
+    border-radius: 4px;
+    box-shadow:
+        rgba(27, 31, 35, 0.04) 0 1px 0,
+        rgba(255, 255, 255, 0.25) 0 1px 0 inset;
+    box-sizing: border-box;
+    color: #24292e;
+    cursor: pointer;
+    display: inline-block;
+    font-family: -apple-system, system-ui, "Segoe UI", Helvetica, Arial,
+        sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    list-style: none;
+    padding: 6px 16px;
+    position: relative;
+    transition: background-color 0.2s cubic-bezier(0.3, 0, 0.5, 1);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    vertical-align: middle;
+    white-space: nowrap;
+    word-wrap: break-word;
 }
 
-button:hover, a.button:hover {
-  background-color: #F3F4F6;
-  text-decoration: none;
-  transition-duration: 0.1s;
+button:hover,
+a.button:hover {
+    background-color: #f3f4f6;
+    text-decoration: none;
+    transition-duration: 0.1s;
 }
 
-button:disabled, a.button:disabled {
-  background-color: #FAFBFC;
-  border-color: rgba(27, 31, 35, 0.15);
-  color: #959DA5;
-  cursor: default;
+button:disabled,
+a.button:disabled {
+    background-color: #fafbfc;
+    border-color: rgba(27, 31, 35, 0.15);
+    color: #959da5;
+    cursor: default;
 }
 
-button:enabled:active, a.button:active {
-  background-color: #EDEFF2;
-  box-shadow: rgba(225, 228, 232, 0.2) 0 1px 0 inset;
-  transition: none 0s;
+button:enabled:active,
+a.button:active {
+    background-color: #edeff2;
+    box-shadow: rgba(225, 228, 232, 0.2) 0 1px 0 inset;
+    transition: none 0s;
 }
 
-button:focus, a.button:focus {
-  outline: 1px transparent;
+button:focus,
+a.button:focus {
+    outline: 1px transparent;
 }
 
 button:before {
-  display: none;
+    display: none;
 }
 
 button:-webkit-details-marker {
-  display: none;
+    display: none;
 }
 
 button.subscribed {
@@ -338,43 +341,42 @@ button.subscribed .unsubscribe-text {
 button.subscribed:hover .subscribed-text {
     display: none;
 }
-  
+
 button.subscribed:hover .unsubscribe-text {
     display: inline;
 }
 
-
 button.subscribed:hover {
     background-color: var(--color-red);
 }
-
 
 .bold {
     font-weight: bold;
 }
 
 /* headlines with lines */
-.decorated{
+.decorated {
     overflow: hidden;
     text-align: center;
 }
-.decorated > span{
-   position: relative;
-   display: inline-block;
+.decorated > span {
+    position: relative;
+    display: inline-block;
 }
-.decorated > span:before, .decorated > span:after{
-   content: '';
-   position: absolute;
-   top: 50%;
-   border-bottom: 1px solid gray;
-   width: 100vw;
-   margin: 0 20px;
+.decorated > span:before,
+.decorated > span:after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    border-bottom: 1px solid gray;
+    width: 100vw;
+    margin: 0 20px;
 }
-.decorated > span:before{
-   right: 100%;
+.decorated > span:before {
+    right: 100%;
 }
-.decorated > span:after{
-   left: 100%;
+.decorated > span:after {
+    left: 100%;
 }
 
 .muted,
@@ -389,13 +391,15 @@ button.subscribed:hover {
     height: auto;
 }
 
-.post-content code, .post-content pre {
+.post-content code,
+.post-content pre {
     overflow: auto;
     text-wrap: scroll;
     background-color: #f3f3f3;
 }
 
-.post-content iframe, .post-content embed {
+.post-content iframe,
+.post-content embed {
     max-width: 100%;
     height: auto;
     max-height: 30em;
@@ -408,7 +412,9 @@ button.subscribed:hover {
     width: 100%;
     background: white;
     border-radius: 4px;
-    box-shadow: rgba(60, 66, 87, 0.12) 0px 7px 14px 0px, rgba(0, 0, 0, 0.12) 0px 3px 6px 0px;
+    box-shadow:
+        rgba(60, 66, 87, 0.12) 0px 7px 14px 0px,
+        rgba(0, 0, 0, 0.12) 0px 3px 6px 0px;
 }
 
 .formbg-small {
@@ -429,13 +435,14 @@ button.subscribed:hover {
     border-radius: 4px;
     outline-color: rgb(84 105 212 / 0.5);
     background-color: rgb(255, 255, 255);
-    box-shadow: rgba(0, 0, 0, 0) 0px 0px 0px 0px, 
-                rgba(0, 0, 0, 0) 0px 0px 0px 0px, 
-                rgba(0, 0, 0, 0) 0px 0px 0px 0px, 
-                rgba(60, 66, 87, 0.16) 0px 0px 0px 1px, 
-                rgba(0, 0, 0, 0) 0px 0px 0px 0px, 
-                rgba(0, 0, 0, 0) 0px 0px 0px 0px, 
-                rgba(0, 0, 0, 0) 0px 0px 0px 0px;
+    box-shadow:
+        rgba(0, 0, 0, 0) 0px 0px 0px 0px,
+        rgba(0, 0, 0, 0) 0px 0px 0px 0px,
+        rgba(0, 0, 0, 0) 0px 0px 0px 0px,
+        rgba(60, 66, 87, 0.16) 0px 0px 0px 1px,
+        rgba(0, 0, 0, 0) 0px 0px 0px 0px,
+        rgba(0, 0, 0, 0) 0px 0px 0px 0px,
+        rgba(0, 0, 0, 0) 0px 0px 0px 0px;
 }
 
 .formbg input[type="submit"] {
@@ -469,7 +476,7 @@ button.subscribed:hover {
 
 .flash-red {
     background-color: var(--color-red);
-    color:white;
+    color: white;
 }
 
 hr {
@@ -520,35 +527,9 @@ hr {
     margin-bottom: 2em;
 }
 
-
-/* ADMIN CONTROLS */
-
-.admin-control {
-    background-color: var(--color-blue-light);
-    padding: 1em;
-    margin-top: 2em;
+.pill {
+    border-radius: 4px;
+    padding: 0.25em 0.5em;
+    background-color: var(--color-gray);
+    color: white;
 }
-
-.admin-control table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.admin-control th,
-.admin-control td {
-    padding: 8px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-}
-
-.admin-control th {
-    background-color: #f2f2f2;
-}
-
-.admin-control tr:hover {
-    background-color: #f5f5f5;
-}
-
-
-.admin-control#hidden{ display: none; }
-.admin-control#hidden:target{ display: block; }

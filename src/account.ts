@@ -4,12 +4,26 @@ import { renderHTML } from "./htmltools";
 import { sendEmail } from "./email";
 
 export const myAccountHandler = async (c: any) => {
-  const username = c.get("USERNAME");
+  const user_id = c.get("USER_ID");
+  const user = await c.env.DB.prepare(
+    "SELECT created, username, email_verified, status, email from users WHERE user_id = ?",
+  )
+    .bind(user_id)
+    .run();
+  console.log(user);
+  const verified = user["results"][0]["email_verified"] ? "yes" : "no";
+  const email = user["results"][0]["email"];
+  const username = user["results"][0]["username"];
+  const status = user["results"][0]["status"];
   let list = `
     <h1>My account</h1>
     <p>
     Username: ${username}<br>
-    Profile: <a href="/users/${username}">${username}</a>
+    Profile: <a href="/users/${username}">${username}</a><br>
+    Email: ${email}<br>
+    Email verified: ${verified}<br>
+    Account status: ${status}<br>
+
     </p>
     <p style="margin-top:3em;">
     <a style="padding: 0.75em; border: 1px solid; background-color: #9c0000; color: white;" href="/logout">Log out</a>
@@ -23,7 +37,7 @@ export const myAccountVerifyEmailHandler = async (c: any) => {
   const code = c.req.query("code");
   const username = c.get("USERNAME");
   const result = await c.env.DB.prepare(
-    "SELECT * from email_verification WHERE verification_code = ?",
+    "SELECT * from email_verifications WHERE verification_code = ?",
   )
     .bind(code)
     .run();
@@ -48,7 +62,7 @@ export const myAccountVerifyEmailHandler = async (c: any) => {
     .bind(userId)
     .run();
   await c.env.DB.prepare(
-    "DELETE FROM email_verification WHERE verification_code = ?",
+    "DELETE FROM email_verifications WHERE verification_code = ?",
   )
     .bind(code)
     .run();
@@ -207,7 +221,7 @@ export const signupPostHandler = async (c: any) => {
 
     const email_verification_code = randomHash(32);
     await c.env.DB.prepare(
-      "INSERT INTO email_verification (user_id, verification_code) values (?, ?)",
+      "INSERT INTO email_verifications (user_id, verification_code) values (?, ?)",
     )
       .bind(userId, email_verification_code)
       .run();
