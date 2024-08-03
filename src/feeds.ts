@@ -386,9 +386,9 @@ async function addFeed(env: Bindings, url: string, verified: boolean = false) {
   const r: FeedData = await extractRSS(RSSUrl);
 
   const feedValidationResult = validateFeedData(r);
-  if (feedValidationResult.validated) {
+  if (!feedValidationResult.validated) {
     throw new Error(
-      "Feed data verification failed" +
+      "Feed data verification failed: " +
         feedValidationResult.messages.join("\n"),
     );
   }

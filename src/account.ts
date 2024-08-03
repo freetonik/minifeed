@@ -10,7 +10,6 @@ export const myAccountHandler = async (c: any) => {
   )
     .bind(user_id)
     .run();
-  console.log(user);
   const verified = user["results"][0]["email_verified"] ? "yes" : "no";
   const email = user["results"][0]["email"];
   const username = user["results"][0]["username"];
