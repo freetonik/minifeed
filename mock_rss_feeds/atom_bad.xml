@@ -1,0 +1,13 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+<channel>
+<title>Good feed</title>
+<link>https://rakhimgood.org/</link>
+<description>Good rss feed</description>
+<item>
+<title>The Yearly Run (sci-fi short story)</title>
+<pubDate>Mon, 09 Nov 2020 00:00:00 +0000</pubDate>
+<description> my description woah</description>
+</item>
+
+</channel>
+</rss>

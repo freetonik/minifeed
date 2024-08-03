@@ -1,6 +1,6 @@
-import { extract } from "@extractus/feed-extractor";
+import { extract, FeedData } from "@extractus/feed-extractor";
 
-export async function extractRSS(RSSUrl: string) {
+export async function extractRSS(RSSUrl: string): Promise<FeedData> {
   return await extract(RSSUrl, {
     descriptionMaxLen: 0,
     getExtraEntryFields: (feedEntry) => {
@@ -36,4 +36,44 @@ export async function extractRSS(RSSUrl: string) {
       };
     },
   });
+}
+
+export interface feedValidationResult {
+  validated: boolean;
+  messages: string[];
+}
+
+export function validateFeedData(feedData: FeedData): feedValidationResult {
+  let result: feedValidationResult = {
+    validated: true,
+    messages: [],
+  };
+
+  if (!feedData.title || feedData.title.length == 0) {
+    result.validated = false;
+    result.messages.push("Feed title is missing");
+  }
+
+  if (!feedData.entries || feedData.entries.length == 0) {
+    result.validated = false;
+    result.messages.push("Feed entries are missing");
+  }
+
+  if (feedData.entries) {
+    let index = 0;
+    for (const item of feedData.entries) {
+      if (!item.title || item.title.length == 0) {
+        result.validated = false;
+        result.messages.push(`Feed item title is missing; item index ${index}`);
+      }
+      let link = item.link || item.id;
+      if (!link || link.length == 0) {
+        result.validated = false;
+        result.messages.push(`Feed item link is missing; item index ${index}`);
+      }
+      index++;
+    }
+  }
+
+  return result;
 }

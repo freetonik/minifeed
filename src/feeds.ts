@@ -13,7 +13,7 @@ import {
   truncate,
 } from "./utils";
 import { deleteFeedFromIndex } from "./search";
-import { extractRSS } from "./feed_extractor";
+import { extractRSS, validateFeedData } from "./feed_extractor";
 import { Bindings } from "./bindings";
 import {
   enqueueIndexAllItemsOfFeed,
@@ -22,6 +22,7 @@ import {
   enqueueScrapeAllItemsOfFeed,
   enqueueRebuildFeedTopItemsCache,
 } from "./queue";
+import { FeedData } from "@extractus/feed-extractor";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ROUTE HANDLERS //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -371,7 +372,15 @@ export async function feedsGlobalCacheRebuildHandler(c: any) {
 
 async function addFeed(env: Bindings, url: string, verified: boolean = false) {
   const RSSUrl: string = await getRSSLinkFromUrl(url);
-  const r = await extractRSS(RSSUrl);
+  const r: FeedData = await extractRSS(RSSUrl);
+
+  const feedValidationResult = validateFeedData(r);
+  if (feedValidationResult.validated) {
+    throw new Error(
+      "Feed data verification failed" +
+        feedValidationResult.messages.join("\n"),
+    );
+  }
 
   // if url === rssUrl that means the submitted URL was RSS URL, so retrieve site URL from RSS; otherwise use submitted URL as site URL
   const attemptedSiteUrl =
@@ -426,7 +435,7 @@ export async function updateFeed(env: Bindings, feedId: number) {
   const description = String(feeds[0]["description"]);
   console.log(`Updating feed ${feedId} (${RSSUrl})`);
 
-  const r = await extractRSS(RSSUrl); // fetch RSS content
+  const r: FeedData = await extractRSS(RSSUrl); // fetch RSS content
 
   if (
     r.description &&

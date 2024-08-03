@@ -1,7 +1,14 @@
-export const version = "0.2.5";
+export const version = "0.3.0";
 
 export const changelog = `
     <h2>Changelog</h2>
+
+    <h3>0.3.0 (31.07.2024)</h3>
+    <ul>
+        <li>Additional feed validation.</li>
+        <li>User registrations with email verifications.</li>
+        <li>Bugfix: some profile pages showed incorrect follower/following status.</li>
+    </ul>
 
     <h3>0.2.5 (31.07.2024)</h3>
     <ul>

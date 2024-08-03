@@ -188,10 +188,10 @@ export const stripTags = (s: string) => {
 };
 
 export const extractItemUrl = (item: any, feedRSSUrl: string) => {
-  if (!item.link && !item.guid && !item.id)
+  if (!item.link && !item.id)
     throw new Error("Cannot extract item URL: missing link, guid, or id");
 
-  let link = item.link || item.guid || item.id;
+  let link = item.link || item.id;
   // if link does not start with http, it's probably a relative link, so we need to absolutify it by prepending the RSS URL origin
   if (!link.startsWith("http")) {
     const feedRSSUrlBase = new URL(feedRSSUrl).origin;
