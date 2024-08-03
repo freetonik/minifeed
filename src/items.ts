@@ -21,7 +21,17 @@ export const globalFeedHandler = async (c: any) => {
     .bind(userId, itemsPerPage, offset)
     .run();
 
-  let list = `<p style="margin-bottom: 2em"><strong>This is a global feed of all items from all blogs in chronological order.</strong></p>`;
+  let list = ``;
+  if (userId == -1) {
+    list += `<div style="margin-bottom: 2em" class="flash flash-blue">
+    <strong>Minifeed</strong> is a curated blog reader and blog search engine.
+    Our goal is to collect all blogs written by real humans, and make them discoverable and searchable.
+    After signing up, you can subscribe to blogs, follow people, and save your favorite posts.
+    </div>`;
+  }
+
+  list += `<p style="margin-bottom: 2em"><strong>This is a global feed of all items from all blogs in chronological order.</strong></p>`;
+
   if (!results.length)
     list += `<p><i>Nothing exists on minifeed yet...</i></p>`;
 

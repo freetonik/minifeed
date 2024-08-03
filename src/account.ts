@@ -226,7 +226,7 @@ export const signupPostHandler = async (c: any) => {
       .bind(userId, email_verification_code)
       .run();
     const emailVerificationLink = `${c.env.ENVIRONMENT == "dev" ? "http://localhost:8787" : "https://minifeed.net"}/verify_email?code=${email_verification_code}`;
-    const emailBody = `Welcome to minifeed, ${username}! Please verify your email by clicking <a href="${emailVerificationLink}">here</a>.`;
+    const emailBody = `Welcome to minifeed, ${username}! Please verify your email by clicking this link: ${emailVerificationLink}`;
 
     await sendEmail(
       email,

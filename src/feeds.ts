@@ -39,6 +39,16 @@ export const blogsHandler = async (c: any) => {
     .run();
 
   let list = `<div class="main">`;
+  list += `<div style="text-align:center;"><a class="button" href="/suggest">+ suggest a blog</a></div></div>`;
+
+  if (user_id == -1) {
+    list += `<div style="margin-bottom: 2em" class="flash flash-blue">
+    <strong>Minifeed</strong> is a curated blog reader and blog search engine.
+    Our goal is to collect all blogs written by real humans, and make them discoverable and searchable.
+    After signing up, you can subscribe to blogs, follow people, and save your favorite posts.
+    </div>`;
+  }
+
   results.forEach((feed: any) => {
     const sqid = feedIdToSqid(feed.feed_id);
 
@@ -86,7 +96,8 @@ export const blogsHandler = async (c: any) => {
             ${top_items_list}
         </div>`;
   });
-  list += `<div style="margin-top:2em;text-align:center;"><a class="button" href="/blogs/new">+ add new blog</a></div></div>`;
+  // list += `<div style="margin-top:2em;text-align:center;"><a class="button" href="/blogs/new">+ add new blog</a></div></div>`;
+  list += `<div style="margin-top:2em;text-align:center;"><a class="button" href="/suggest">+ suggest a blog</a></div></div>`;
   return c.html(
     renderHTML(
       "Blogs | minifeed",

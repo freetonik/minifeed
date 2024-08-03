@@ -61,7 +61,7 @@ import { changelog } from "./changelog";
 import { Bindings } from "./bindings";
 import { enqueueScrapeAllItemsOfFeed, enqueueUpdateAllFeeds } from "./queue";
 import { scrapeItem } from "./scrape";
-import { feedbackHandler } from "./feedback";
+import { feedbackHandler, suggestBlogHandler } from "./feedback";
 
 const app = new Hono<{ Bindings: Bindings }>({ strict: false });
 
@@ -80,6 +80,7 @@ app.use("/items/:feed_sqid/favorite", userPageMiddleware);
 app.use("/items/:feed_sqid/unfavorite", userPageMiddleware);
 
 // all routes below this line require admin privileges
+app.use("/blogs/new", adminMiddleware);
 app.use("/feeds/:feed_sqid/delete", adminMiddleware);
 app.use("/feeds/:feed_sqid/update", adminMiddleware);
 app.use("/feeds/:feed_sqid/scrape", adminMiddleware);
@@ -161,6 +162,7 @@ app.get("/admin", adminHandler);
 app.get("/search", searchHandler);
 app.get("/global", globalFeedHandler);
 app.get("/feedback", feedbackHandler);
+app.get("/suggest", suggestBlogHandler);
 
 app.get("/login", loginHandler);
 app.get("/logout", logoutHandler);

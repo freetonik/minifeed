@@ -68,7 +68,7 @@ npx wrangler d1 execute minifeed --command="SELECT COUNT(item_id) FROM Items"
 - [ ] request for post, voted and commented by users
 - [ ] download images?
 - [x] summary for posts
-- [ ] get blog description from RSS feed (optionally)
+- [x] get blog description from RSS feed (optionally)
 - [ ] validate feed before adding it:
   - has title
   - has entries
