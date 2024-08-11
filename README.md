@@ -69,12 +69,13 @@ npx wrangler d1 execute minifeed --command="SELECT COUNT(item_id) FROM Items"
 - [ ] download images?
 - [x] summary for posts
 - [x] get blog description from RSS feed (optionally)
-- [ ] validate feed before adding it:
+- [x] validate feed before adding it:
   - has title
   - has entries
   - entry has link
 - [ ] re-check typesense api keys leak
 - [x] add posts to feed manually
+- [ ] index post after adding posts to feed manually
 
 ### TODO: remove uniqueness constraint from items url
 

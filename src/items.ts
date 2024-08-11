@@ -715,7 +715,8 @@ export const itemsAddItemByUrlPostHandler = async (c: any) => {
     content_from_content: articleContent.data.content,
   };
 
-  const addedItemId = await addItemsToFeed(c.env, [item], feedId, false);
+  const insert_results = await addItemsToFeed(c.env, [item], feedId, false);
+  const addedItemId = insert_results[0].meta.last_row_id;
   const addedItemSqid = itemIdToSqid(addedItemId);
   return c.redirect(`/items/${addedItemSqid}`);
 };

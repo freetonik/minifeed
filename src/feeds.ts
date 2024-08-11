@@ -420,7 +420,7 @@ async function addFeed(env: Bindings, url: string, verified: boolean = false) {
       return RSSUrl;
     }
   } catch (e: any) {
-    if (e.toString().includes("UNIQUE constraint failed: feeds.rss_url")) {
+    if (e.toString().includes("UNIQUE constraint failed")) {
       return RSSUrl;
     } else {
       throw e;
@@ -553,9 +553,10 @@ export async function addItemsToFeed(
         console.log(`Item: ${item_id} sent to queue for scraping`);
         await enqueueItemScrape(env, item_id);
       }
-      return result.meta.last_row_id;
     }
   }
+
+  return insert_results;
 }
 
 export async function regenerateTopItemsCacheForFeed(
