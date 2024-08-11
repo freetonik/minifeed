@@ -14,6 +14,8 @@ import {
   itemsScrapeHandler,
   myFavoritesHandler,
   itemsIndexHandler,
+  itemsAddItembyUrlHandler,
+  itemsAddItemByUrlPostHandler,
 } from "./items";
 import {
   blogsSingleHandler,
@@ -80,7 +82,8 @@ app.use("/items/:feed_sqid/favorite", userPageMiddleware);
 app.use("/items/:feed_sqid/unfavorite", userPageMiddleware);
 
 // all routes below this line require admin privileges
-app.use("/blogs/new", adminMiddleware);
+app.use("/blogs/:feed_sqid/new", adminMiddleware);
+app.use("/blogs/:feed_sqid/new", adminMiddleware);
 app.use("/feeds/:feed_sqid/delete", adminMiddleware);
 app.use("/feeds/:feed_sqid/update", adminMiddleware);
 app.use("/feeds/:feed_sqid/scrape", adminMiddleware);
@@ -179,6 +182,9 @@ app.get("/verify_email", myAccountVerifyEmailHandler);
 app.get("/blogs", blogsHandler);
 app.get("/blogs/new", blogsNewHandler);
 app.post("/blogs/new", blogsNewPostHandler);
+app.get("/blogs/:feed_sqid/new", itemsAddItembyUrlHandler);
+app.post("/blogs/:feed_sqid/new", itemsAddItemByUrlPostHandler);
+
 app.get("/blogs/:feed_sqid", blogsSingleHandler);
 app.post("/feeds/:feed_sqid/subscribe", feedsSubscribeHandler);
 app.post("/feeds/:feed_sqid/unsubscribe", feedsUnsubscribeHandler);

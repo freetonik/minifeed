@@ -1,7 +1,19 @@
-import { renderHTML, renderItemShort } from "./htmltools";
+import {
+  renderAddItemByURLForm,
+  renderHTML,
+  renderItemShort,
+} from "./htmltools";
 import { html, raw } from "hono/html";
-import { feedIdToSqid, itemIdToSqid, itemSqidToId, truncate } from "./utils";
+import {
+  feedIdToSqid,
+  feedSqidToId,
+  itemIdToSqid,
+  itemSqidToId,
+  truncate,
+} from "./utils";
 import { enqueueItemIndex, enqueueItemScrape } from "./queue";
+import { scrapeURLIntoItem } from "./scrape";
+import { addItemsToFeed } from "./feeds";
 
 export const globalFeedHandler = async (c: any) => {
   const userId = c.get("USER_ID") || -1;
@@ -664,6 +676,48 @@ export const itemsRemoveFromFavoritesHandler = async (c: any) => {
     "Error"
     </span>
     `);
+};
+
+export const itemsAddItembyUrlHandler = async (c: any) => {
+  const feedSqid = c.req.param("feed_sqid");
+  const feedId = feedSqidToId(feedSqid);
+
+  const blog = await c.env.DB.prepare(`SELECT * FROM feeds WHERE feed_id = ?`)
+    .bind(feedId)
+    .all();
+
+  const blogTitle = blog.results[0].title;
+
+  return c.html(
+    renderHTML(
+      "Add new item",
+      html`${renderAddItemByURLForm("", "", blogTitle)}`,
+      c.get("USERNAME"),
+      "blogs",
+    ),
+  );
+};
+
+export const itemsAddItemByUrlPostHandler = async (c: any) => {
+  const feedSqid = c.req.param("feed_sqid");
+  const feedId = feedSqidToId(feedSqid);
+
+  const body = await c.req.parseBody();
+  const url = body["url"].toString();
+
+  const articleContent = await scrapeURLIntoItem(c.env, url);
+  const item = {
+    feed_id: feedId,
+    title: articleContent.data.title,
+    link: url,
+    published: articleContent.data.published,
+    description: articleContent.data.description,
+    content_from_content: articleContent.data.content,
+  };
+
+  const addedItemId = await addItemsToFeed(c.env, [item], feedId, false);
+  const addedItemSqid = itemIdToSqid(addedItemId);
+  return c.redirect(`/items/${addedItemSqid}`);
 };
 
 export const itemsScrapeHandler = async (c: any) => {

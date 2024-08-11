@@ -483,10 +483,11 @@ export async function updateFeed(env: Bindings, feedId: number) {
   console.log(`Updated feed ${feedId} (${RSSUrl}), no items fetched`);
 }
 
-async function addItemsToFeed(
+export async function addItemsToFeed(
   env: Bindings,
   items: Array<any>,
   feedId: number,
+  scrapeAfterAdding: boolean = true,
 ) {
   if (!items.length) return;
 
@@ -547,9 +548,12 @@ async function addItemsToFeed(
         .bind(item_sqid, item_id)
         .run();
       console.log(`Item: ${item_id} set sqid ${item_sqid}`);
-      console.log(`Item: ${item_id} sent to queue for scraping`);
 
-      await enqueueItemScrape(env, item_id);
+      if (scrapeAfterAdding) {
+        console.log(`Item: ${item_id} sent to queue for scraping`);
+        await enqueueItemScrape(env, item_id);
+      }
+      return result.meta.last_row_id;
     }
   }
 }

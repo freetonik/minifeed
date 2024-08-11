@@ -203,3 +203,37 @@ export const renderAddFeedForm = (url: string = "", flash: string = "") => {
     </div>
   `;
 };
+
+export const renderAddItemByURLForm = (
+  url: string = "",
+  flash: string = "",
+  blogTitle: string = "",
+) => {
+  let flash_test = "";
+  if (flash.includes("Cannot fetch url"))
+    flash_test += "That page does not exist.";
+  else flash_test += flash;
+
+  const flashBlock = flash
+    ? html`<div class="flash flash-red">${flash_test}</div>`
+    : "";
+  return html`
+    <h1>Add new item by URL to ${blogTitle}</h1>
+    ${flashBlock}
+    <div class="formbg">
+      <form action="new" method="POST">
+        <div style="margin-bottom:1em;">
+          <label for="url">URL:</label>
+          <input
+            type="url"
+            id="url"
+            name="url"
+            value="${url}"
+            style="width: 100%;"
+          /><br />
+        </div>
+        <input type="submit" value="Add item" />
+      </form>
+    </div>
+  `;
+};

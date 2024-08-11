@@ -74,7 +74,7 @@ npx wrangler d1 execute minifeed --command="SELECT COUNT(item_id) FROM Items"
   - has entries
   - entry has link
 - [ ] re-check typesense api keys leak
-- [ ] add posts to feed manually
+- [x] add posts to feed manually
 
 ### TODO: remove uniqueness constraint from items url
 

@@ -31,3 +31,15 @@ export async function scrapeItem(env: Bindings, item_id: number) {
 
   await enqueueItemIndex(env, item_id);
 }
+
+export async function scrapeURLIntoItem(env: Bindings, url: string) {
+  const maeServiceUrl = `https://mae.deno.dev/?apikey=${env.MAE_SERVICE_API_KEY}&url=${url}`;
+  try {
+    const req = await fetch(maeServiceUrl);
+    const articleInfo = await req.text();
+    const articleInfoParsed = JSON.parse(articleInfo);
+    return articleInfoParsed;
+  } catch (err: any) {
+    console.log(`Error scraping URL ${url}: ${err.toString()}`);
+  }
+}
