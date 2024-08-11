@@ -505,8 +505,15 @@ async function addItemsToFeed(
 
   items.forEach((item: any) => {
     let link = extractItemUrl(item, feedRSSUrl);
-    // if date was not properly parsed, try to parse it (expects 'pubdate' to be retrieved by feed_extractor's extractRSS function)
-    if (!item.published) item.published = new Date(item.pubdate).toISOString();
+    if (!item.published) {
+      // if date was not properly parsed, try to parse it (expects 'pubdate' to be retrieved by feed_extractor's extractRSS function)
+      if (item.pubdate) {
+        item.published = new Date(item.pubdate).toISOString();
+      } else {
+        // if date is still not available, use current date
+        item.published = new Date().toISOString();
+      }
+    }
 
     let content_html =
       item["content_from_content"] ||
