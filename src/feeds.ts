@@ -389,7 +389,7 @@ async function addFeed(env: Bindings, url: string, verified: boolean = false) {
   if (!feedValidationResult.validated) {
     throw new Error(
       "Feed data verification failed: " +
-        feedValidationResult.messages.join("\n"),
+        feedValidationResult.messages.join("; "),
     );
   }
 

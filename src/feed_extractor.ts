@@ -64,12 +64,12 @@ export function validateFeedData(feedData: FeedData): feedValidationResult {
     for (const item of feedData.entries) {
       if (!item.title || item.title.length == 0) {
         result.validated = false;
-        result.messages.push(`Feed item title is missing; item index ${index}`);
+        result.messages.push(`Feed item title is missing at index ${index}`);
       }
       let link = item.link || item.id;
       if (!link || link.length == 0) {
         result.validated = false;
-        result.messages.push(`Feed item link is missing; item index ${index}`);
+        result.messages.push(`Feed item link is missing at index ${index}`);
       }
       index++;
     }

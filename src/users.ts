@@ -68,7 +68,7 @@ export const usersSingleHandler = async (c: any) => {
     // favorites batch[4]
     c.env.DB.prepare(
       `
-        SELECT items.item_id, items.feed_id, items.url, items.title, items.pub_date, feeds.title as feed_title
+        SELECT items.item_sqid, items.feed_id, items.url, items.title, items.pub_date, feeds.title as feed_title, feeds.feed_sqid
         FROM items
         JOIN favorites on items.item_id = favorites.item_id
         JOIN feeds on items.feed_id = feeds.feed_id
@@ -86,11 +86,11 @@ export const usersSingleHandler = async (c: any) => {
   if (!batch[4].results.length) list += `<p><i>None yet</i></p>`;
   batch[4].results.forEach((item: any) => {
     list += renderItemShort(
-      item.item_id,
+      item.item_sqid,
       item.title,
       item.url,
       item.feed_title,
-      item.feed_id,
+      item.feed_sqid,
       item.pub_date,
     );
   });
