@@ -2,7 +2,7 @@ name = "minifeed"
 compatibility_date = "2023-01-01"
 
 workers_dev = false
-route = { pattern = "minifeed.net", custom_domain = true }
+route = { pattern = "*minifeed.net/*", zone_name = "minifeed.net" }
 main = "src/index.ts"
 
 [vars]

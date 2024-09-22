@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Context, Hono } from "hono";
 import { raw } from "hono/html";
 import { renderHTML } from "./htmltools";
 import { serveStatic } from "hono/cloudflare-workers";
@@ -65,8 +65,10 @@ import { enqueueScrapeAllItemsOfFeed, enqueueUpdateAllFeeds } from "./queue";
 import { scrapeItem } from "./scrape";
 import { feedbackHandler, suggestBlogHandler } from "./feedback";
 
-const app = new Hono<{ Bindings: Bindings }>({ strict: false });
-
+// main app handles the root paths
+const app = new Hono<{ Bindings: Bindings }>({
+  strict: false,
+});
 app.get("/static/*", serveStatic({ root: "./" }));
 app.get("/robots.txt", async (c) => c.text("User-agent: *\nAllow: /"));
 app.get("/favicon.ico", async (c) =>
@@ -161,6 +163,7 @@ app.get("/", (c: any) => {
   if (!c.get("USER_ID")) return c.redirect("/global");
   return c.redirect("/my");
 });
+
 app.get("/admin", adminHandler);
 app.get("/search", searchHandler);
 app.get("/global", globalFeedHandler);
@@ -234,9 +237,36 @@ app.get("/about/changelog", async (c) =>
   c.html(renderHTML("Changelog | minifeed", raw(changelog), c.get("USERNAME"))),
 );
 
+// This handles subdomain blogs
+const subdomainApp = new Hono();
+subdomainApp.use("*", authMiddleware);
+subdomainApp.get("/", (c: Context<any, any, {}>) => {
+  const subdomain = c.req.raw.headers.get("host").split(".")[0];
+  return c.text(subdomain);
+});
+
+// Main app to route based on Host
+const appMain = new Hono();
+
+appMain.all("*", async (c: Context<any, any, {}>, next: () => any) => {
+  const host = c.req.raw.headers.get("host"); // Cloudflare Workers use lowercase 'host'
+  if (host) {
+    const subdomain = host.split(".")[0];
+    if (host.split(".").length === 3) {
+      c.set("SUBDOMAIN", subdomain);
+      return await subdomainApp.fetch(c.req, c.env, c.ctx);
+    }
+    // Default to root app for the main domain (example.com)
+    return await app.fetch(c.req, c.env, c.ctx);
+  }
+  return await app.fetch(c.req, c.env, c.ctx);
+
+  await next();
+});
+
 // MAIN EXPORT
 export default {
-  fetch: app.fetch, // normal processing of requests
+  fetch: (req, env, ctx) => appMain.fetch(req, env, ctx), // normal processing of requests
 
   async queue(batch: MessageBatch<any>, env: Bindings) {
     // consumer of queue FEED_UPDATE_QUEUE

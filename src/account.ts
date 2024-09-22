@@ -258,6 +258,7 @@ const createSessionSetCookieAndRedirect = async (
   }
   setCookie(c, "minifeed_session", sessionKey, {
     path: "/",
+    domain: c.env.ENVIRONMENT == "dev" ? ".localhost" : ".minifeed.net",
     secure: true,
     httpOnly: true,
     maxAge: 34560000,
