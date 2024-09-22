@@ -691,7 +691,7 @@ export const itemsAddItembyUrlHandler = async (c: any) => {
   return c.html(
     renderHTML(
       "Add new item",
-      html`${renderAddItemByURLForm("", "", blogTitle)}`,
+      html`${renderAddItemByURLForm("", "", "", blogTitle)}`,
       c.get("USERNAME"),
       "blogs",
     ),
@@ -704,21 +704,47 @@ export const itemsAddItemByUrlPostHandler = async (c: any) => {
 
   const body = await c.req.parseBody();
   const url = body["url"].toString();
+  const urls = body["urls"].toString();
+  if (!url && !urls) {
+    return c.html("Both URL and URLs are empty")
+  }
+  if (url && urls) {
+    return c.html("Both URL and URLs are filled in, please only fill in one")
+  }
 
-  const articleContent = await scrapeURLIntoItem(c.env, url);
-  const item = {
-    feed_id: feedId,
-    title: articleContent.data.title,
-    link: url,
-    published: articleContent.data.published,
-    description: articleContent.data.description,
-    content_from_content: articleContent.data.content,
-  };
+  let urls_array;
+  if (url) {
+    urls_array = [url];
+  }
+  if (urls) {
+    urls_array = urls.split("\r\n");
+  }
 
-  const insert_results = await addItemsToFeed(c.env, [item], feedId, false);
-  const addedItemId = insert_results[0].meta.last_row_id;
-  const addedItemSqid = itemIdToSqid(addedItemId);
-  return c.redirect(`/items/${addedItemSqid}`);
+  let added_items_sqids = [];
+
+  for (const url_value of urls_array) {
+    const articleContent = await scrapeURLIntoItem(c.env, url_value);
+    const item = {
+      feed_id: feedId,
+      title: articleContent.data.title,
+      link: url_value,
+      published: articleContent.data.published,
+      description: articleContent.data.description,
+      content_from_content: articleContent.data.content,
+    };
+
+    const insert_results = await addItemsToFeed(c.env, [item], feedId, false);  // don't scrape after adding
+    const addedItemId = insert_results[0].meta.last_row_id;
+    await enqueueItemIndex(c.env, addedItemId);
+    const addedItemSqid = itemIdToSqid(addedItemId);
+    added_items_sqids.push(addedItemSqid);
+  }
+  // it was a single URL, redirect to new post
+  if (url) {
+    return c.redirect(`/items/${added_items_sqids[0]}`);
+  }
+  // it was multiple URLs, redirect to blog
+  return c.redirect(`/blogs/${feedSqid}`);
 };
 
 export const itemsScrapeHandler = async (c: any) => {

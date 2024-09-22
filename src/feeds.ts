@@ -31,7 +31,7 @@ export const blogsHandler = async (c: any) => {
   const userLoggedIn = user_id != -1;
   const { results } = await c.env.DB.prepare(
     `
-    SELECT feeds.feed_id, feeds.title, subscriptions.subscription_id, items_top_cache.content from feeds
+    SELECT feeds.feed_id, feeds.title, feeds.url, feeds.rss_url, feeds.description, subscriptions.subscription_id, items_top_cache.content from feeds
     LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
     LEFT JOIN subscriptions on feeds.feed_id = subscriptions.feed_id AND subscriptions.user_id = ?`,
   )
@@ -39,10 +39,9 @@ export const blogsHandler = async (c: any) => {
     .run();
 
   let list = `<div class="main">`;
-  list += `<div style="text-align:center;"><a class="button" href="/suggest">+ suggest a blog</a></div></div>`;
 
   if (user_id == -1) {
-    list += `<div style="margin-bottom: 2em" class="flash flash-blue">
+    list += `<div style="margin-bottom: 2em;margin-top: -1em;" class="flash flash-blue">
     <strong>Minifeed</strong> is a curated blog reader and blog search engine.
     Our goal is to collect all blogs written by real humans, and make them discoverable and searchable.
     After signing up, you can subscribe to blogs, follow people, and save your favorite posts.
@@ -58,6 +57,10 @@ export const blogsHandler = async (c: any) => {
     const subscriptionButtonText = feed.subscription_id
       ? "subscribed"
       : "subscribe";
+
+    const feedDescriptionBlock = feed.description
+      ? `<p>${feed.description}</p>`
+      : "";
 
     const subscriptionBlock = userLoggedIn
       ? `<div><span id="subscription-${sqid}">
@@ -78,10 +81,11 @@ export const blogsHandler = async (c: any) => {
 
     const cache_content = JSON.parse(feed.content);
     const top_items = cache_content["top_items"]
-    const items_count = cache_content["items_count"] - top_items.length;
+    let items_count = 0;
     let top_items_list = "";
 
     if (top_items) {
+      items_count = cache_content["items_count"] - top_items.length;
       top_items_list += "<ul>";
       top_items.forEach((item: any) => {
         top_items_list += `<li><a href="/items/${item.item_sqid}">${item.title}</a></li>`;
@@ -92,12 +96,14 @@ export const blogsHandler = async (c: any) => {
     }
     list += `
         <div class="blog-summary">
-            <div class="summary-header">
-                <div><h2><a class="no-color" href="/blogs/${sqid}">${feed.title}</a> </h2></div>
-                ${subscriptionBlock}
-
-            </div>
-            ${top_items_list}
+          <h2>
+            <a class="no-color" href="/blogs/${sqid}">${feed.title}</a>
+            <small>(<a href="${feed.url}">site</a> / <a href="${feed.rss_url}">rss</a>)</small>
+          </h2>
+          ${feedDescriptionBlock}
+          ${subscriptionBlock}
+          <hr style="margin:2em 0;">
+          ${top_items_list}
         </div>`;
   });
   // list += `<div style="margin-top:2em;text-align:center;"><a class="button" href="/blogs/new">+ add new blog</a></div></div>`;
@@ -181,7 +187,8 @@ export const blogsSingleHandler = async (c: any) => {
     <h1>
       ${feedTitle}
       <small>(<a href="${feedUrl}">site</a> / <a href="${rssUrl}">rss</a>)</small>
-    </h1><p>${feedDescriptionBlock}</p>
+    </h1>
+    ${feedDescriptionBlock}
     ${subscriptionBlock}
     <hr style="margin:2em 0;">
     `;

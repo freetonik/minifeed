@@ -206,6 +206,7 @@ export const renderAddFeedForm = (url: string = "", flash: string = "") => {
 
 export const renderAddItemByURLForm = (
   url: string = "",
+  urls: string = "",
   flash: string = "",
   blogTitle: string = "",
 ) => {
@@ -230,9 +231,21 @@ export const renderAddItemByURLForm = (
             name="url"
             value="${url}"
             style="width: 100%;"
-          /><br />
+          />
+
+          <p>Or add multiple URLs separated by new lines:</p>
+
+          <label for="urls">URLs:</label>
+          <textarea
+            id="urls"
+            name="urls"
+            rows="7"
+
+            value="${urls}"
+            style="width: 100%;resize: vertical;"
+          /></textarea><br />
         </div>
-        <input type="submit" value="Add item" />
+        <input type="submit" value="Add item(s)" />
       </form>
     </div>
   `;
