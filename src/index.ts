@@ -4,60 +4,60 @@ import { renderHTML } from "./htmltools";
 import { serveStatic } from "hono/cloudflare-workers";
 import { adminHandler } from "./admin";
 import {
-  globalFeedHandler,
-  myItemsHandler,
-  mySubscriptionsHandler,
-  myFollowsHandler,
-  itemsSingleHandler,
-  itemsAddToFavoritesHandler,
-  itemsRemoveFromFavoritesHandler,
-  itemsScrapeHandler,
-  myFavoritesHandler,
-  itemsIndexHandler,
-  itemsAddItembyUrlHandler,
-  itemsAddItemByUrlPostHandler,
+    globalFeedHandler,
+    myItemsHandler,
+    mySubscriptionsHandler,
+    myFollowsHandler,
+    itemsSingleHandler,
+    itemsAddToFavoritesHandler,
+    itemsRemoveFromFavoritesHandler,
+    itemsScrapeHandler,
+    myFavoritesHandler,
+    itemsIndexHandler,
+    itemsAddItembyUrlHandler,
+    itemsAddItemByUrlPostHandler,
 } from "./items";
 import {
-  blogsSingleHandler,
-  feedsSubscribeHandler,
-  feedsUnsubscribeHandler,
-  feedsDeleteHandler,
-  feedsUpdateHandler,
-  feedsScrapeHandler,
-  blogsNewHandler,
-  blogsNewPostHandler,
-  updateFeed,
-  blogsHandler,
-  feedsIndexHandler,
-  regenerateTopItemsCacheForFeed,
-  feedsCacheRebuildHandler,
-  feedsGlobalIndexHandler,
-  feedsGlobalCacheRebuildHandler,
+    blogsSingleHandler,
+    feedsSubscribeHandler,
+    feedsUnsubscribeHandler,
+    feedsDeleteHandler,
+    feedsUpdateHandler,
+    feedsScrapeHandler,
+    blogsNewHandler,
+    blogsNewPostHandler,
+    updateFeed,
+    blogsHandler,
+    feedsIndexHandler,
+    regenerateTopItemsCacheForFeed,
+    feedsCacheRebuildHandler,
+    feedsGlobalIndexHandler,
+    feedsGlobalCacheRebuildHandler,
 } from "./feeds";
 import {
-  usersHandler,
-  usersSingleHandler,
-  usersFollowPostHandler,
-  usersUnfollowPostHandler,
+    usersHandler,
+    usersSingleHandler,
+    usersFollowPostHandler,
+    usersUnfollowPostHandler,
 } from "./users";
 import {
-  loginHandler,
-  loginPostHandler,
-  myAccountHandler,
-  logoutHandler,
-  signupPostHandler,
-  myAccountVerifyEmailHandler,
+    loginHandler,
+    loginPostHandler,
+    myAccountHandler,
+    logoutHandler,
+    signupPostHandler,
+    myAccountVerifyEmailHandler,
 } from "./account";
 import {
-  searchHandler,
-  updateFeedIndex,
-  updateItemIndex,
-  upsertSingleDocument,
+    searchHandler,
+    updateFeedIndex,
+    updateItemIndex,
+    upsertSingleDocument,
 } from "./search";
 import {
-  adminMiddleware,
-  authMiddleware,
-  userPageMiddleware,
+    adminMiddleware,
+    authMiddleware,
+    userPageMiddleware,
 } from "./middlewares";
 import { changelog } from "./changelog";
 import { Bindings } from "./bindings";
@@ -67,12 +67,12 @@ import { feedbackHandler, suggestBlogHandler } from "./feedback";
 
 // main app handles the root paths
 const app = new Hono<{ Bindings: Bindings }>({
-  strict: false,
+    strict: false,
 });
 app.get("/static/*", serveStatic({ root: "./" }));
 app.get("/robots.txt", async (c) => c.text("User-agent: *\nAllow: /"));
 app.get("/favicon.ico", async (c) =>
-  c.redirect("/static/favicons/favicon.ico"),
+    c.redirect("/static/favicons/favicon.ico"),
 );
 
 app.use("*", authMiddleware);
@@ -100,29 +100,29 @@ app.use("/items/:item_sqid/index", adminMiddleware);
 app.use("/admin", adminMiddleware);
 
 app.notFound((c) => {
-  return c.html(
-    renderHTML(
-      "404 | minifeed",
-      raw(`<div class="flash flash-blue">Page not found.</div>`),
-      c.get("USERNAME"),
-    ),
-  );
+    return c.html(
+        renderHTML(
+            "404 | minifeed",
+            raw(`<div class="flash flash-blue">Page not found.</div>`),
+            c.get("USERNAME"),
+        ),
+    );
 });
 
 app.onError((err, c) => {
-  return c.html(
-    renderHTML(
-      "Error | minifeed",
-      raw(`<div class="flash flash-red">ERROR: ${err}.</div>`),
-      c.get("USERNAME"),
-    ),
-  );
+    return c.html(
+        renderHTML(
+            "Error | minifeed",
+            raw(`<div class="flash flash-red">ERROR: ${err}.</div>`),
+            c.get("USERNAME"),
+        ),
+    );
 });
 
 // APP ROUTES
 app.get("/", (c: any) => {
-  if (!c.get("USER_ID")) return c.redirect("/global");
-  return c.redirect("/my");
+    if (!c.get("USER_ID")) return c.redirect("/global");
+    return c.redirect("/my");
 });
 
 app.get("/admin", adminHandler);
@@ -162,25 +162,25 @@ app.post("/feeds/index", feedsGlobalIndexHandler);
 app.post("/feeds/rebuild_cache", feedsGlobalCacheRebuildHandler);
 
 app.get("/podcasts", (c: any) => {
-  return c.html(
-    renderHTML(
-      "Podcasts | minifeed",
-      raw("Coming soon"),
-      c.get("USERNAME"),
-      "podcasts",
-    ),
-  );
+    return c.html(
+        renderHTML(
+            "Podcasts | minifeed",
+            raw("Coming soon"),
+            c.get("USERNAME"),
+            "podcasts",
+        ),
+    );
 });
 
 app.get("/channels", (c: any) => {
-  return c.html(
-    renderHTML(
-      "Channels | minifeed",
-      raw("Coming soon"),
-      c.get("USERNAME"),
-      "channels",
-    ),
-  );
+    return c.html(
+        renderHTML(
+            "Channels | minifeed",
+            raw("Coming soon"),
+            c.get("USERNAME"),
+            "channels",
+        ),
+    );
 });
 
 app.get("/items/:item_sqid", itemsSingleHandler);
@@ -195,109 +195,109 @@ app.post("/users/:username/follow", usersFollowPostHandler);
 app.post("/users/:username/unfollow", usersUnfollowPostHandler);
 
 app.get("/about/changelog", async (c) =>
-  c.html(renderHTML("Changelog | minifeed", raw(changelog), c.get("USERNAME"))),
+    c.html(renderHTML("Changelog | minifeed", raw(changelog), c.get("USERNAME"))),
 );
 
 // This handles subdomain blogs
 const subdomainApp = new Hono();
 subdomainApp.use("*", authMiddleware);
 subdomainApp.get("/", (c: Context<any, any, {}>) => {
-  const subdomain = c.req.raw.headers.get("host").split(".")[0];
-  return c.text(subdomain);
+    const subdomain = c.req.raw.headers.get("host").split(".")[0];
+    return c.text(subdomain);
 });
 
 // Main app to route based on Host
 const appMain = new Hono();
 
 appMain.all("*", async (c: Context<any, any, {}>, next: () => any) => {
-  const host = c.req.raw.headers.get("host"); // Cloudflare Workers use lowercase 'host'
-  if (host) {
-    const subdomain = host.split(".")[0];
-    if (host.split(".").length === 3) {
-      c.set("SUBDOMAIN", subdomain);
-      return await subdomainApp.fetch(c.req, c.env, c.ctx);
+    const host = c.req.raw.headers.get("host"); // Cloudflare Workers use lowercase 'host'
+    if (host) {
+        const subdomain = host.split(".")[0];
+        if (host.split(".").length === 3) {
+            c.set("SUBDOMAIN", subdomain);
+            return await subdomainApp.fetch(c.req, c.env, c.ctx);
+        }
+        // Default to root app for the main domain (example.com)
+        return await app.fetch(c.req, c.env, c.ctx);
     }
-    // Default to root app for the main domain (example.com)
     return await app.fetch(c.req, c.env, c.ctx);
-  }
-  return await app.fetch(c.req, c.env, c.ctx);
 
-  await next();
+    await next();
 });
 
 // MAIN EXPORT
 export default {
-  fetch: (req, env, ctx) => appMain.fetch(req, env, ctx), // normal processing of requests
+    fetch: (req, env, ctx) => appMain.fetch(req, env, ctx), // normal processing of requests
 
-  async queue(batch: MessageBatch<any>, env: Bindings) {
-    // consumer of queue FEED_UPDATE_QUEUE
-    for (const message of batch.messages) {
-      switch (message.body["type"]) {
-        case "feed_update":
-          try {
-            await updateFeed(env, message.body.feed_id);
-          } catch (e: any) {
-            console.log(
-              `Error updating feed ${message.body.feed_id}: ${e.toString()}`,
-            );
-          }
-          break;
+    async queue(batch: MessageBatch<any>, env: Bindings) {
+        // consumer of queue FEED_UPDATE_QUEUE
+        for (const message of batch.messages) {
+            switch (message.body["type"]) {
+                case "feed_update":
+                    try {
+                        await updateFeed(env, message.body.feed_id);
+                    } catch (e: any) {
+                        console.log(
+                            `Error updating feed ${message.body.feed_id}: ${e.toString()}`,
+                        );
+                    }
+                    break;
 
-        case "feed_scrape":
-          try {
-            await enqueueScrapeAllItemsOfFeed(env, message.body.feed_id);
-          } catch (e: any) {
-            console.log(
-              `Error scraping feed ${message.body.feed_id}: ${e.toString()}`,
-            );
-          }
-          break;
+                case "feed_scrape":
+                    try {
+                        await enqueueScrapeAllItemsOfFeed(env, message.body.feed_id);
+                    } catch (e: any) {
+                        console.log(
+                            `Error scraping feed ${message.body.feed_id}: ${e.toString()}`,
+                        );
+                    }
+                    break;
 
-        case "item_scrape":
-          try {
-            await scrapeItem(env, message.body.item_id);
-          } catch (e: any) {
-            console.log(
-              `Error scraping item ${message.body.item_id}: ${e.toString()}`,
-            );
-          }
-          break;
+                case "item_scrape":
+                    try {
+                        await scrapeItem(env, message.body.item_id);
+                    } catch (e: any) {
+                        console.log(
+                            `Error scraping item ${message.body.item_id}: ${e.toString()}`,
+                        );
+                    }
+                    break;
 
-        case "item_index":
-          try {
-            await updateItemIndex(env, message.body.item_id);
-          } catch (e: any) {
-            console.log(
-              `Error indexing item ${message.body.item_id}: ${e.toString()}`,
-            );
-          }
-          break;
+                case "item_index":
+                    try {
+                        await updateItemIndex(env, message.body.item_id);
+                    } catch (e: any) {
+                        console.log(
+                            `Error indexing item ${message.body.item_id}: ${e.toString()}`,
+                        );
+                    }
+                    break;
 
-        case "feed_index":
-          try {
-            await updateFeedIndex(env, message.body.feed_id);
-          } catch (e: any) {
-            console.log(
-              `Error indexing feed ${message.body.feed_id}: ${e.toString()}`,
-            );
-          }
-          break;
+                case "feed_index":
+                    try {
+                        await updateFeedIndex(env, message.body.feed_id);
+                    } catch (e: any) {
+                        console.log(
+                            `Error indexing feed ${message.body.feed_id}: ${e.toString()}`,
+                        );
+                    }
+                    break;
 
-        case "feed_update_top_items_cache":
-          try {
-            await regenerateTopItemsCacheForFeed(env, message.body.feed_id);
-          } catch (e: any) {
-            console.log(
-              `Error regenerating top items cache for feed ${message.body.feed_id}: ${e.toString()}`,
-            );
-          }
-          break;
-      }
-    }
-  },
+                case "feed_update_top_items_cache":
+                    try {
+                        await regenerateTopItemsCacheForFeed(env, message.body.feed_id);
+                    } catch (e: any) {
+                        console.log(
+                            `Error regenerating top items cache for feed ${message.body.feed_id}: ${e.toString()}`,
+                        );
+                    }
+                    break;
+            }
+        }
+    },
 
-  async scheduled(event: any, env: Bindings, ctx: any) {
-    // cron
-    await enqueueUpdateAllFeeds(env);
-  },
+    async scheduled(event: any, env: Bindings, ctx: any) {
+        // cron
+        await enqueueUpdateAllFeeds(env);
+    },
 };

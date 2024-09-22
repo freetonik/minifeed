@@ -2,30 +2,30 @@ import { html } from "hono/html";
 import { version } from "./changelog";
 
 export const renderHTML = (
-  title: string,
-  inner: any,
-  username: string = "",
-  active: string = "all",
-  searchQuery: string = "",
-  canonicalUrl: string = "",
+    title: string,
+    inner: any,
+    username: string = "",
+    active: string = "all",
+    searchQuery: string = "",
+    canonicalUrl: string = "",
 ) => {
-  const canonicalUrlBlock = canonicalUrl
-    ? html`<link rel="canonical" href="${canonicalUrl}" />`
-    : "";
+    const canonicalUrlBlock = canonicalUrl
+        ? html`<link rel="canonical" href="${canonicalUrl}" />`
+        : "";
 
-  let userBlock = html``;
-  if (username) {
-    userBlock = html`
+    let userBlock = html``;
+    if (username) {
+        userBlock = html`
       <a href="/my/account" class="bold">${username}</a>
       <a href="/logout" class="bold">(logout)</a>
     `;
-  } else {
-    userBlock = html`<a href="/login" class="bold"
+    } else {
+        userBlock = html`<a href="/login" class="bold"
       >Log in or create account</a
     >`;
-  }
+    }
 
-  return html`
+    return html`
     <!DOCTYPE html>
     <html>
     <head>
@@ -83,33 +83,33 @@ export const renderHTML = (
 };
 
 const dateFormatOptions: Intl.DateTimeFormatOptions = {
-  year: "numeric",
-  month: "short",
-  day: "numeric",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
 };
 
 export const renderItemShort = (
-  item_sqid: string,
-  title: string,
-  url: string,
-  feed_title: string,
-  feed_sqid: string,
-  pub_date: string = "",
-  summary: string = "",
+    item_sqid: string,
+    title: string,
+    url: string,
+    feed_title: string,
+    feed_sqid: string,
+    pub_date: string = "",
+    summary: string = "",
 ) => {
-  const postDate = new Date(pub_date).toLocaleDateString(
-    "en-UK",
-    dateFormatOptions,
-  );
+    const postDate = new Date(pub_date).toLocaleDateString(
+        "en-UK",
+        dateFormatOptions,
+    );
 
-  const feedLink = feed_title
-    ? `from <a href="/blogs/${feed_sqid}">${feed_title}</a> | `
-    : "";
-  const summaryContent = summary
-    ? `<p class="item-summary">${summary}</p>`
-    : "";
+    const feedLink = feed_title
+        ? `from <a href="/blogs/${feed_sqid}">${feed_title}</a> | `
+        : "";
+    const summaryContent = summary
+        ? `<p class="item-summary">${summary}</p>`
+        : "";
 
-  return `
+    return `
     <div class="item-short">
     <a href="/items/${item_sqid}" class="item-short-title">${title}</a> <br>
     <div class="muted">
@@ -123,32 +123,32 @@ export const renderItemShort = (
 };
 
 export const renderItemSearchResult = (searchResult: any) => {
-  const item = searchResult["document"];
-  // item_id, title, url, feed_title, feed_id, pub_date=''
-  const postDate = new Date(item["pub_date"]).toLocaleDateString(
-    "en-UK",
-    dateFormatOptions,
-  );
-  const feedSqid = item["feed_sqid"];
-  const itemSqid = item["item_sqid"];
-  const uri_root_from_type = item["type"] === "blog" ? "blogs" : "";
+    const item = searchResult["document"];
+    // item_id, title, url, feed_title, feed_id, pub_date=''
+    const postDate = new Date(item["pub_date"]).toLocaleDateString(
+        "en-UK",
+        dateFormatOptions,
+    );
+    const feedSqid = item["feed_sqid"];
+    const itemSqid = item["item_sqid"];
+    const uri_root_from_type = item["type"] === "blog" ? "blogs" : "";
 
-  let title = item["title"];
-  if (
-    searchResult["highlight"]["title"] &&
-    searchResult["highlight"]["title"]["snippet"]
-  ) {
-    title = searchResult["highlight"]["title"]["snippet"];
-  }
-  let content = "";
-  if (
-    searchResult["highlight"]["content"] &&
-    searchResult["highlight"]["content"]["snippet"]
-  ) {
-    content = searchResult["highlight"]["content"]["snippet"];
-  }
+    let title = item["title"];
+    if (
+        searchResult["highlight"]["title"] &&
+        searchResult["highlight"]["title"]["snippet"]
+    ) {
+        title = searchResult["highlight"]["title"]["snippet"];
+    }
+    let content = "";
+    if (
+        searchResult["highlight"]["content"] &&
+        searchResult["highlight"]["content"]["snippet"]
+    ) {
+        content = searchResult["highlight"]["content"]["snippet"];
+    }
 
-  return `
+    return `
     <div class="item-short" style="margin-top:2em">
     <a href="/items/${itemSqid}" class="item-short-title">${title}</a> <br>
     <small class="muted">
@@ -168,22 +168,22 @@ export const renderItemSearchResult = (searchResult: any) => {
 };
 
 export const renderAddFeedForm = (url: string = "", flash: string = "") => {
-  let flash_test = "";
-  if (flash.includes("Cannot find RSS link"))
-    flash_test +=
-      "Cannot find RSS link on that page. Try entering direct RSS URL.";
-  else if (flash.includes("UNIQUE constraint failed: feeds.rss_url"))
-    flash_test += "Blog already exists.";
-  else if (flash.includes("Cannot fetch url"))
-    flash_test += "That page does not exist.";
-  else if (flash.includes("error code 530"))
-    flash_test += "That page does not exist.";
-  else flash_test += flash;
+    let flash_test = "";
+    if (flash.includes("Cannot find RSS link"))
+        flash_test +=
+            "Cannot find RSS link on that page. Try entering direct RSS URL.";
+    else if (flash.includes("UNIQUE constraint failed: feeds.rss_url"))
+        flash_test += "Blog already exists.";
+    else if (flash.includes("Cannot fetch url"))
+        flash_test += "That page does not exist.";
+    else if (flash.includes("error code 530"))
+        flash_test += "That page does not exist.";
+    else flash_test += flash;
 
-  const flashBlock = flash
-    ? html`<div class="flash flash-red">${flash_test}</div>`
-    : "";
-  return html`
+    const flashBlock = flash
+        ? html`<div class="flash flash-red">${flash_test}</div>`
+        : "";
+    return html`
     <h1>Add new blog</h1>
     ${flashBlock}
     <div class="formbg">
@@ -205,20 +205,20 @@ export const renderAddFeedForm = (url: string = "", flash: string = "") => {
 };
 
 export const renderAddItemByURLForm = (
-  url: string = "",
-  urls: string = "",
-  flash: string = "",
-  blogTitle: string = "",
+    url: string = "",
+    urls: string = "",
+    flash: string = "",
+    blogTitle: string = "",
 ) => {
-  let flash_test = "";
-  if (flash.includes("Cannot fetch url"))
-    flash_test += "That page does not exist.";
-  else flash_test += flash;
+    let flash_test = "";
+    if (flash.includes("Cannot fetch url"))
+        flash_test += "That page does not exist.";
+    else flash_test += flash;
 
-  const flashBlock = flash
-    ? html`<div class="flash flash-red">${flash_test}</div>`
-    : "";
-  return html`
+    const flashBlock = flash
+        ? html`<div class="flash flash-red">${flash_test}</div>`
+        : "";
+    return html`
     <h1>Add new item by URL to ${blogTitle}</h1>
     ${flashBlock}
     <div class="formbg">
