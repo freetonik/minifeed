@@ -99,45 +99,6 @@ app.use("/items/:item_sqid/index", adminMiddleware);
 
 app.use("/admin", adminMiddleware);
 
-// app.get("/populate", async (c: any) => {
-//   const feed_id = 1;
-//   for (let i = 0; i < 1000; i++) {
-//     const title =
-//       (Math.random() + 1).toString(36).substring(7) +
-//       " " +
-//       (Math.random() + 1).toString(36).substring(7);
-
-//     const url = `https://example.com/${title}`;
-//     const pub_date = new Date().toISOString();
-//     const description = title.repeat(
-//       (Math.floor(Math.random() * 10) + 1) * Math.floor(Math.random() * 3) + 1,
-//     );
-//     const content_html = title.repeat(
-//       (Math.floor(Math.random() * 100) + 1) * Math.floor(Math.random() * 10) +
-//         1,
-//     );
-
-//     const insert_results = await c.env.DB.prepare(
-//       "INSERT INTO items (feed_id, title, url, pub_date, description, content_html) values (?, ?, ?, ?, ?, ?)",
-//     )
-//       .bind(feed_id, title, url, pub_date, description, content_html)
-//       .run();
-
-//     const item_id = insert_results.meta.last_row_id;
-//     const item_sqid = itemIdToSqid(item_id);
-//     await c.env.DB.prepare("UPDATE items SET item_sqid = ? WHERE item_id = ?")
-//       .bind(item_sqid, item_id)
-//       .run();
-//   }
-//   return c.html(
-//     renderHTML(
-//       "!",
-//       raw(`<div class="flash flash-blue">Done.</div>`),
-//       c.get("USERNAME"),
-//     ),
-//   );
-// });
-
 app.notFound((c) => {
   return c.html(
     renderHTML(

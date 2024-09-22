@@ -25,16 +25,16 @@ CREATE TABLE IF NOT EXISTS feeds (
 );
 
 CREATE TABLE IF NOT EXISTS items (
-	item_id INTEGER PRIMARY KEY,
+  	item_id INTEGER PRIMARY KEY,
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-	feed_id INTEGER NOT NULL,
-	title TEXT NOT NULL,
+  	feed_id INTEGER NOT NULL,
+  	title TEXT NOT NULL,
     description TEXT,
     content_html TEXT,
     content_html_scraped TEXT,
-	url TEXT NOT NULL,
+  	url TEXT NOT NULL,
     pub_date TIMESTAMP,
-	FOREIGN KEY(feed_id) REFERENCES feeds(feed_id) ON DELETE CASCADE
+  	FOREIGN KEY(feed_id) REFERENCES feeds(feed_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS favorites (

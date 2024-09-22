@@ -12,7 +12,7 @@ import {
   truncate,
 } from "./utils";
 import { enqueueItemIndex, enqueueItemScrape } from "./queue";
-import { scrapeURLIntoItem } from "./scrape";
+import { scrapeURLIntoObject } from "./scrape";
 import { addItemsToFeed } from "./feeds";
 
 export const globalFeedHandler = async (c: any) => {
@@ -733,7 +733,7 @@ export const itemsAddItemByUrlPostHandler = async (c: any) => {
     if (existingItem.results.length > 0) {
       continue;
     }
-    const articleContent = await scrapeURLIntoItem(c.env, url_value);
+    const articleContent = await scrapeURLIntoObject(c.env, url_value);
     const item = {
       feed_id: feedId,
       title: articleContent.data.title,

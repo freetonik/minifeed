@@ -11,11 +11,9 @@ export async function scrapeItem(env: Bindings, item_id: number) {
   const item_url = String(items[0]["url"]);
   let item_description = String(items[0]["description"]);
   console.log(`Scraping item ${item_id} (${item_url})`);
-  const maeServiceUrl = `https://mae.deno.dev/?apikey=${env.MAE_SERVICE_API_KEY}&url=${item_url}`;
   try {
-    const req = await fetch(maeServiceUrl);
-    const articleInfo = await req.text();
-    const content = JSON.parse(articleInfo).data.content;
+    const articleInfoParsed = await scrapeURLIntoObject(env, item_url)
+    const content = articleInfoParsed.data.content;
     if (!item_description || item_description.length < 5)
       item_description = stripTags(truncate(content, 500));
     await env.DB.prepare(
@@ -32,7 +30,7 @@ export async function scrapeItem(env: Bindings, item_id: number) {
   await enqueueItemIndex(env, item_id);
 }
 
-export async function scrapeURLIntoItem(env: Bindings, url: string) {
+export async function scrapeURLIntoObject(env: Bindings, url: string) {
   const maeServiceUrl = `https://mae.deno.dev/?apikey=${env.MAE_SERVICE_API_KEY}&url=${url}`;
   try {
     const req = await fetch(maeServiceUrl);
