@@ -720,9 +720,19 @@ export const itemsAddItemByUrlPostHandler = async (c: any) => {
     urls_array = urls.split("\r\n");
   }
 
+  // remove empty strings from urls_array
+  urls_array = urls_array.filter((url: string) => url !== "");
+
   let added_items_sqids = [];
 
   for (const url_value of urls_array) {
+    // check if item url already exists in the db
+    const existingItem = await c.env.DB.prepare(
+      `SELECT items.item_id FROM items WHERE url = ?`,
+    ).bind(url_value).run();
+    if (existingItem.results.length > 0) {
+      continue;
+    }
     const articleContent = await scrapeURLIntoItem(c.env, url_value);
     const item = {
       feed_id: feedId,
