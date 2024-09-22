@@ -5,32 +5,40 @@ import { getCollection } from "./search";
 export const adminHandler = async (c: any) => {
   // TODO: we're assuming that feed always has items; if feed has 0 items, this will return 404, but maybe we want to
   // show the feed still as "processing"; use https://developers.cloudflare.com/d1/platform/client-api/#batch-statements
-  const userId = c.get("USER_ID") || -1;
-  const userLoggedIn = c.get("USER_ID") ? true : false;
-
   let list = "";
   const feeds = await c.env.DB.prepare(
-    "SELECT * FROM feeds ORDER BY feed_id ASC",
+    "SELECT * FROM feeds LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id ORDER BY feed_id ASC ",
   ).all();
 
   const feed_count = await c.env.DB.prepare(
     "SELECT COUNT(feed_id) FROM feeds",
   ).all();
 
-  list += `<h1>Feeds (${feed_count.results[0]["COUNT(feed_id)"]})</h1>`;
+  list += `<h3>${feed_count.results[0]["COUNT(feed_id)"]} Feeds</h3>`;
+
+  const all_items_count = await c.env.DB.prepare(
+    "SELECT COUNT(item_id) FROM Items",
+  ).all();
+
+  list += `<h3>${all_items_count.results[0]["COUNT(item_id)"]} Items</h3>`;
+
+  const items_collection = await getCollection(c.env);
+  list += `<h3>${items_collection["num_documents"]} Indexed items</h3>`;
+
+
   for (const feed of feeds.results) {
     list += `<div style="border:1px solid grey; margin-bottom:1em; padding: 1em;">
-    <strong>${feed.title}</strong>
-    ${feed["verified"] ? "✅" : "❌"}
-    <br>
-    ${feed.feed_id} → <a href="/blogs/${feed.feed_sqid}">${feed.feed_sqid}</a><br>`;
+    <strong>${feed.title}</strong> <br>
+    ${JSON.parse(feed.content)["items_count"]} posts |
+    ID: ${feed.feed_id}, SQID: <a href="/blogs/${feed.feed_sqid}">${feed.feed_sqid}</a>
+    ${feed["verified"] ? "✅" : "❌"}`;
 
-    const items_count = await c.env.DB.prepare(
-      "SELECT COUNT(item_id) FROM Items where feed_id = ?",
-    )
-      .bind(feed.feed_id)
-      .all();
-    list += `${items_count.results[0]["COUNT(item_id)"]} items`;
+    // const items_count = await c.env.DB.prepare(
+    //   "SELECT COUNT(item_id) FROM Items where feed_id = ?",
+    // )
+    //   .bind(feed.feed_id)
+    //   .all();
+    // list += `${items_count.results[0]["COUNT(item_id)"]} items`;
 
     list += `<p>
     <button hx-post="/feeds/${feed.feed_sqid}/delete"
@@ -85,14 +93,7 @@ export const adminHandler = async (c: any) => {
     list += "</div>";
   }
 
-  const all_items_count = await c.env.DB.prepare(
-    "SELECT COUNT(item_id) FROM Items",
-  ).all();
 
-  list += `<h1>Items (${all_items_count.results[0]["COUNT(item_id)"]})</h1>`;
-
-  const items_collection = await getCollection(c.env);
-  list += `<h1>Indexed items (${items_collection["num_documents"]})`;
 
   list += `<hr>
   <button hx-post="/feeds/index"

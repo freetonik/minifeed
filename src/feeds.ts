@@ -76,7 +76,9 @@ export const blogsHandler = async (c: any) => {
             </button>
         </span></div>`;
 
-    const top_items = JSON.parse(feed.content);
+    const cache_content = JSON.parse(feed.content);
+    const top_items = cache_content["top_items"]
+    const items_count = cache_content["items_count"] - top_items.length;
     let top_items_list = "";
 
     if (top_items) {
@@ -84,7 +86,9 @@ export const blogsHandler = async (c: any) => {
       top_items.forEach((item: any) => {
         top_items_list += `<li><a href="/items/${item.item_sqid}">${item.title}</a></li>`;
       });
-      top_items_list += `<li><i>and <a href="/blogs/${sqid}">more...</a></i></li></ul>`;
+      if (items_count > 0) {
+        top_items_list += `<li><i>and <a href="/blogs/${sqid}">${items_count} more...</a></i></li></ul>`;
+      }
     }
     list += `
         <div class="blog-summary">
@@ -389,7 +393,7 @@ async function addFeed(env: Bindings, url: string, verified: boolean = false) {
   if (!feedValidationResult.validated) {
     throw new Error(
       "Feed data verification failed: " +
-        feedValidationResult.messages.join("; "),
+      feedValidationResult.messages.join("; "),
     );
   }
 
@@ -563,18 +567,31 @@ export async function regenerateTopItemsCacheForFeed(
   env: Bindings,
   feedId: number,
 ) {
-  const { results: items } = await env.DB.prepare(
+  const { results: top_items } = await env.DB.prepare(
     "SELECT item_id, title FROM items WHERE feed_id = ? ORDER BY items.pub_date DESC LIMIT 5",
   )
     .bind(feedId)
     .all();
-  items.forEach((item: any) => {
+  top_items.forEach((item: any) => {
     item.item_sqid = itemIdToSqid(item.item_id);
     delete item.item_id;
   });
+
+  const items_count = await env.DB.prepare(
+    "SELECT COUNT(item_id) FROM Items where feed_id = ?",
+  )
+    .bind(feedId)
+    .all();
+
+  const cache_content = {
+    top_items: top_items,
+    items_count: items_count.results[0]["COUNT(item_id)"],
+  }
+
+
   await env.DB.prepare(
     "REPLACE INTO items_top_cache (feed_id, content) values (?, ?)",
   )
-    .bind(feedId, JSON.stringify(items))
+    .bind(feedId, JSON.stringify(cache_content))
     .run();
 }
