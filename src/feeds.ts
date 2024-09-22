@@ -33,7 +33,8 @@ export const blogsHandler = async (c: any) => {
     `
     SELECT feeds.feed_id, feeds.title, feeds.url, feeds.rss_url, feeds.description, subscriptions.subscription_id, items_top_cache.content from feeds
     LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
-    LEFT JOIN subscriptions on feeds.feed_id = subscriptions.feed_id AND subscriptions.user_id = ?`,
+    LEFT JOIN subscriptions on feeds.feed_id = subscriptions.feed_id AND subscriptions.user_id = ?
+    ORDER BY feeds.title`,
   )
     .bind(user_id)
     .run();
