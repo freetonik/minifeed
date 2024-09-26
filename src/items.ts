@@ -586,6 +586,16 @@ export const itemsSingleHandler = async (c: any) => {
         <span id="index-indicator"></span>
         </p>
 
+        <p>
+        <button hx-post="/items/${item_sqid}/delete"
+            hx-trigger="click"
+            hx-target="#delete-indicator"
+            hx-swap="outerHTML">
+            delete
+        </button>
+        <span id="delete-indicator"></span>
+        </p>
+
         </div>
         `;
     }
@@ -697,6 +707,14 @@ export const itemsAddItembyUrlHandler = async (c: any) => {
         ),
     );
 };
+
+export const itemDeleteHandler = async (c: any) => {
+    const itemSqid = c.req.param("item_sqid");
+    const itemId = itemSqidToId(itemSqid);
+
+    await c.env.DB.prepare(`DELETE FROM items WHERE item_id = ?`).bind(itemId).run();
+    return c.html("Item deleted");
+}
 
 export const itemsAddItemByUrlPostHandler = async (c: any) => {
     const feedSqid = c.req.param("feed_sqid");

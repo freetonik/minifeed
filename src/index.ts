@@ -16,6 +16,7 @@ import {
     itemsIndexHandler,
     itemsAddItembyUrlHandler,
     itemsAddItemByUrlPostHandler,
+    itemDeleteHandler,
 } from "./items";
 import {
     blogsSingleHandler,
@@ -96,6 +97,7 @@ app.use("/feeds/rebuild_cache", adminMiddleware);
 
 app.use("/items/:item_sqid/scrape", adminMiddleware);
 app.use("/items/:item_sqid/index", adminMiddleware);
+app.use("/items/:item_sqid/delete", adminMiddleware);
 
 app.use("/admin", adminMiddleware);
 
@@ -142,6 +144,8 @@ app.get("/my/friendfeed", myFollowsHandler);
 app.get("/my/favorites", myFavoritesHandler);
 app.get("/my/account", myAccountHandler);
 app.get("/verify_email", myAccountVerifyEmailHandler);
+
+app.post("/items/:item_sqid/delete", itemDeleteHandler);
 
 app.get("/blogs", blogsHandler);
 app.get("/blogs/new", blogsNewHandler);
