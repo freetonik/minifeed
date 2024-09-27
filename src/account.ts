@@ -2,6 +2,7 @@ import { html, raw } from "hono/html";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { renderHTML } from "./htmltools";
 import { sendEmail } from "./email";
+import { feedIdToSqid } from "./utils";
 
 export const myAccountHandler = async (c: any) => {
     const user_id = c.get("USER_ID");
@@ -22,6 +23,28 @@ export const myAccountHandler = async (c: any) => {
         Email: ${email}<br>
         Email verified: ${verified}<br>
         Account status: ${status}<br>
+    </p>
+    <p style="margin-top:3em;">
+        <form action="/my/account/create_mblog" method="POST">
+            <div class="formbg formbg-small">
+                <h2>Create new blog</h2>
+                <div style="margin-bottom:1em;">
+                    <label for="username">Address</label>
+                    <div style="display: flex; flex-wrap: wrap;    align-items: flex-end;">
+                    <input style="flex: 50%;" type="text" id="address" name="address" required />
+                    <spanstyle="flex: 50%;"> .minifeed.net</span>
+                    </div>
+
+                </div>
+
+                <div style="margin-bottom:1em;">
+                    <label for="username">Title</label>
+                    <input type="text" id="title" name="title" required />
+                </div>
+
+            <input type="submit" value="Create">
+            </div>
+        </form>
     </p>
     <p style="margin-top:3em;">
         <a style="padding: 0.75em; border: 1px solid; background-color: #9c0000; color: white;" href="/logout">Log out</a>
@@ -269,4 +292,48 @@ function checkUsername(username: string) {
 
 function checkEmail(email: string) {
     return /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email);
+}
+
+export const myNewMblogPostHandler = async (c: any) => {
+    const user_id = c.get("USER_ID");
+
+    const body = await c.req.parseBody();
+    const slug = body["address"].toString();
+    if (!slug) return c.text("Address is required");
+    const title = body["title"].toString();
+    if (!title) return c.text("Title is required");
+
+    const full_final_url = `https://${slug}.minifeed.net`;
+    const full_final_rss_url = `https://${slug}.minifeed.net/rss`;
+    try {
+        const feed_insertion_results = await c.env.DB.prepare(
+            "INSERT INTO feeds (title, type, url, rss_url, verified) values (?,?,?,?,?)"
+        ).bind(title, "mblog", full_final_url, full_final_rss_url, 0).run();
+
+        if (feed_insertion_results.success) {
+            const new_feed_id = feed_insertion_results.meta.last_row_id;
+            // update feed_sqid
+            const new_feed_sqid = feedIdToSqid(new_feed_id);
+            await c.env.DB.prepare("UPDATE feeds SET feed_sqid = ? WHERE feed_id = ?")
+                .bind(new_feed_sqid, new_feed_id)
+                .run();
+
+            const mblog_insertion_results = await c.env.DB.prepare(
+                "INSERT INTO mblogs (user_id, feed_id, slug) values (?,?,?)"
+            ).bind(user_id, new_feed_id, slug).run();
+
+            console.log(mblog_insertion_results)
+            if (mblog_insertion_results.success) {
+                if (c.env.ENVIRONMENT == "dev") {
+                    return c.redirect(`http://localhost:8787/b/${slug}`);
+                } else {
+                    return c.redirect(`https://${slug}.minifeed.net/`);
+                }
+            }
+
+        }
+        return c.redirect("/");
+    } catch (err) {
+        return c.text(err);
+    }
 }

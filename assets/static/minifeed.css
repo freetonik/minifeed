@@ -417,6 +417,12 @@ button.subscribed:hover {
 }
 
 /* FORMS */
+.form-mblog {
+    margin: 2em auto;
+}
+
+
+
 .formbg {
     margin: 2em auto;
     padding: 1.75em 2em 2.25em 2em;
@@ -437,7 +443,9 @@ button.subscribed:hover {
 }
 
 .formbg input,
-.formbg textarea {
+.form-mblog input,
+.formbg textarea,
+.form-mblog textarea {
     font-size: 16px;
     line-height: 28px;
     padding: 8px 16px;
@@ -457,6 +465,7 @@ button.subscribed:hover {
         rgba(0, 0, 0, 0) 0px 0px 0px 0px;
 }
 
+.form-mblog input[type="submit"],
 .formbg input[type="submit"] {
     background-color: rgb(5 133 76);
     color: #fff;
@@ -468,6 +477,7 @@ button.subscribed:hover {
     background-color: var(--color-blue);
 }
 
+.form-mblog label,
 .formbg label {
     font-size: 14px;
     font-weight: 600;
@@ -475,6 +485,18 @@ button.subscribed:hover {
     margin-bottom: 0.5em;
 }
 
+.form-mblog input,
+.form-mblog textarea {
+    border-radius: 0;
+}
+
+.form-mblog textarea {
+    font-family: inherit;
+    resize: vertical;
+    line-height: inherit;
+}
+
+/* FLASHES */
 .flash {
     margin-top: 1em;
     border: 1px solid var(--color-blue);

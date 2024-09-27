@@ -48,6 +48,7 @@ import {
     logoutHandler,
     signupPostHandler,
     myAccountVerifyEmailHandler,
+    myNewMblogPostHandler,
 } from "./account";
 import {
     searchHandler,
@@ -65,6 +66,7 @@ import { Bindings } from "./bindings";
 import { enqueueScrapeAllItemsOfFeed, enqueueUpdateAllFeeds } from "./queue";
 import { scrapeItem } from "./scrape";
 import { feedbackHandler, suggestBlogHandler } from "./feedback";
+import { mblogHandler, mblogPostPostHandler, mblogSinglePostHandler, mblogSinglePostDeleteHandler, mblogSinglePostEditHandler, mblogSinglePostEditPostHandler, mblogRSSHandler } from "./mblogs";
 
 // main app handles the root paths
 const app = new Hono<{ Bindings: Bindings }>({
@@ -77,6 +79,7 @@ app.get("/favicon.ico", async (c) =>
 );
 
 app.use("*", authMiddleware);
+app.use("/b/*", authMiddleware);
 // all routes below this line require authentication
 app.use("/my/*", userPageMiddleware);
 app.use("/feeds/:feed_sqid/subscribe", userPageMiddleware);
@@ -85,6 +88,7 @@ app.use("/items/:feed_sqid/favorite", userPageMiddleware);
 app.use("/items/:feed_sqid/unfavorite", userPageMiddleware);
 
 // all routes below this line require admin privileges
+app.use("/b/*", adminMiddleware);
 app.use("/blogs/:feed_sqid/new", adminMiddleware);
 app.use("/blogs/:feed_sqid/new", adminMiddleware);
 app.use("/feeds/:feed_sqid/delete", adminMiddleware);
@@ -143,6 +147,7 @@ app.get("/my/subscriptions", mySubscriptionsHandler);
 app.get("/my/friendfeed", myFollowsHandler);
 app.get("/my/favorites", myFavoritesHandler);
 app.get("/my/account", myAccountHandler);
+app.post("/my/account/create_mblog", myNewMblogPostHandler);
 app.get("/verify_email", myAccountVerifyEmailHandler);
 
 app.post("/items/:item_sqid/delete", itemDeleteHandler);
@@ -164,6 +169,14 @@ app.post("/feeds/:feed_sqid/index", feedsIndexHandler);
 app.post("/feeds/:feed_sqid/rebuild_cache", feedsCacheRebuildHandler);
 app.post("/feeds/index", feedsGlobalIndexHandler);
 app.post("/feeds/rebuild_cache", feedsGlobalCacheRebuildHandler);
+
+app.get("/b/:slug", mblogHandler)
+app.get("/b/:slug/rss", mblogRSSHandler)
+app.get("/b/:slug/:post_slug", mblogSinglePostHandler)
+app.get("/b/:slug/:post_slug/edit", mblogSinglePostEditHandler)
+app.post("/b/:slug/:post_slug/edit", mblogSinglePostEditPostHandler)
+app.post("/b/:slug", mblogPostPostHandler)
+app.post("/b/:slug/:post_slug/delete", mblogSinglePostDeleteHandler)
 
 app.get("/podcasts", (c: any) => {
     return c.html(
