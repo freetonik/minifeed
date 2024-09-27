@@ -16,7 +16,7 @@ export async function enqueueUpdateAllFeeds(env: Bindings) {
         rss_url: string;
     };
     const { results: feeds } = await env.DB.prepare(
-        "SELECT feed_id, rss_url FROM feeds",
+        "SELECT feed_id, rss_url FROM feeds WHERE type = 'blog'",
     ).all<FeedsRowPartial>();
     for (const feed of feeds) {
         await enqueueFeedUpdate(env, feed["feed_id"]);
