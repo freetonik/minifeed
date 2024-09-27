@@ -14,6 +14,7 @@ import {
 import { enqueueItemIndex, enqueueItemScrape } from "./queue";
 import { scrapeURLIntoObject } from "./scrape";
 import { addItemsToFeed } from "./feeds";
+import { deleteItemFromIndex } from "./search";
 
 export const globalFeedHandler = async (c: any) => {
     const userId = c.get("USER_ID") || -1;
@@ -712,8 +713,12 @@ export const itemDeleteHandler = async (c: any) => {
     const itemSqid = c.req.param("item_sqid");
     const itemId = itemSqidToId(itemSqid);
 
-    await c.env.DB.prepare(`DELETE FROM items WHERE item_id = ?`).bind(itemId).run();
-    return c.html("Item deleted");
+    const dbDeleteResults = await c.env.DB.prepare(`DELETE FROM items WHERE item_id = ?`).bind(itemId).run();
+    if (dbDeleteResults.success) {
+        return c.html("Item deleted. Delete it from the index yourself dude");
+    } else {
+        return c.html("ERROR while deleting item from DB");
+    }
 }
 
 export const itemsAddItemByUrlPostHandler = async (c: any) => {
