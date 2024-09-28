@@ -14,7 +14,6 @@ import {
 import { enqueueItemIndex, enqueueItemScrape } from "./queue";
 import { scrapeURLIntoObject } from "./scrape";
 import { addItemsToFeed } from "./feeds";
-import { deleteItemFromIndex } from "./search";
 
 export const globalFeedHandler = async (c: any) => {
     const userId = c.get("USER_ID") || -1;

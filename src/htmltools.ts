@@ -9,20 +9,15 @@ export const renderHTML = (
     searchQuery: string = "",
     canonicalUrl: string = "",
 ) => {
-    const canonicalUrlBlock = canonicalUrl
-        ? html`<link rel="canonical" href="${canonicalUrl}" />`
-        : "";
+    const canonicalUrlBlock = canonicalUrl ? html`<link rel="canonical" href="${canonicalUrl}" />` : "";
 
     let userBlock = html``;
     if (username) {
         userBlock = html`
       <a href="/my/account" class="bold">${username}</a>
-      <a href="/logout" class="bold">(logout)</a>
     `;
     } else {
-        userBlock = html`<a href="/login" class="bold"
-      >Log in or create account</a
-    >`;
+        userBlock = html`<a href="/login" class="bold">Log in or create account</a>`;
     }
 
     return html`
@@ -47,7 +42,7 @@ export const renderHTML = (
     <header>
         <div class="topline">
         <div class="logo">
-        <a href="/"><span>⬤</span> <span class="bold" style="margin-left: 0.2em;">minifeed</span>.net</a>
+        <a href="/"><span>⬤</span> <span class="bold" style="margin-left: 0.2em;">minifeed</span></a>
         </div>
         <div class="user">
         ${userBlock}
@@ -81,6 +76,54 @@ export const renderHTML = (
     </body>
     </html>`;
 };
+
+export const renderHTMLMblog = (
+    title: string,
+    post_slug: string,
+    inner: any,
+) => {
+    return html`
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>${title}</title>
+        <meta name="author" content="">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="canonical" href="/${post_slug}" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/static/favicons/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/static/favicons/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/static/favicons/favicon-16x16.png">
+        <link rel="manifest" href="/static/favicons/site.webmanifest">
+        <link rel="stylesheet" href="/static/minifeed.css">
+        <script defer src="/static/htmx.min.js"></script>
+    </head>
+
+    <body>
+    <header>
+        <div class="topline" style="padding: 0 1.5em 0.5em;">
+            <div class="logo">
+                <a href="/"><span>⬤</span> <span class="bold" style="margin-left: 0.2em;">minifeed</span></a>
+            </div>
+            <nav aria-label="Site sections" style="margin:0;display:inline-block;padding:0;">
+                <a href="/my">My&nbsp;feed</a>
+                <a href="/global"  style="margin-left: 0.5em">Global&nbsp;feed</a>
+                <a href="/blogs"  style="margin-left: 0.5em">Blogs</a>
+                <a href="/users"  style="margin-left: 0.5em">Users</a>
+            </nav>
+        </div>        
+    </header>
+
+    <main>${inner}</main>
+
+    <footer>
+        footer
+    </footer>
+
+    </body>
+    </html>`;
+}
 
 const dateFormatOptions: Intl.DateTimeFormatOptions = {
     year: "numeric",

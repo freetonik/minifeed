@@ -4,18 +4,42 @@ import { renderHTML } from "./htmltools";
 import { sendEmail } from "./email";
 import { feedIdToSqid } from "./utils";
 
-export const myAccountHandler = async (c: any) => {
+export const handle_my_account = async (c: any) => {
     const user_id = c.get("USER_ID");
-    const user = await c.env.DB.prepare(
-        "SELECT created, username, email_verified, status, email from users WHERE user_id = ?",
-    )
-        .bind(user_id)
-        .run();
+    const batch = await c.env.DB.batch([
+        c.env.DB.prepare(`
+            SELECT created, username, email_verified, status, email
+            FROM users
+            WHERE user_id = ?`
+        ).bind(user_id),
+
+        c.env.DB.prepare(`
+            SELECT mblogs.feed_id, feeds.title, mblogs.slug
+            FROM mblogs
+            JOIN feeds ON mblogs.feed_id = feeds.feed_id
+            WHERE user_id = ?`
+        ).bind(user_id)
+    ]);
+
+    const user = batch[0];
+    const user_mblogs = batch[1];
+
     const verified = user["results"][0]["email_verified"] ? "yes" : "no";
     const email = user["results"][0]["email"];
     const username = user["results"][0]["username"];
     const status = user["results"][0]["status"];
-    let list = `
+
+    let listOfMblogs = "";
+    if (user_mblogs["results"]) {
+        listOfMblogs += `<h3>My blogs hosted at minifeed</h3><ul>`;
+        for (const mblog of user_mblogs["results"]) {
+            const feedId = mblog["feed_id"];
+            const sqid = feedIdToSqid(feedId);
+            listOfMblogs += `<li><a href="/b/${mblog["slug"]}">${mblog["title"]}</a></li>`;
+        }
+        listOfMblogs += `</ul>`;
+    }
+    const list = `
     <h1>My account</h1>
     <p>
         Username: ${username}<br>
@@ -24,9 +48,10 @@ export const myAccountHandler = async (c: any) => {
         Email verified: ${verified}<br>
         Account status: ${status}<br>
     </p>
+    ${listOfMblogs}
     <p style="margin-top:3em;">
         <form action="/my/account/create_mblog" method="POST">
-            <div class="formbg formbg-small">
+            <div class="formbg" style="max-width:25em;margin:0;">
                 <h2>Create new blog</h2>
                 <div style="margin-bottom:1em;">
                     <label for="username">Address</label>

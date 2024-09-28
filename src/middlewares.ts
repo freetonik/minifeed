@@ -26,7 +26,7 @@ export async function authMiddleware(
 }
 
 // User must be logged in
-export async function userPageMiddleware(
+export async function authRequiredMiddleware(
     c: Context<any, any, {}>,
     next: () => any,
 ) {
@@ -35,7 +35,7 @@ export async function userPageMiddleware(
 }
 
 // User must be logged in and be admin
-export async function adminMiddleware(
+export async function adminRequiredMiddleware(
     c: Context<any, any, {}>,
     next: () => any,
 ) {

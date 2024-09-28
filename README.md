@@ -46,6 +46,12 @@ npx wrangler d1 execute minifeed --local --command="SELECT * FROM Items"
 npx wrangler d1 execute minifeed --command="SELECT COUNT(item_id) FROM Items"
 ```
 
+### Subdomains
+
+```
+npx wrangler dev src/index.ts --host slugger.localhost.dev
+```
+
 ### TODO
 - [x] properly parse atom vs rss2.0
 - [x] queues

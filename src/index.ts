@@ -44,7 +44,7 @@ import {
 import {
     loginHandler,
     loginPostHandler,
-    myAccountHandler,
+    handle_my_account,
     logoutHandler,
     signupPostHandler,
     myAccountVerifyEmailHandler,
@@ -57,16 +57,16 @@ import {
     upsertSingleDocument,
 } from "./search";
 import {
-    adminMiddleware,
+    adminRequiredMiddleware,
     authMiddleware,
-    userPageMiddleware,
+    authRequiredMiddleware,
 } from "./middlewares";
 import { changelog } from "./changelog";
 import { Bindings } from "./bindings";
 import { enqueueScrapeAllItemsOfFeed, enqueueUpdateAllFeeds } from "./queue";
 import { scrapeItem } from "./scrape";
 import { feedbackHandler, suggestBlogHandler } from "./feedback";
-import { mblogHandler, mblogPostPostHandler, mblogSinglePostHandler, mblogSinglePostDeleteHandler, mblogSinglePostEditHandler, mblogSinglePostEditPostHandler, mblogRSSHandler } from "./mblogs";
+import { handle_mblog, handle_mblog_POST, mblogSinglePostHandler, mblogSinglePostDeleteHandler, mblogSinglePostEditHandler, mblogSinglePostEditPostHandler, mblogRSSHandler } from "./mblogs";
 
 // main app handles the root paths
 const app = new Hono<{ Bindings: Bindings }>({
@@ -74,36 +74,34 @@ const app = new Hono<{ Bindings: Bindings }>({
 });
 app.get("/static/*", serveStatic({ root: "./" }));
 app.get("/robots.txt", async (c) => c.text("User-agent: *\nAllow: /"));
-app.get("/favicon.ico", async (c) =>
-    c.redirect("/static/favicons/favicon.ico"),
-);
+app.get("/favicon.ico", async (c) => c.redirect("/static/favicons/favicon.ico"));
 
 app.use("*", authMiddleware);
 app.use("/b/*", authMiddleware);
 // all routes below this line require authentication
-app.use("/my/*", userPageMiddleware);
-app.use("/feeds/:feed_sqid/subscribe", userPageMiddleware);
-app.use("/feeds/:feed_sqid/unsubscribe", userPageMiddleware);
-app.use("/items/:feed_sqid/favorite", userPageMiddleware);
-app.use("/items/:feed_sqid/unfavorite", userPageMiddleware);
+app.use("/my/*", authRequiredMiddleware);
+app.use("/feeds/:feed_sqid/subscribe", authRequiredMiddleware);
+app.use("/feeds/:feed_sqid/unsubscribe", authRequiredMiddleware);
+app.use("/items/:feed_sqid/favorite", authRequiredMiddleware);
+app.use("/items/:feed_sqid/unfavorite", authRequiredMiddleware);
 
 // all routes below this line require admin privileges
-app.use("/b/*", adminMiddleware);
-app.use("/blogs/:feed_sqid/new", adminMiddleware);
-app.use("/blogs/:feed_sqid/new", adminMiddleware);
-app.use("/feeds/:feed_sqid/delete", adminMiddleware);
-app.use("/feeds/:feed_sqid/update", adminMiddleware);
-app.use("/feeds/:feed_sqid/scrape", adminMiddleware);
-app.use("/feeds/:feed_sqid/index", adminMiddleware);
-app.use("/feeds/:feed_sqid/rebuild_cache", adminMiddleware);
-app.use("/feeds/index", adminMiddleware);
-app.use("/feeds/rebuild_cache", adminMiddleware);
+app.use("/b/*", adminRequiredMiddleware);
+app.use("/blogs/:feed_sqid/new", adminRequiredMiddleware);
+app.use("/blogs/:feed_sqid/new", adminRequiredMiddleware);
+app.use("/feeds/:feed_sqid/delete", adminRequiredMiddleware);
+app.use("/feeds/:feed_sqid/update", adminRequiredMiddleware);
+app.use("/feeds/:feed_sqid/scrape", adminRequiredMiddleware);
+app.use("/feeds/:feed_sqid/index", adminRequiredMiddleware);
+app.use("/feeds/:feed_sqid/rebuild_cache", adminRequiredMiddleware);
+app.use("/feeds/index", adminRequiredMiddleware);
+app.use("/feeds/rebuild_cache", adminRequiredMiddleware);
 
-app.use("/items/:item_sqid/scrape", adminMiddleware);
-app.use("/items/:item_sqid/index", adminMiddleware);
-app.use("/items/:item_sqid/delete", adminMiddleware);
+app.use("/items/:item_sqid/scrape", adminRequiredMiddleware);
+app.use("/items/:item_sqid/index", adminRequiredMiddleware);
+app.use("/items/:item_sqid/delete", adminRequiredMiddleware);
 
-app.use("/admin", adminMiddleware);
+app.use("/admin", adminRequiredMiddleware);
 
 app.notFound((c) => {
     return c.html(
@@ -146,7 +144,7 @@ app.get("/my", myItemsHandler);
 app.get("/my/subscriptions", mySubscriptionsHandler);
 app.get("/my/friendfeed", myFollowsHandler);
 app.get("/my/favorites", myFavoritesHandler);
-app.get("/my/account", myAccountHandler);
+app.get("/my/account", handle_my_account);
 app.post("/my/account/create_mblog", myNewMblogPostHandler);
 app.get("/verify_email", myAccountVerifyEmailHandler);
 
@@ -170,35 +168,16 @@ app.post("/feeds/:feed_sqid/rebuild_cache", feedsCacheRebuildHandler);
 app.post("/feeds/index", feedsGlobalIndexHandler);
 app.post("/feeds/rebuild_cache", feedsGlobalCacheRebuildHandler);
 
-app.get("/b/:slug", mblogHandler)
+app.get("/b/:slug", handle_mblog)
 app.get("/b/:slug/rss", mblogRSSHandler)
 app.get("/b/:slug/:post_slug", mblogSinglePostHandler)
 app.get("/b/:slug/:post_slug/edit", mblogSinglePostEditHandler)
+app.post("/b/:slug", handle_mblog_POST)
 app.post("/b/:slug/:post_slug/edit", mblogSinglePostEditPostHandler)
-app.post("/b/:slug", mblogPostPostHandler)
 app.post("/b/:slug/:post_slug/delete", mblogSinglePostDeleteHandler)
 
-app.get("/podcasts", (c: any) => {
-    return c.html(
-        renderHTML(
-            "Podcasts | minifeed",
-            raw("Coming soon"),
-            c.get("USERNAME"),
-            "podcasts",
-        ),
-    );
-});
-
-app.get("/channels", (c: any) => {
-    return c.html(
-        renderHTML(
-            "Channels | minifeed",
-            raw("Coming soon"),
-            c.get("USERNAME"),
-            "channels",
-        ),
-    );
-});
+app.get("/podcasts", (c: any) => { return c.html(renderHTML("Podcasts | minifeed", raw("Coming soon"), c.get("USERNAME"), "podcasts",),); });
+app.get("/channels", (c: any) => { return c.html(renderHTML("Channels | minifeed", raw("Coming soon"), c.get("USERNAME"), "channels",),); });
 
 app.get("/items/:item_sqid", itemsSingleHandler);
 app.post("/items/:item_sqid/favorite", itemsAddToFavoritesHandler);
@@ -216,12 +195,32 @@ app.get("/about/changelog", async (c) =>
 );
 
 // This handles subdomain blogs
+const handleMblogRootSubdomain = async (c: Context<any, any, {}>) => {
+    const host = c.req.raw.headers.get("host");
+    if (host) {
+        const subdomain = host.split(".")[0];
+        c.set("SUBDOMAIN", subdomain);
+        return await handle_mblog(c);
+    }
+    throw new Error("Host header is missing");
+}
+
+const handleMblogItemSubdomain = async (c: Context<any, any, {}>) => {
+    const host = c.req.raw.headers.get("host");
+    if (host) {
+        const subdomain = host.split(".")[0];
+        c.set("SUBDOMAIN", subdomain);
+        return await mblogSinglePostHandler(c);
+    }
+    throw new Error("Host header is missing");
+}
+
 const subdomainApp = new Hono();
 subdomainApp.use("*", authMiddleware);
-subdomainApp.get("/", (c: Context<any, any, {}>) => {
-    const subdomain = c.req.raw.headers.get("host").split(".")[0];
-    return c.text(subdomain);
-});
+subdomainApp.get("/", handleMblogRootSubdomain);
+subdomainApp.get("/:post_slug", handleMblogItemSubdomain);
+subdomainApp.get("/static/*", serveStatic({ root: "./" }));
+
 
 // Main app to route based on Host
 const appMain = new Hono();
@@ -229,17 +228,13 @@ const appMain = new Hono();
 appMain.all("*", async (c: Context<any, any, {}>, next: () => any) => {
     const host = c.req.raw.headers.get("host"); // Cloudflare Workers use lowercase 'host'
     if (host) {
-        const subdomain = host.split(".")[0];
         if (host.split(".").length === 3) {
-            c.set("SUBDOMAIN", subdomain);
             return await subdomainApp.fetch(c.req, c.env, c.ctx);
         }
         // Default to root app for the main domain (example.com)
         return await app.fetch(c.req, c.env, c.ctx);
     }
     return await app.fetch(c.req, c.env, c.ctx);
-
-    await next();
 });
 
 // MAIN EXPORT
@@ -254,9 +249,7 @@ export default {
                     try {
                         await updateFeed(env, message.body.feed_id);
                     } catch (e: any) {
-                        console.log(
-                            `Error updating feed ${message.body.feed_id}: ${e.toString()}`,
-                        );
+                        console.log(`Error updating feed ${message.body.feed_id}: ${e.toString()}`,);
                     }
                     break;
 
@@ -264,9 +257,7 @@ export default {
                     try {
                         await enqueueScrapeAllItemsOfFeed(env, message.body.feed_id);
                     } catch (e: any) {
-                        console.log(
-                            `Error scraping feed ${message.body.feed_id}: ${e.toString()}`,
-                        );
+                        console.log(`Error scraping feed ${message.body.feed_id}: ${e.toString()}`,);
                     }
                     break;
 
@@ -274,9 +265,7 @@ export default {
                     try {
                         await scrapeItem(env, message.body.item_id);
                     } catch (e: any) {
-                        console.log(
-                            `Error scraping item ${message.body.item_id}: ${e.toString()}`,
-                        );
+                        console.log(`Error scraping item ${message.body.item_id}: ${e.toString()}`,);
                     }
                     break;
 
@@ -284,9 +273,7 @@ export default {
                     try {
                         await updateItemIndex(env, message.body.item_id);
                     } catch (e: any) {
-                        console.log(
-                            `Error indexing item ${message.body.item_id}: ${e.toString()}`,
-                        );
+                        console.log(`Error indexing item ${message.body.item_id}: ${e.toString()}`,);
                     }
                     break;
 
@@ -294,9 +281,7 @@ export default {
                     try {
                         await updateFeedIndex(env, message.body.feed_id);
                     } catch (e: any) {
-                        console.log(
-                            `Error indexing feed ${message.body.feed_id}: ${e.toString()}`,
-                        );
+                        console.log(`Error indexing feed ${message.body.feed_id}: ${e.toString()}`,);
                     }
                     break;
 
@@ -304,9 +289,7 @@ export default {
                     try {
                         await regenerateTopItemsCacheForFeed(env, message.body.feed_id);
                     } catch (e: any) {
-                        console.log(
-                            `Error regenerating top items cache for feed ${message.body.feed_id}: ${e.toString()}`,
-                        );
+                        console.log(`Error regenerating top items cache for feed ${message.body.feed_id}: ${e.toString()}`,);
                     }
                     break;
             }
