@@ -1,0 +1,11 @@
+-- Migration number: 0006 	 2024-09-27T15:53:35.386Z
+
+CREATE TABLE IF NOT EXISTS mblogs (
+    mblog_id INTEGER PRIMARY KEY,
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    feed_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    slug TEXT NOT NULL,
+    FOREIGN KEY(feed_id) REFERENCES feeds(feed_id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
