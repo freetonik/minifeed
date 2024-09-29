@@ -203,12 +203,13 @@ export const mblogSinglePostHandler = async (c: any) => {
 
     if (userLoggedIn && userId === post.user_id) {
         // add delete button
+        let url_prefix = c.env.ENVIRONMENT == "dev" ? `` : `https://minifeed.net`;
         list += `
             <div style="display: flex; gap: 10px;margin-top:1em;">
-                <form action="/b/${mblog_slug}/${post_slug}/delete" method="POST">
+                <form action="${url_prefix}/b/${mblog_slug}/${post_slug}/delete" method="POST">
                     <input type="submit" value="Delete" onclick="return confirm('Are you sure?')">
                 </form>
-                <form action="/b/${mblog_slug}/${post_slug}/edit" method="GET">
+                <form action="${url_prefix}/b/${mblog_slug}/${post_slug}/edit" method="GET">
                     <input type="submit" value="Edit">
                 </form>
             </div>
@@ -221,8 +222,10 @@ export const mblogSinglePostHandler = async (c: any) => {
             `${post.title} | minifeed`,
             html`${raw(list)} `,
             c.get("USERNAME"),
-            "blogs",
             "",
+            "",
+            "",
+            true
         ),
     );
 }
