@@ -1,5 +1,4 @@
 import { html } from "hono/html";
-import { version } from "./changelog";
 
 export const renderHTML = (
     title: string,
@@ -8,7 +7,10 @@ export const renderHTML = (
     active: string = "all",
     searchQuery: string = "",
     canonicalUrl: string = "",
+    prefix_root_url: boolean = false,
 ) => {
+    const root_url = prefix_root_url ? "https://minifeed.net" : "";
+
     const canonicalUrlBlock = canonicalUrl ? html`<link rel="canonical" href="${canonicalUrl}" />` : "";
 
     let userBlock = html``;
@@ -40,18 +42,18 @@ export const renderHTML = (
 
     <body>
     <header>
-        <form action="/search" method="GET" style="width:100%;margin-bottom:1.25em;">
+        <form action="${root_url}/search" method="GET" style="width:100%;margin-bottom:1.25em;">
             <input class="search-input"
             type="text" name="q" placeholder="search..." minlength="2" autocomplete="off" value="${searchQuery}">
         </form>
         <div>
             <nav aria-label="Site navigation">
                 <div>
-                    <a href="/"><span>⬤</span> <span class="bold" style="margin-left: 0.2em;margin-right:1.5em;">minifeed</span></a>
-                    <a href="/my" class="${active === "my" ? "bold" : ""}">My</a>
-                    <a href="/global" class="${active === "global" ? "bold" : ""}" style="margin-left: 0.5em">All</a>
-                    <a href="/blogs" class="${active === "blogs" ? "bold" : ""}" style="margin-left: 0.5em">Blogs</a>
-                    <a href="/users" class="${active === "users" ? "bold" : ""}" style="margin-left: 0.5em">Users</a>
+                    <a href="${root_url}/"><span>⬤</span> <span class="bold" style="margin-left: 0.2em;margin-right:1.5em;">minifeed</span></a>
+                    <a href="${root_url}/my" class="${active === "my" ? "bold" : ""}">My</a>
+                    <a href="${root_url}/global" class="${active === "global" ? "bold" : ""}" style="margin-left: 0.5em">All</a>
+                    <a href="${root_url}/blogs" class="${active === "blogs" ? "bold" : ""}" style="margin-left: 0.5em">Blogs</a>
+                    <a href="${root_url}/users" class="${active === "users" ? "bold" : ""}" style="margin-left: 0.5em">Users</a>
                 </div>
                 <div class="user-block">
                     ${userBlock}
@@ -66,9 +68,9 @@ export const renderHTML = (
     <footer>
         <p>
             Minifeed.net ::
-            <a href="/about/changelog">changelog</a> /
+            <a href="${root_url}/about/changelog">changelog</a> /
             <a href="https://status.minifeed.net/">status</a> /
-            <a href="/feedback">feedback</a>
+            <a href="${root_url}/feedback">feedback</a>
         </p>
     </footer>
 

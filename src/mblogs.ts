@@ -5,17 +5,17 @@ import { marked } from 'marked';
 
 export const handle_mblog = async (c: any) => {
     const subdomain = c.get("SUBDOMAIN");
-    if (c.env.ENVIRONMENT != "dev") {
-        console.log("redirecting to", `https://${subdomain}.minifeed.net`)
-        return c.redirect(`https://${subdomain}.minifeed.net`, 301);
-    }
-    const userId = c.get("USER_ID") || -1;
-    const userLoggedIn = c.get("USER_ID") ? true : false;
-
     let mblog_slug = subdomain;
     if (!subdomain) {
         mblog_slug = c.req.param("slug")
     }
+    if (c.env.ENVIRONMENT != "dev" && !subdomain) {
+        return c.redirect(`https://${mblog_slug}.minifeed.net`, 301);
+    }
+    const userId = c.get("USER_ID") || -1;
+    const userLoggedIn = c.get("USER_ID") ? true : false;
+
+
 
     const batch = await c.env.DB.batch([
         c.env.DB.prepare(`
@@ -42,10 +42,9 @@ export const handle_mblog = async (c: any) => {
     const items = batch[1].results;
 
     let list = ` <h1> ${mblog.title} </h1>`
-
     if (userLoggedIn && userId === mblog.user_id) {
         list += `
-            <form action="/b/${mblog.slug}" method="POST">
+            <form action="https://minifeed.net/b/${mblog.slug}" method="POST">
                 <div style="margin-bottom:1em;">
                     <input type="text" id="post-title" name="post-title" placeholder="Title">
                 </div>
@@ -75,7 +74,11 @@ export const handle_mblog = async (c: any) => {
         renderHTML(
             `${mblog.title}`,
             html`${raw(list)} `,
-            userLoggedIn
+            userLoggedIn,
+            "",
+            "",
+            "",
+            true
         ),
     );
 }
@@ -149,8 +152,8 @@ export const handle_mblog_POST = async (c: any) => {
 
 const generate_slug = (title: string) => {
     return title.replace(/\s+/g, '-')
-                .replace(/[^a-zA-Z0-9-]/g, '')
-                .toLowerCase();
+        .replace(/[^a-zA-Z0-9-]/g, '')
+        .toLowerCase();
 }
 
 export const mblogSinglePostHandler = async (c: any) => {

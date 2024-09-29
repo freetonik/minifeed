@@ -34,7 +34,7 @@ export const handle_my_account = async (c: any) => {
         listOfMblogs += `<h3>My blogs hosted at minifeed</h3><ul>`;
         for (const mblog of user_mblogs["results"]) {
             const feedId = mblog["feed_id"];
-            listOfMblogs += `<li><a href="/b/${mblog["slug"]}">${mblog["title"]}</a></li>`;
+            listOfMblogs += `<li><a href="https://${mblog["slug"]}.minifeed.net">${mblog["title"]}</a></li>`;
         }
         listOfMblogs += `</ul>`;
     }
