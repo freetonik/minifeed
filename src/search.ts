@@ -8,7 +8,7 @@ import {
     stripTags,
 } from "./utils";
 
-export const searchHandler = async (c: any) => {
+export const handle_search = async (c: any) => {
     const q = c.req.query("q");
 
     // if query only contains spaces, return error
@@ -62,11 +62,7 @@ export const searchHandler = async (c: any) => {
             {
                 collection: c.env.TYPESENSE_ITEMS_COLLECTION,
                 q: q,
-            },
-            {
-                collection: c.env.TYPESENSE_BLOG_FEEDS_COLLECTION,
-                q: q,
-            },
+            }
         ],
     };
 
@@ -88,7 +84,7 @@ export const searchHandler = async (c: any) => {
     const hasNextPage =
         parsedResults["results"][0]["found"] > page * itemsPerPage;
 
-    let list = `<h2>Search results for '${q}'</h2>`;
+    let list = `<h2 style="margin-bottom:1.25em;">Search results for '${q}':</h2>`;
     if (!parsedResults["results"][0]["hits"].length) {
         response = await fetch(
             `https://${c.env.TYPESENSE_CLUSTER}:443/multi_search?per_page=${itemsPerPage}&page=${page}&query_by=title,content`,

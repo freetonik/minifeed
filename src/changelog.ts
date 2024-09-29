@@ -1,7 +1,13 @@
-export const version = "0.3.0";
+export const version = "0.4.0";
 
 export const changelog = `
     <h2>Changelog</h2>
+
+    <h3>0.4.0 (29.09.2024)</h3>
+    <ul>
+        <li>Redesign.</li>
+        <li>Native blogs at minifeed, private beta.</li>
+    </ul>
 
     <h3>0.3.0 (31.07.2024)</h3>
     <ul>

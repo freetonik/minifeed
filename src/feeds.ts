@@ -26,7 +26,7 @@ import { FeedData } from "@extractus/feed-extractor";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ROUTE HANDLERS //////////////////////////////////////////////////////////////////////////////////////////////////////
-export const blogsHandler = async (c: any) => {
+export const handle_blogs = async (c: any) => {
     const user_id = c.get("USER_ID") || -1;
     const userLoggedIn = user_id != -1;
     const { results } = await c.env.DB.prepare(
@@ -40,13 +40,11 @@ export const blogsHandler = async (c: any) => {
         .bind(user_id)
         .run();
 
-    let list = `<div class="main">`;
+    let list = ``;
 
     if (user_id == -1) {
-        list += `<div style="margin-bottom: 2em;margin-top: -1em;" class="flash flash-blue">
-    <strong>Minifeed</strong> is a curated blog reader and blog search engine.
-    Our goal is to collect all blogs written by real humans, and make them discoverable and searchable.
-    After signing up, you can subscribe to blogs, follow people, and save your favorite posts.
+        list += `<div class="flash">
+    <strong>Minifeed</strong> is a curated blog reader and blog search engine. We collect humans-written blogs to make them discoverable and searchable. Sign up to subscribe to blogs, follow people, save favorites, or start your own blog.
     </div>`;
     }
 
@@ -98,18 +96,18 @@ export const blogsHandler = async (c: any) => {
         }
         list += `
         <div class="blog-summary">
+
           <h2>
             <a class="no-color" href="/blogs/${sqid}">${feed.title}</a>
             <small>(<a href="${feed.url}">site</a> / <a href="${feed.rss_url}">rss</a>)</small>
           </h2>
           ${feedDescriptionBlock}
           ${subscriptionBlock}
-          <hr style="margin:2em 0;">
           ${top_items_list}
         </div>`;
     });
-    // list += `<div style="margin-top:2em;text-align:center;"><a class="button" href="/blogs/new">+ add new blog</a></div></div>`;
-    list += `<div style="margin-top:2em;text-align:center;"><a class="button" href="/suggest">+ suggest a blog</a></div></div>`;
+
+    list += `<div style="margin-top:2em;text-align:center;"><a class="button" href="/suggest">+ suggest a blog</a></div>`;
     return c.html(
         renderHTML(
             "Blogs | minifeed",
@@ -120,7 +118,7 @@ export const blogsHandler = async (c: any) => {
     );
 };
 
-export const blogsSingleHandler = async (c: any) => {
+export const handle_blogs_single = async (c: any) => {
     // TODO: we're assuming that feed always has items; if feed has 0 items, this will return 404, but maybe we want to
     // show the feed still as "processing"; use https://developers.cloudflare.com/d1/platform/client-api/#batch-statements
     const feedSqid = c.req.param("feed_sqid");
@@ -181,25 +179,36 @@ export const blogsSingleHandler = async (c: any) => {
         </button>
       </span>
       `;
-    const feedDescriptionBlock = batch[0].results[0]["description"]
-        ? `<p>${batch[0].results[0]["description"]}</p>`
+    const feedDescription = batch[0].results[0]["description"]
+        ? `${batch[0].results[0]["description"]}<br>`
         : "";
 
+    const feedDescriptionBlock = `
+    <div style="margin-bottom:1em;">
+    ${feedDescription}
+    <a href="${feedUrl}">${feedUrl}</a> (<a href="${rssUrl}">RSS</a>)
+    </div>
+    `
+
     let list = `
-    <h1>
+    <div style="margin-bottom:3em;">
+    <h1 style="margin-bottom:0.25em;">
       ${feedTitle}
-      <small>(<a href="${feedUrl}">site</a> / <a href="${rssUrl}">rss</a>)</small>
     </h1>
+
     ${feedDescriptionBlock}
     ${subscriptionBlock}
-    <hr style="margin:2em 0;">
+
+
+    </div>
     `;
 
+
+    console.log(batch[1].results)
     // batch[1] is items
     if (!batch[1].results.length)
         list += `<p>Feed is being updated, come back later...</p>`;
     else {
-        list += `<div>`;
         batch[1].results.forEach((item: any) => {
             const itemTitle = item.favorite_id
                 ? `★ ${item.item_title}`
@@ -208,13 +217,12 @@ export const blogsSingleHandler = async (c: any) => {
                 item.item_sqid,
                 itemTitle,
                 item.item_url,
-                "", // don't show title
+                "", // don't show feed title
                 "", // don't show feed link
                 item.pub_date,
                 item.description,
             );
         });
-        list += `</div>`;
     }
 
     return c.html(

@@ -1,22 +1,22 @@
+import { html, raw } from "hono/html";
+import { addItemsToFeed } from "./feeds";
 import {
     renderAddItemByURLForm,
     renderHTML,
     renderItemShort,
+    render_my_subsections,
 } from "./htmltools";
-import { html, raw } from "hono/html";
-import {
-    feedIdToSqid,
-    feedSqidToId,
-    itemIdToSqid,
-    itemSqidToId,
-    truncate,
-} from "./utils";
 import { enqueueItemIndex, enqueueItemScrape } from "./queue";
 import { scrapeURLIntoObject } from "./scrape";
-import { addItemsToFeed } from "./feeds";
+import {
+    feedSqidToId,
+    itemIdToSqid,
+    itemSqidToId
+} from "./utils";
 
-export const globalFeedHandler = async (c: any) => {
+export const handle_global = async (c: any) => {
     const userId = c.get("USER_ID") || -1;
+    const user_logged_in = userId != -1;
     const itemsPerPage = 30;
     const page = Number(c.req.query("p")) || 1;
     const offset = page * itemsPerPage - itemsPerPage;
@@ -34,15 +34,21 @@ export const globalFeedHandler = async (c: any) => {
         .run();
 
     let list = ``;
-    if (userId == -1) {
-        list += `<div style="margin-bottom: 2em" class="flash flash-blue">
+    if (!user_logged_in) {
+        list += `<div class="flash">
     <strong>Minifeed</strong> is a curated blog reader and blog search engine.
-    Our goal is to collect all blogs written by real humans, and make them discoverable and searchable.
-    After signing up, you can subscribe to blogs, follow people, and save your favorite posts.
+    We collect humans-written blogs to make them discoverable and searchable.
+    Sign up to subscribe to blogs, follow people, save favorites, or start your own blog.
+    <br><br>
+    ↓ Below is a global feed of all items from all blogs.
     </div>`;
+    } else {
+        list += `<div class="flash">
+    ↓ Below is a global feed of all items from all blogs.
+    </div>`
     }
 
-    list += `<p style="margin-bottom: 2em"><strong>This is a global feed of all items from all blogs in chronological order.</strong></p>`;
+    list += ``;
 
     if (!results.length)
         list += `<p><i>Nothing exists on minifeed yet...</i></p>`;
@@ -75,7 +81,7 @@ export const globalFeedHandler = async (c: any) => {
 };
 
 // // MY HOME FEED: subs + favorites + friendfeed
-export const myItemsHandler = async (c: any) => {
+export const handle_my = async (c: any) => {
     const itemsPerPage = 30;
     const page = Number(c.req.query("p")) || 1;
     const offset = page * itemsPerPage - itemsPerPage;
@@ -117,13 +123,7 @@ export const myItemsHandler = async (c: any) => {
         .all();
 
     let list = `
-    <nav class="my-menu"><small>
-        show <a href="/my" class="active">everything</a> /
-        <a href="/my/subscriptions">subscriptions</a> /
-        <a href="/my/favorites">favorites</a> /
-        <a href="/my/friendfeed">friendfeed</a>
-    </small></nav>
-    <div class="main">
+    ${render_my_subsections("my")}
     `;
     if (results.length) {
         results.forEach((item: any) => {
@@ -138,13 +138,11 @@ export const myItemsHandler = async (c: any) => {
                 item.description,
             );
         });
-        list += `<p><a href="?p=${page + 1}">More</a></p></div>`;
+        list += `<p><a href="?p=${page + 1}">More</a></p>`;
     } else {
         if (page == 1) {
             list += `Your home is empty :-( <br>Subscribe to some <strong><a href="/blogs">blogs</a></strong> or follow some <strong><a href="/users">users</a></strong>.`;
         }
-
-        list += ` </div>`;
     }
 
     return c.html(
@@ -157,7 +155,7 @@ export const myItemsHandler = async (c: any) => {
     );
 };
 
-export const mySubscriptionsHandler = async (c: any) => {
+export const handle_my_subscriptions = async (c: any) => {
     const itemsPerPage = 30;
     const page = Number(c.req.query("p")) || 1;
     const offset = page * itemsPerPage - itemsPerPage;
@@ -178,13 +176,7 @@ export const mySubscriptionsHandler = async (c: any) => {
         .bind(userId, userId, itemsPerPage, offset)
         .all();
 
-    let list = `
-    <nav class="my-menu"><small>
-        show <a href="/my">everything</a> /
-        <a href="/my/subscriptions" class="active">subscriptions</a> /
-        <a href="/my/favorites">favorites</a> /
-        <a href="/my/friendfeed">friendfeed</a>
-    </small></nav>
+    let list = ` ${render_my_subsections("subscriptions")}
     <div class="main">
     `;
     if (results.length) {
@@ -212,7 +204,7 @@ export const mySubscriptionsHandler = async (c: any) => {
     );
 };
 
-export const myFollowsHandler = async (c: any) => {
+export const handle_my_friendfeed = async (c: any) => {
     const itemsPerPage = 30;
     const page = Number(c.req.query("p")) || 1;
     const offset = page * itemsPerPage - itemsPerPage;
@@ -235,12 +227,7 @@ export const myFollowsHandler = async (c: any) => {
         .all();
 
     let list = `
-    <nav class="my-menu"><small>
-        show <a href="/my">everything</a> /
-        <a href="/my/subscriptions">subscriptions</a> /
-        <a href="/my/favorites">favorites</a> /
-        <a href="/my/friendfeed" class="active">friendfeed</a>
-    </small></nav>
+    ${render_my_subsections("friendfeed")}
     <div class="main">
     `;
     if (results.length) {
@@ -268,7 +255,7 @@ export const myFollowsHandler = async (c: any) => {
     );
 };
 
-export const myFavoritesHandler = async (c: any) => {
+export const handle_my_favorites = async (c: any) => {
     const itemsPerPage = 30;
     const page = Number(c.req.query("p")) || 1;
     const offset = page * itemsPerPage - itemsPerPage;
@@ -289,12 +276,7 @@ export const myFavoritesHandler = async (c: any) => {
         .all();
 
     let list = `
-    <nav class="my-menu"><small>
-        show <a href="/my">everything</a> /
-        <a href="/my/subscriptions">subscriptions</a> /
-        <a href="/my/favorites" class="active">favorites</a> /
-        <a href="/my/friendfeed">friendfeed</a>
-    </small></nav>
+    ${render_my_subsections("favorites")}
     <div class="main">
     `;
     if (results.length) {
@@ -323,7 +305,7 @@ export const myFavoritesHandler = async (c: any) => {
     );
 };
 
-export const itemsSingleHandler = async (c: any) => {
+export const handle_items_single = async (c: any) => {
     const item_sqid = c.req.param("item_sqid");
     const item_id: number = itemSqidToId(item_sqid);
     const user_id = c.get("USER_ID") || -1;
@@ -420,7 +402,7 @@ export const itemsSingleHandler = async (c: any) => {
             contentBlock = raw(item.content_html_scraped);
         else contentBlock = item.description;
     } else
-        contentBlock = `${item.description} <div class="flash flash-blue"><a href="/login">Log in</a> and subscribe to this blog to view full content</div>`;
+        contentBlock = `${item.description} <div class="flash" style="margin-top:1em;"><a href="/login">Log in</a> and subscribe to this blog to view full content</div>`;
 
     let favoriteBlock = "";
     let subscriptionBlock = "";
@@ -479,7 +461,6 @@ export const itemsSingleHandler = async (c: any) => {
     if (batch[2].results.length) {
         otherItemsBlock += `<div class="related-items"><h4>More from ${item.type} <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a>:</h4>`;
         batch[2].results.forEach((related_item: any) => {
-            otherItemsBlock += `<div class="related-item">`;
             const itemTitle = related_item.favorite_id
                 ? `★ ${related_item.item_title}`
                 : related_item.item_title;
@@ -492,7 +473,6 @@ export const itemsSingleHandler = async (c: any) => {
                 related_item.pub_date,
                 related_item.description,
             );
-            otherItemsBlock += `</div>`;
         });
         otherItemsBlock += `</div>`;
     }
@@ -500,7 +480,7 @@ export const itemsSingleHandler = async (c: any) => {
     let list = `
     <h1 style="margin-bottom: 0.25em;">${item.item_title} </h1>
     <div style="margin-bottom:1.25em;">from ${item.type} <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time></div>
-    <div class="item-actions">
+    <div class="item-actions" style="margin-bottom:3em;">
         <div>
         ${favoriteBlock}
         <a class="button" href="${item.item_url}" target="_blank">↗ open original</a>
@@ -509,11 +489,9 @@ export const itemsSingleHandler = async (c: any) => {
         ${subscriptionBlock}
         </div>
     </div>
-    <hr>
-    <div class="post-content">
+    <article>
     ${contentBlock}
-
-    </div>
+    </article>
 
     ${otherItemsBlock}
     `;

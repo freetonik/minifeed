@@ -4,7 +4,7 @@ import { version } from "./changelog";
 export const renderHTML = (
     title: string,
     inner: any,
-    username: string = "",
+    user_logged_in: boolean = false,
     active: string = "all",
     searchQuery: string = "",
     canonicalUrl: string = "",
@@ -12,17 +12,17 @@ export const renderHTML = (
     const canonicalUrlBlock = canonicalUrl ? html`<link rel="canonical" href="${canonicalUrl}" />` : "";
 
     let userBlock = html``;
-    if (username) {
+    if (user_logged_in) {
         userBlock = html`
-      <a href="/my/account" class="bold">${username}</a>
+      <a href="/my/account">account</a>
     `;
     } else {
-        userBlock = html`<a href="/login" class="bold">Log in or create account</a>`;
+        userBlock = html`<a href="/login" class="bold">Log in</a> or <a class="bold" href="/signup">sign up</a>`;
     }
 
     return html`
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
         <meta charset="utf-8">
         <title>${title}</title>
@@ -40,90 +40,41 @@ export const renderHTML = (
 
     <body>
     <header>
-        <div class="topline">
-        <div class="logo">
-        <a href="/"><span>⬤</span> <span class="bold" style="margin-left: 0.2em;">minifeed</span></a>
-        </div>
-        <div class="user">
-        ${userBlock}
-        </div>
+        <form action="/search" method="GET" style="width:100%;margin-bottom:1.25em;">
+            <input class="search-input"
+            type="text" name="q" placeholder="search..." minlength="2" autocomplete="off" value="${searchQuery}">
+        </form>
+        <div>
+            <nav aria-label="Site navigation">
+                <div>
+                    <a href="/"><span>⬤</span> <span class="bold" style="margin-left: 0.2em;margin-right:1.5em;">minifeed</span></a>
+                    <a href="/my" class="${active === "my" ? "bold" : ""}">My</a>
+                    <a href="/global" class="${active === "global" ? "bold" : ""}" style="margin-left: 0.5em">All</a>
+                    <a href="/blogs" class="${active === "blogs" ? "bold" : ""}" style="margin-left: 0.5em">Blogs</a>
+                    <a href="/users" class="${active === "users" ? "bold" : ""}" style="margin-left: 0.5em">Users</a>
+                </div>
+                <div class="user-block">
+                    ${userBlock}
+                </div>
+            </nav>
         </div>
 
-        <nav aria-label="Site navigation">
-            <div class="main-sections" aria-label="Site sections">
-                <a href="/my" class="${active === "my" ? "active" : ""}">My&nbsp;feed</a>
-                <a href="/global" class="${active === "global" ? "active" : ""}" style="margin-left: 0.5em">Global&nbsp;feed</a>
-                <a href="/blogs" class="${active === "blogs" ? "active" : ""}" style="margin-left: 0.5em">Blogs</a>
-                <a href="/users" class="${active === "users" ? "active" : ""}" style="margin-left: 0.5em">Users</a>
-            </div>
-            <span class="search-form ${active === "search" ? "active" : ""}">
-            <form action="/search" method="GET">
-                <input type="text" name="q" placeholder="Search..." minlength="2" autocomplete="off" value="${searchQuery}">
-            </form>
-            </span>
-        </nav>
     </header>
 
     <main>${inner}</main>
 
     <footer>
-        <div>
-        <p><a href="/my/account" class="bold">${userBlock}</p>
-        <p>Minifeed.net v.${version} / <a class="bold" href="/about/changelog">changelog</a> / <a class="bold" href="https://status.minifeed.net/">status</a> / <a href="/feedback" class="bold">feedback</a></p>
-        </div>
+        <p>
+            Minifeed.net ::
+            <a href="/about/changelog">changelog</a> /
+            <a href="https://status.minifeed.net/">status</a> /
+            <a href="/feedback">feedback</a>
+        </p>
     </footer>
 
     </body>
     </html>`;
 };
-
-export const renderHTMLMblog = (
-    title: string,
-    post_slug: string,
-    inner: any,
-) => {
-    return html`
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <title>${title}</title>
-        <meta name="author" content="">
-        <meta name="description" content="">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="canonical" href="/${post_slug}" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/static/favicons/apple-touch-icon.png">
-        <link rel="icon" type="image/png" sizes="32x32" href="/static/favicons/favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="/static/favicons/favicon-16x16.png">
-        <link rel="manifest" href="/static/favicons/site.webmanifest">
-        <link rel="stylesheet" href="/static/minifeed.css">
-        <script defer src="/static/htmx.min.js"></script>
-    </head>
-
-    <body>
-    <header>
-        <div class="topline" style="padding: 0 1.5em 0.5em;">
-            <div class="logo">
-                <a href="/"><span>⬤</span> <span class="bold" style="margin-left: 0.2em;">minifeed</span></a>
-            </div>
-            <nav aria-label="Site sections" style="margin:0;display:inline-block;padding:0;">
-                <a href="/my">My&nbsp;feed</a>
-                <a href="/global"  style="margin-left: 0.5em">Global&nbsp;feed</a>
-                <a href="/blogs"  style="margin-left: 0.5em">Blogs</a>
-                <a href="/users"  style="margin-left: 0.5em">Users</a>
-            </nav>
-        </div>        
-    </header>
-
-    <main>${inner}</main>
-
-    <footer>
-        footer
-    </footer>
-
-    </body>
-    </html>`;
-}
 
 const dateFormatOptions: Intl.DateTimeFormatOptions = {
     year: "numeric",
@@ -146,7 +97,7 @@ export const renderItemShort = (
     );
 
     const feedLink = feed_title
-        ? `from <a href="/blogs/${feed_sqid}">${feed_title}</a> | `
+        ? `<a href="/blogs/${feed_sqid}">${feed_title}</a> | `
         : "";
     const summaryContent = summary
         ? `<p class="item-summary">${summary}</p>`
@@ -154,13 +105,15 @@ export const renderItemShort = (
 
     return `
     <div class="item-short">
-    <a href="/items/${item_sqid}" class="item-short-title">${title}</a> <br>
-    <div class="muted">
-    <small>${feedLink}
-    <time>${postDate}</time> |
-    <a class="no-underline no-color" href="${url}">original</a> </small>
-    ${summaryContent}
-    </div>
+        <a href="/items/${item_sqid}" class="bold no-color no-underline">${title}</a> <br>
+        <div class="muted">
+            <small>
+                ${feedLink}
+                <span>${postDate}</span> |
+                <a class="no-underline no-color" href="${url}">original</a>
+            </small>
+        </div>
+        ${summaryContent}
     </div>
     `;
 };
@@ -192,20 +145,16 @@ export const renderItemSearchResult = (searchResult: any) => {
     }
 
     return `
-    <div class="item-short" style="margin-top:2em">
-    <a href="/items/${itemSqid}" class="item-short-title">${title}</a> <br>
-    <small class="muted">
-    from ${item["type"]} <a href="/${uri_root_from_type}/${feedSqid}">${item["feed_title"]}</a> |
-    <time>${postDate}</time> |
-    <a class="no-underline no-color" href="${item["url"]}">original</a>
-    <br>
-
-    </small>
-    <small>
-    <span class="search-result-snippet">
-    ${content}...
-    </span>
-    </small>
+    <div class="item-short search-result">
+        <a href="/items/${itemSqid}" class="no-underline bold">${title}</a> <br>
+        <div class="muted"><small>
+            from ${item["type"]} <a href="/${uri_root_from_type}/${feedSqid}">${item["feed_title"]}</a> |
+            <time>${postDate}</time> |
+            <a class="no-underline no-color" href="${item["url"]}">original</a>
+        </small></div>
+        <p class="item-summary">
+        ${content}...
+        </p>
     </div>
     `;
 };
@@ -229,7 +178,6 @@ export const renderAddFeedForm = (url: string = "", flash: string = "") => {
     return html`
     <h1>Add new blog</h1>
     ${flashBlock}
-    <div class="formbg">
       <form action="/blogs/new" method="POST">
         <div style="margin-bottom:1em;">
           <label for="url">Blog URL (or direct RSS URL):</label>
@@ -243,7 +191,6 @@ export const renderAddFeedForm = (url: string = "", flash: string = "") => {
         </div>
         <input type="submit" value="Add blog" />
       </form>
-    </div>
   `;
 };
 
@@ -293,3 +240,14 @@ export const renderAddItemByURLForm = (
     </div>
   `;
 };
+
+export const render_my_subsections = (active: string = "all") => {
+    return html`
+    <nav class="subsections">
+        <a href="/my" class="no-color no-underline ${active === "my" ? "active bold" : ""}">everything</a>
+        <a href="/my/subscriptions" class="no-color no-underline ${active === "subscriptions" ? "active bold" : ""}">subscriptions</a>
+        <a href="/my/favorites" class="no-color no-underline ${active === "favorites" ? "active bold" : ""}">favorites</a>
+        <a href="/my/friendfeed" class="no-color no-underline ${active === "friendfeed" ? "active bold" : ""}">friendfeed</a>
+    </nav>
+    `;
+}

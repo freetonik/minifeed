@@ -1,72 +1,72 @@
 import { Context, Hono } from "hono";
-import { raw } from "hono/html";
-import { renderHTML } from "./htmltools";
 import { serveStatic } from "hono/cloudflare-workers";
-import { adminHandler } from "./admin";
+import { raw } from "hono/html";
 import {
-    globalFeedHandler,
-    myItemsHandler,
-    mySubscriptionsHandler,
-    myFollowsHandler,
-    itemsSingleHandler,
-    itemsAddToFavoritesHandler,
-    itemsRemoveFromFavoritesHandler,
-    itemsScrapeHandler,
-    myFavoritesHandler,
-    itemsIndexHandler,
-    itemsAddItembyUrlHandler,
-    itemsAddItemByUrlPostHandler,
-    itemDeleteHandler,
-} from "./items";
+    handle_create_mblog_POST,
+    handle_login,
+    handle_login_POST,
+    handle_logout,
+    handle_my_account,
+    handle_signup,
+    handle_signup_POST,
+    handle_verify_email,
+} from "./account";
+import { handle_admin } from "./admin";
+import { Bindings } from "./bindings";
+import { changelog } from "./changelog";
+import { handle_feedback, handle_suggest_blog } from "./feedback";
 import {
-    blogsSingleHandler,
-    feedsSubscribeHandler,
-    feedsUnsubscribeHandler,
-    feedsDeleteHandler,
-    feedsUpdateHandler,
-    feedsScrapeHandler,
     blogsNewHandler,
     blogsNewPostHandler,
-    updateFeed,
-    blogsHandler,
-    feedsIndexHandler,
-    regenerateTopItemsCacheForFeed,
     feedsCacheRebuildHandler,
-    feedsGlobalIndexHandler,
+    feedsDeleteHandler,
     feedsGlobalCacheRebuildHandler,
+    feedsGlobalIndexHandler,
+    feedsIndexHandler,
+    feedsScrapeHandler,
+    feedsSubscribeHandler,
+    feedsUnsubscribeHandler,
+    feedsUpdateHandler,
+    handle_blogs,
+    handle_blogs_single,
+    regenerateTopItemsCacheForFeed,
+    updateFeed,
 } from "./feeds";
+import { renderHTML } from "./htmltools";
 import {
-    usersHandler,
-    usersSingleHandler,
-    usersFollowPostHandler,
-    usersUnfollowPostHandler,
-} from "./users";
-import {
-    loginHandler,
-    loginPostHandler,
-    handle_my_account,
-    logoutHandler,
-    signupPostHandler,
-    myAccountVerifyEmailHandler,
-    myNewMblogPostHandler,
-} from "./account";
-import {
-    searchHandler,
-    updateFeedIndex,
-    updateItemIndex,
-    upsertSingleDocument,
-} from "./search";
+    handle_global,
+    handle_items_single,
+    handle_my,
+    handle_my_favorites,
+    handle_my_friendfeed,
+    handle_my_subscriptions,
+    itemDeleteHandler,
+    itemsAddItemByUrlPostHandler,
+    itemsAddItembyUrlHandler,
+    itemsAddToFavoritesHandler,
+    itemsIndexHandler,
+    itemsRemoveFromFavoritesHandler,
+    itemsScrapeHandler,
+} from "./items";
+import { handle_mblog, handle_mblog_POST, mblogRSSHandler, mblogSinglePostDeleteHandler, mblogSinglePostEditHandler, mblogSinglePostEditPostHandler, mblogSinglePostHandler } from "./mblogs";
 import {
     adminRequiredMiddleware,
     authMiddleware,
     authRequiredMiddleware,
 } from "./middlewares";
-import { changelog } from "./changelog";
-import { Bindings } from "./bindings";
 import { enqueueScrapeAllItemsOfFeed, enqueueUpdateAllFeeds } from "./queue";
 import { scrapeItem } from "./scrape";
-import { feedbackHandler, suggestBlogHandler } from "./feedback";
-import { handle_mblog, handle_mblog_POST, mblogSinglePostHandler, mblogSinglePostDeleteHandler, mblogSinglePostEditHandler, mblogSinglePostEditPostHandler, mblogRSSHandler } from "./mblogs";
+import {
+    handle_search,
+    updateFeedIndex,
+    updateItemIndex
+} from "./search";
+import {
+    handle_users_single,
+    usersFollowPostHandler,
+    usersHandler,
+    usersUnfollowPostHandler,
+} from "./users";
 
 // main app handles the root paths
 const app = new Hono<{ Bindings: Bindings }>({
@@ -87,6 +87,7 @@ app.use("/items/:feed_sqid/unfavorite", authRequiredMiddleware);
 
 // all routes below this line require admin privileges
 app.use("/b/*", adminRequiredMiddleware);
+app.use("/my/account/create_mblog", adminRequiredMiddleware);
 app.use("/blogs/:feed_sqid/new", adminRequiredMiddleware);
 app.use("/blogs/:feed_sqid/new", adminRequiredMiddleware);
 app.use("/feeds/:feed_sqid/delete", adminRequiredMiddleware);
@@ -129,34 +130,35 @@ app.get("/", (c: any) => {
     return c.redirect("/my");
 });
 
-app.get("/admin", adminHandler);
-app.get("/search", searchHandler);
-app.get("/global", globalFeedHandler);
-app.get("/feedback", feedbackHandler);
-app.get("/suggest", suggestBlogHandler);
+app.get("/admin", handle_admin);
+app.get("/search", handle_search);
+app.get("/global", handle_global);
+app.get("/feedback", handle_feedback);
+app.get("/suggest", handle_suggest_blog);
 
-app.get("/login", loginHandler);
-app.get("/logout", logoutHandler);
-app.post("/signup", signupPostHandler);
-app.post("/login", loginPostHandler);
+app.get("/login", handle_login);
+app.get("/signup", handle_signup);
+app.post("/login", handle_login_POST);
+app.post("/signup", handle_signup_POST);
+app.get("/logout", handle_logout);
 
-app.get("/my", myItemsHandler);
-app.get("/my/subscriptions", mySubscriptionsHandler);
-app.get("/my/friendfeed", myFollowsHandler);
-app.get("/my/favorites", myFavoritesHandler);
+app.get("/my", handle_my);
+app.get("/my/subscriptions", handle_my_subscriptions);
+app.get("/my/friendfeed", handle_my_friendfeed);
+app.get("/my/favorites", handle_my_favorites);
 app.get("/my/account", handle_my_account);
-app.post("/my/account/create_mblog", myNewMblogPostHandler);
-app.get("/verify_email", myAccountVerifyEmailHandler);
+app.post("/my/account/create_mblog", handle_create_mblog_POST);
+app.get("/verify_email", handle_verify_email);
 
 app.post("/items/:item_sqid/delete", itemDeleteHandler);
 
-app.get("/blogs", blogsHandler);
+app.get("/blogs", handle_blogs);
 app.get("/blogs/new", blogsNewHandler);
 app.post("/blogs/new", blogsNewPostHandler);
 app.get("/blogs/:feed_sqid/new", itemsAddItembyUrlHandler);
 app.post("/blogs/:feed_sqid/new", itemsAddItemByUrlPostHandler);
 
-app.get("/blogs/:feed_sqid", blogsSingleHandler);
+app.get("/blogs/:feed_sqid", handle_blogs_single);
 app.post("/feeds/:feed_sqid/subscribe", feedsSubscribeHandler);
 app.post("/feeds/:feed_sqid/unsubscribe", feedsUnsubscribeHandler);
 
@@ -179,14 +181,14 @@ app.post("/b/:slug/:post_slug/delete", mblogSinglePostDeleteHandler)
 app.get("/podcasts", (c: any) => { return c.html(renderHTML("Podcasts | minifeed", raw("Coming soon"), c.get("USERNAME"), "podcasts",),); });
 app.get("/channels", (c: any) => { return c.html(renderHTML("Channels | minifeed", raw("Coming soon"), c.get("USERNAME"), "channels",),); });
 
-app.get("/items/:item_sqid", itemsSingleHandler);
+app.get("/items/:item_sqid", handle_items_single);
 app.post("/items/:item_sqid/favorite", itemsAddToFavoritesHandler);
 app.post("/items/:item_sqid/unfavorite", itemsRemoveFromFavoritesHandler);
 app.post("/items/:item_sqid/scrape", itemsScrapeHandler);
 app.post("/items/:item_sqid/index", itemsIndexHandler);
 
 app.get("/users", usersHandler);
-app.get("/users/:username", usersSingleHandler);
+app.get("/users/:username", handle_users_single);
 app.post("/users/:username/follow", usersFollowPostHandler);
 app.post("/users/:username/unfollow", usersUnfollowPostHandler);
 

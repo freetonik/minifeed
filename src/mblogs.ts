@@ -1,5 +1,5 @@
 import { html, raw } from "hono/html";
-import { renderHTML, renderHTMLMblog } from "./htmltools";
+import { renderHTML } from "./htmltools";
 import { itemIdToSqid } from "./utils";
 import { marked } from 'marked';
 
@@ -45,17 +45,15 @@ export const handle_mblog = async (c: any) => {
 
     if (userLoggedIn && userId === mblog.user_id) {
         list += `
-        <div class="form-mblog">
             <form action="/b/${mblog.slug}" method="POST">
                 <div style="margin-bottom:1em;">
-                    <input type="text" id="post-title" name="post-title" placeholder="Post title">
+                    <input type="text" id="post-title" name="post-title" placeholder="Title">
                 </div>
                 <div style="margin-bottom:1em;">
-                    <textarea id="post-content" name="post-content" placeholder="Write a post" rows=12></textarea>
+                    <textarea id="contentful" name="post-content" placeholder="Here we go..." rows=12></textarea>
                 </div>
-                <input type="submit" value="Post" onclick="return confirm('All good, yeah?')">
+                <input type="submit" value="Publish">
             </form>
-        </div>
             `
     }
 
@@ -70,14 +68,14 @@ export const handle_mblog = async (c: any) => {
             <div>${raw(item.content_html_scraped)}</div>
             <br>
             `
-        }
+    }
 
 
     return c.html(
-        renderHTMLMblog(
+        renderHTML(
             `${mblog.title}`,
-            "",
-            html`${raw(list)} `
+            html`${raw(list)} `,
+            userLoggedIn
         ),
     );
 }
@@ -150,7 +148,9 @@ export const handle_mblog_POST = async (c: any) => {
 }
 
 const generate_slug = (title: string) => {
-    return title.toLowerCase().replace(/ /g, "-");
+    return title.replace(/\s+/g, '-')
+                .replace(/[^a-zA-Z0-9-]/g, '')
+                .toLowerCase();
 }
 
 export const mblogSinglePostHandler = async (c: any) => {

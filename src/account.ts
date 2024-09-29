@@ -25,7 +25,7 @@ export const handle_my_account = async (c: any) => {
     const user_mblogs = batch[1];
 
     const verified = user["results"][0]["email_verified"] ? "yes" : "no";
-    const email = user["results"][0]["email"];
+    const email = user["results"][0]["email"] ? user["results"][0]["email"] : "no";
     const username = user["results"][0]["username"];
     const status = user["results"][0]["status"];
 
@@ -34,25 +34,20 @@ export const handle_my_account = async (c: any) => {
         listOfMblogs += `<h3>My blogs hosted at minifeed</h3><ul>`;
         for (const mblog of user_mblogs["results"]) {
             const feedId = mblog["feed_id"];
-            const sqid = feedIdToSqid(feedId);
             listOfMblogs += `<li><a href="/b/${mblog["slug"]}">${mblog["title"]}</a></li>`;
         }
         listOfMblogs += `</ul>`;
     }
-    const list = `
-    <h1>My account</h1>
-    <p>
-        Username: ${username}<br>
-        Profile: <a href="/users/${username}">${username}</a><br>
-        Email: ${email}<br>
-        Email verified: ${verified}<br>
-        Account status: ${status}<br>
-    </p>
-    ${listOfMblogs}
-    <p style="margin-top:3em;">
+
+    let new_mblog_form = ``;
+    if (user_id == 1) {
+        new_mblog_form = `
+        <details>
+      <summary>Create new blog</summary>
+      <div class="borderbox" style="margin-top: 1em;">
         <form action="/my/account/create_mblog" method="POST">
-            <div class="formbg" style="max-width:25em;margin:0;">
-                <h2>Create new blog</h2>
+            <div style="max-width:25em;margin:0;">
+                <h2 style="margin-top: 0;">Create new blog</h2>
                 <div style="margin-bottom:1em;">
                     <label for="username">Address</label>
                     <div style="display: flex; flex-wrap: wrap;    align-items: flex-end;">
@@ -70,16 +65,29 @@ export const handle_my_account = async (c: any) => {
             <input type="submit" value="Create">
             </div>
         </form>
+      </div>
+    </details>`;
+    }
+    const list = `
+    <h1>My account</h1>
+    <p>
+        Username: ${username}<br>
+        Profile: <a href="/users/${username}">${username}</a><br>
+        Email: ${email}<br>
+        Email verified: ${verified}<br>
+        Account status: ${status}<br>
     </p>
+    ${listOfMblogs}
+    ${new_mblog_form}
     <p style="margin-top:3em;">
-        <a style="padding: 0.75em; border: 1px solid; background-color: #9c0000; color: white;" href="/logout">Log out</a>
+        <a href="/logout">Log out</a>
     </p>`;
     return c.html(
         renderHTML("My account | minifeed", html`${raw(list)}`, username, ""),
     );
 };
 
-export const myAccountVerifyEmailHandler = async (c: any) => {
+export const handle_verify_email = async (c: any) => {
     const code = c.req.query("code");
     const username = c.get("USERNAME");
     const result = await c.env.DB.prepare(
@@ -107,7 +115,7 @@ export const myAccountVerifyEmailHandler = async (c: any) => {
 
     let message = `Email verified!`;
     if (username) {
-        message += ` You can now go to <a href="/my">your feed</a>... Or anywhere else, really.`;
+        message += ` You can now go to <a href="/my">your feed</a>... Or contemplate life.`;
     } else {
         message += ` You can now <a href="/login">log in</a>.`;
     }
@@ -121,7 +129,7 @@ export const myAccountVerifyEmailHandler = async (c: any) => {
     );
 };
 
-export const logoutHandler = async (c: any) => {
+export const handle_logout = async (c: any) => {
     const sessionKey = getCookie(c, "minifeed_session");
     if (!sessionKey) {
         return c.redirect("/");
@@ -137,31 +145,50 @@ export const logoutHandler = async (c: any) => {
     return c.redirect("/");
 };
 
-export const loginHandler = async (c: any) => {
+export const handle_login = async (c: any) => {
     if (c.get("USER_ID")) return c.redirect("/my");
 
     let list = `
-    <form action="/login" method="POST">
-        <div class="formbg formbg-small">
-            <h2>Log in</h2>
-            <div style="margin-bottom:1em;">
-            <label for="username">Username</label>
-            <input type="text" id="username" name="username" required />
+    <div style="max-width:25em;margin:auto;">
+        <div class="borderbox">
+            <h2 style="margin-top:0;">Log in</h2>
+            <form action="/login" method="POST">
+                <div style="margin-bottom:1em;">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required />
+                </div>
+
+                <div style="margin-bottom:2em;">
+                <label for="pass">Password (8 characters minimum)</label>
+                <input type="password" id="pass" name="password" minlength="8" required />
+                </div>
+
+                <input type="submit" value="Log in">
+            </form>
         </div>
+        <p style="text-align:center;">Don't have an account? <a href="/signup">Sign up here</a>.</p>
+    </div>
 
-        <div style="margin-bottom:2em;">
-            <label for="pass">Password (8 characters minimum)</label>
-            <input type="password" id="pass" name="password" minlength="8" required />
-        </div>
 
-        <input type="submit" value="Log in">
-        </div>
-    </form>
+    `;
+    return c.html(
+        renderHTML(
+            "Login or create account | minifeed",
+            html`${raw(list)}`,
+            "",
+            "",
+        ),
+    );
+};
 
-    <h3 style="margin: 3em 0;" class="decorated"><span>or</span></h3>
+export const handle_signup = async (c: any) => {
+    if (c.get("USER_ID")) return c.redirect("/my");
 
-    <div class="formbg formbg-small">
-        <h2>Create account</h2>
+    let list = `
+    <div style="max-width:25em;margin:auto;">
+
+    <div class="borderbox">
+        <h2 style="margin-top:0;">Create account</h2>
         <form action="/signup" method="POST">
             <div style="margin-bottom:1em;">
             <label for="username">Username</label>
@@ -197,7 +224,7 @@ export const loginHandler = async (c: any) => {
     );
 };
 
-export const loginPostHandler = async (c: any) => {
+export const handle_login_POST = async (c: any) => {
     const body = await c.req.parseBody();
     const username = body["username"].toString();
     const password = body["password"].toString();
@@ -222,7 +249,7 @@ export const loginPostHandler = async (c: any) => {
     return c.text("Wrong password");
 };
 
-export const signupPostHandler = async (c: any) => {
+export const handle_signup_POST = async (c: any) => {
     const body = await c.req.parseBody();
     const username = body["username"].toString();
     const password = body["password"].toString();
@@ -234,6 +261,12 @@ export const signupPostHandler = async (c: any) => {
     if (!checkUsername(username)) return c.text("Invalid username");
     if (password.length < 8) return c.text("Password too short");
     if (!checkEmail(email)) return c.text("Invalid email");
+
+    // Check if username already exists
+    const existingUser = await c.env.DB.prepare("SELECT username FROM users WHERE username = ?").bind(username).run();
+    if (existingUser.results.length > 0) {
+        return c.text("Username already exists. Please choose a different username.");
+    }
 
     const salt = randomHash(32);
     const passwordHashed = await hashPassword(password, salt);
@@ -319,7 +352,7 @@ function checkEmail(email: string) {
     return /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email);
 }
 
-export const myNewMblogPostHandler = async (c: any) => {
+export const handle_create_mblog_POST = async (c: any) => {
     const user_id = c.get("USER_ID");
 
     const body = await c.req.parseBody();

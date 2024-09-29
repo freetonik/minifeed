@@ -21,7 +21,7 @@ export const usersHandler = async (c: any) => {
     );
 };
 
-export const usersSingleHandler = async (c: any) => {
+export const handle_users_single = async (c: any) => {
     const userId = c.get("USER_ID") || "0";
     const currentUsername = c.get("USERNAME");
 
@@ -96,7 +96,7 @@ export const usersSingleHandler = async (c: any) => {
     });
 
     // user subscribed to these jabronis
-    list += `<hr><h2>Subscriptions:</h2>`;
+    list += `<h2>Subscriptions:</h2>`;
     if (!batch[1].results.length) list += `<p><i>None yet</i></p>`;
     batch[1].results.forEach((feed: any) => {
         const sqid = feedIdToSqid(feed.feed_id);
@@ -104,13 +104,13 @@ export const usersSingleHandler = async (c: any) => {
     });
 
     // user follows these jabronis
-    list += `<hr><h2>Follows:</h2>`;
+    list += `<h2>Follows:</h2>`;
     if (!batch[2].results.length) list += `<p><i>None yet</i></p>`;
     batch[2].results.forEach((user: any) => {
         list += `<li><a href="${user.followed}">${user.followed}</a></li>`;
     });
 
-    list += `<hr><h2>Followers:</h2>`;
+    list += `<h2>Followers:</h2>`;
     let followButtonText = "follow";
     if (!batch[3].results.length) list += `<p><i>None yet</i></p>`;
     batch[3].results.forEach((user: any) => {
@@ -131,12 +131,12 @@ export const usersSingleHandler = async (c: any) => {
             hx-swap="outerHTML">
             ${followButtonText}
             </button>
-            </span><hr>`;
+            </span>`;
         } else {
             top_block += `<div class="flash flash-blue">This is your public profile (<a href="/my/account">account settings</a>)</div>`;
         }
     } else {
-        top_block += `<p><i>Once logged in, you'll be able to follow users and read their feeds on your home page.</i></p>`;
+        top_block += `<div class="flash"><a href="/login">Log in</a> to follow users and read their feeds on your home page.</div>`;
     }
 
     list = top_block + list;
