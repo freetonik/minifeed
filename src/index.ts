@@ -1,5 +1,4 @@
 import { Context, Hono } from "hono";
-import { serveStatic } from "hono/cloudflare-workers";
 import { raw } from "hono/html";
 import {
     handle_create_mblog_POST,
@@ -68,13 +67,20 @@ import {
     usersUnfollowPostHandler,
 } from "./users";
 
+// ///////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////////////
+// ————————————————————————————————————————————————————————————————>>>>
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
 // main app handles the root paths
 const app = new Hono<{ Bindings: Bindings }>({
     strict: false,
 });
-app.get("/static/*", serveStatic({ root: "./" }));
+
 app.get("/robots.txt", async (c) => c.text("User-agent: *\nAllow: /"));
-app.get("/favicon.ico", async (c) => c.redirect("/static/favicons/favicon.ico"));
 
 app.use("*", authMiddleware);
 app.use("/b/*", authMiddleware);
@@ -221,7 +227,6 @@ const subdomainApp = new Hono();
 subdomainApp.use("*", authMiddleware);
 subdomainApp.get("/", handleMblogRootSubdomain);
 subdomainApp.get("/:post_slug", handleMblogItemSubdomain);
-subdomainApp.get("/static/*", serveStatic({ root: "./" }));
 
 
 // Main app to route based on Host

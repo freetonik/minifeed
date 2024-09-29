@@ -1,5 +1,5 @@
 name = "minifeed"
-compatibility_date = "2023-01-01"
+compatibility_date = "2024-09-02"
 
 workers_dev = false
 route = { pattern = "*minifeed.net/*", zone_name = "minifeed.net" }
@@ -11,13 +11,14 @@ TYPESENSE_BLOG_FEEDS_COLLECTION = "blog_feeds"
 TYPESENSE_CLUSTER = "3afyidm6tgzxlvq7p-1.a1.typesense.net"
 TYPESENSE_ITEMS_COLLECTION = "items"
 
-[site]
-bucket = "./assets"
-
 [[d1_databases]]
-binding = "DB"                                       # available in your Worker on env.DB
+binding = "DB"
 database_name = "minifeed"
 database_id = "d059129a-d855-4e39-ae1f-64e92b9c40a1"
+
+[[kv_namespaces]]
+binding = "SESSIONS_KV"
+id = "269cab6a695244cfab39cdc624497d4a"
 
 [[queues.producers]]
 queue = "feed-update"
