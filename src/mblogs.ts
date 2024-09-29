@@ -26,7 +26,7 @@ export const handle_mblog = async (c: any) => {
         ).bind(mblog_slug),
 
         c.env.DB.prepare(`
-        SELECT items.item_id, items.title, items.content_html_scraped, mblog_items.slug, items.created
+        SELECT items.item_id, items.title, items.content_html_scraped, mblog_items.slug, items.created, items.pub_date
         FROM items
         JOIN feeds ON feeds.feed_id = items.feed_id
         JOIN mblogs ON mblogs.feed_id = feeds.feed_id
@@ -42,9 +42,9 @@ export const handle_mblog = async (c: any) => {
     const items = batch[1].results;
 
     let list = ` <h1> ${mblog.title} </h1>`
-    if (userLoggedIn && userId === mblog.user_id) {
+    if (userLoggedIn && userId == mblog.user_id) {
         list += `
-            <form action="https://minifeed.net/b/${mblog.slug}" method="POST">
+            <form action="https://minifeed.net/b/${mblog.slug}" style="margin-bottom: 3em;" method="POST">
                 <div style="margin-bottom:1em;">
                     <input type="text" id="post-title" name="post-title" placeholder="Title">
                 </div>
@@ -57,17 +57,30 @@ export const handle_mblog = async (c: any) => {
     }
 
     const item_url_prefix = c.env.ENVIRONMENT === "dev" ? `/b/${mblog.slug}/` : `/`;
+
+    const formatDate = (date: Date) => {
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        return `${monthNames[date.getMonth()]} ${date.getDate().toString().padStart(2, '0')}, ${date.getFullYear()}`;
+    };
+
+    list += `<ul style="list-style-type: none; padding-left: 0;">`
     for (const item of items) {
+        // const postDate = new Date(item.pub_date).toLocaleDateString(
+        //     "en-UK",
+        //     dateFormatOptions,
+        // );
+        const postDate = formatDate(new Date(item.pub_date));
         list += `
-            <h2>
+            
+            <li>
+                <span class="muted" style="font-family: monospace; letter-spacing: -0.07em; margin-right: 0.5em;">${postDate}</span>
                 <a href="${item_url_prefix}${item.slug}">
                     ${item.title}
                 </a>
-            </h2>
-            <div>${raw(item.content_html_scraped)}</div>
-            <br>
+            </li>
             `
     }
+    list += `</ul>`
 
 
     return c.html(
@@ -126,7 +139,8 @@ export const handle_mblog_POST = async (c: any) => {
             }
         }
 
-        const pub_date = new Date().toISOString()
+        const pub_date = new Date().toISOString();
+        console.log("pub_date", pub_date)
         const insertion_results = await c.env.DB.prepare(
             "INSERT INTO items (feed_id, title, description, content_html, content_html_scraped, url, pub_date) values (?, ?, ?, ?, ?, ?, ?)",
         ).bind(mblog.feed_id, title, title, post_content, content_html_scraped, item_slug, pub_date).run();
@@ -186,7 +200,7 @@ export const mblogSinglePostHandler = async (c: any) => {
 
     const date_format_opts: Intl.DateTimeFormatOptions = {
         year: "numeric",
-        month: "short",
+        month: "long",
         day: "numeric",
     };
     const post_date = new Date(post.pub_date).toLocaleDateString(
@@ -195,13 +209,13 @@ export const mblogSinglePostHandler = async (c: any) => {
     );
 
     let list = `
-        <h3>${mblog_slug}</h3>
+        <a href="/b/${mblog_slug}"><h3>${mblog_slug}</h3></a>
         <h1>${post.title}</h1>
         <div>${post.content_html_scraped}</div>
         <time>${post_date}</time>
         `
 
-    if (userLoggedIn && userId === post.user_id) {
+    if (userLoggedIn && userId == post.user_id) {
         // add delete button
         let url_prefix = c.env.ENVIRONMENT == "dev" ? `` : `https://minifeed.net`;
         list += `

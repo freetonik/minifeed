@@ -35,6 +35,15 @@ npx wrangler d1 execute minifeed --local --command="DELETE FROM d1_migrations WH
 `SELECT * FROM sqlite_schema WHERE name='favorites'`
 `PRAGMA foreign_key_list('favorites');`
 
+### Sessions
+
+```
+npx wrangler kv key list --binding SESSIONS_KV --local
+npx wrangler kv key get "319dcbbb68883cda" --binding SESSIONS_KV --text --local
+```
+
+
+
 ### Deployment
 
 ```

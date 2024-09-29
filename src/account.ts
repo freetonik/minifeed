@@ -134,13 +134,7 @@ export const handle_logout = async (c: any) => {
     if (!sessionKey) {
         return c.redirect("/");
     }
-    try {
-        await c.env.DB.prepare("DELETE FROM sessions WHERE session_key = ?")
-            .bind(sessionKey)
-            .run();
-    } catch (err) {
-        return c.text(err);
-    }
+    await c.env.SESSIONS_KV.delete(sessionKey);
     deleteCookie(c, "minifeed_session");
     return c.redirect("/");
 };
@@ -175,6 +169,7 @@ export const handle_login = async (c: any) => {
         renderHTML(
             "Login or create account | minifeed",
             html`${raw(list)}`,
+            false,
             "",
             "",
         ),
@@ -218,6 +213,7 @@ export const handle_signup = async (c: any) => {
         renderHTML(
             "Login or create account | minifeed",
             html`${raw(list)}`,
+            false,
             "",
             "",
         ),
@@ -239,9 +235,10 @@ export const handle_login_POST = async (c: any) => {
 
     if (user.password_hash === submittedPasswordHashed) {
         try {
+            // remove unnecessary query
             const result = await c.env.DB.prepare("SELECT users.user_id FROM users WHERE username = ?").bind(username).run();
             const userId = result.results[0]["user_id"];
-            return await createSessionSetCookieAndRedirect(c, userId);
+            return await createSessionSetCookieAndRedirect(c, userId, username);
         } catch (err) {
             return c.text(err);
         }
@@ -296,7 +293,7 @@ export const handle_signup_POST = async (c: any) => {
             emailBody,
             c.env.ENVIRONMENT == "dev",
         );
-        return await createSessionSetCookieAndRedirect(c, userId);
+        return await createSessionSetCookieAndRedirect(c, userId, username);
     } catch (err) {
         return c.text(err);
     }
@@ -305,18 +302,12 @@ export const handle_signup_POST = async (c: any) => {
 const createSessionSetCookieAndRedirect = async (
     c: any,
     userId: number,
+    username: string,
     redirectTo = "/",
 ) => {
     const sessionKey = randomHash(16);
-    try {
-        await c.env.DB.prepare(
-            "INSERT INTO sessions (user_id, session_key) values (?, ?)",
-        )
-            .bind(userId, sessionKey)
-            .run();
-    } catch (err) {
-        return c.text(err);
-    }
+    const kv_value = `${userId};${username}`
+    await c.env.SESSIONS_KV.put(sessionKey, kv_value);
     setCookie(c, "minifeed_session", sessionKey, {
         path: "/",
         domain: c.env.ENVIRONMENT == "dev" ? ".localhost" : ".minifeed.net",

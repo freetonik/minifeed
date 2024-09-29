@@ -26,7 +26,7 @@ export const handle_global = async (c: any) => {
         FROM items
         JOIN feeds ON items.feed_id = feeds.feed_id
         LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
-        WHERE items.item_sqid IS NOT 0
+        WHERE items.item_sqid IS NOT 0 AND feeds.type = 'blog'
         ORDER BY items.pub_date DESC
         LIMIT ? OFFSET ?`,
     )
@@ -94,7 +94,7 @@ export const handle_my = async (c: any) => {
     JOIN subscriptions ON items.feed_id = subscriptions.feed_id
     JOIN feeds ON items.feed_id = feeds.feed_id
     LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
-    WHERE items.item_sqid IS NOT 0 AND subscriptions.user_id = ?
+    WHERE items.item_sqid IS NOT 0 AND subscriptions.user_id = ? AND feeds.type = 'blog'
 
     UNION
 
@@ -104,7 +104,7 @@ export const handle_my = async (c: any) => {
     JOIN feeds ON items.feed_id = feeds.feed_id
     LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
     JOIN followings ON subscriptions.user_id = followings.followed_user_id
-    WHERE items.item_sqid IS NOT 0 AND followings.follower_user_id = ?
+    WHERE items.item_sqid IS NOT 0 AND followings.follower_user_id = ? AND feeds.type = 'blog'
 
     UNION
 
@@ -112,7 +112,7 @@ export const handle_my = async (c: any) => {
     FROM items
     JOIN feeds ON items.feed_id = feeds.feed_id
     JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
-    WHERE items.item_sqid IS NOT 0
+    WHERE items.item_sqid IS NOT 0 AND feeds.type = 'blog'
 
     ORDER BY items.pub_date DESC
 

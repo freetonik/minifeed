@@ -7,20 +7,14 @@ export async function authMiddleware(
     next: () => any,
 ) {
     const sessionKey = getCookie(c, "minifeed_session");
-    if (sessionKey) {
-        const result = await c.env.DB.prepare(
-            `
-        SELECT sessions.user_id, users.username
-        FROM sessions
-        JOIN users on users.user_id = sessions.user_id
-        WHERE session_key = ?`,
-        )
-            .bind(sessionKey)
-            .run();
-        if (result && result.results && result.results.length) {
-            c.set("USER_ID", result.results[0]["user_id"]);
-            c.set("USERNAME", result.results[0]["username"]);
-        }
+    const kv_value = await c.env.SESSIONS_KV.get(sessionKey);
+    if (kv_value != null) {
+        const values = kv_value.split(";");
+        c.set("USER_ID", values[0]);
+        c.set("USERNAME", values[1]);
+        await c.env.SESSIONS_KV.put(sessionKey, kv_value, {
+            expirationTtl: 31536000, // 1 year
+        });
     }
     await next();
 }

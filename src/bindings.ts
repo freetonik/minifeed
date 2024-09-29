@@ -1,6 +1,7 @@
 export type Bindings = {
     DB: D1Database;
     FEED_UPDATE_QUEUE: Queue;
+    SESSIONS_KV: KVNamespace;
 
     TYPESENSE_API_KEY: string;
     TYPESENSE_API_KEY_SEARCH: string;
