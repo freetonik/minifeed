@@ -19,7 +19,7 @@ export const renderHTML = (
       <a href="/my/account">account</a>
     `;
     } else {
-        userBlock = html`<a href="/login" class="bold">Log in</a> or <a class="bold" href="/signup">sign up</a>`;
+        userBlock = html`<span><a href="/login" class="bold">Log in</a> or <a class="bold" href="/signup">sign up</a></span>`;
     }
 
     return html`
