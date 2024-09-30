@@ -83,7 +83,6 @@ const app = new Hono<{ Bindings: Bindings }>({
 app.get("/robots.txt", async (c) => c.text("User-agent: *\nAllow: /"));
 
 app.use("*", authMiddleware);
-app.use("/b/*", authMiddleware);
 // all routes below this line require authentication
 app.use("/my/*", authRequiredMiddleware);
 app.use("/feeds/:feed_sqid/subscribe", authRequiredMiddleware);
@@ -114,7 +113,7 @@ app.notFound((c) => {
     return c.html(
         renderHTML(
             "404 | minifeed",
-            raw(`<div class="flash flash-blue">Page not found.</div>`),
+            raw(`<div class="flash">Page not found.</div>`),
             c.get("USERNAME"),
         ),
     );

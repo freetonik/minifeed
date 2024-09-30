@@ -225,22 +225,26 @@ export const handle_login_POST = async (c: any) => {
     const username = body["username"].toString();
     const password = body["password"].toString();
 
-    const { results } = await c.env.DB.prepare(` SELECT * FROM users WHERE users.username = ?`).bind(username).run();
+    if (!username || !password) {
+        return c.text("Username and password are required");
+    }
 
-    if (!results.length) return c.text("Wrong username or password");
+    const user = await c.env.DB.prepare(` SELECT * FROM users WHERE users.username = ?`).bind(username).first();
+    if (!user) {
+        // though user may not exist, we should not leak this information
+        return c.text("Wrong username or password");
+    }
 
-    const user = results[0];
     const salt = user.password_salt;
     const submittedPasswordHashed = await hashPassword(password, salt);
 
     if (user.password_hash === submittedPasswordHashed) {
         try {
             // remove unnecessary query
-            const result = await c.env.DB.prepare("SELECT users.user_id FROM users WHERE username = ?").bind(username).run();
-            const userId = result.results[0]["user_id"];
+            const userId = user["user_id"];
             return await createSessionSetCookieAndRedirect(c, userId, username);
         } catch (err) {
-            return c.text(err);
+            return c.text("Error");
         }
     }
     return c.text("Wrong password");
