@@ -32,9 +32,14 @@ export const handle_my_account = async (c: any) => {
     let listOfMblogs = "";
     if (user_mblogs["results"]) {
         listOfMblogs += `<h3>My blogs hosted at minifeed</h3><ul>`;
-        for (const mblog of user_mblogs["results"]) {
-            const feedId = mblog["feed_id"];
-            listOfMblogs += `<li><a href="https://${mblog["slug"]}.minifeed.net">${mblog["title"]}</a></li>`;
+        if (c.env.ENVIRONMENT == "dev") {
+            for (const mblog of user_mblogs["results"]) {
+                listOfMblogs += `<li><a href="/b/${mblog["slug"]}">${mblog["title"]}</a></li>`;
+            }
+        } else {
+            for (const mblog of user_mblogs["results"]) {
+                listOfMblogs += `<li><a href="https://${mblog["slug"]}.minifeed.net">${mblog["title"]}</a></li>`;
+            }
         }
         listOfMblogs += `</ul>`;
     }
