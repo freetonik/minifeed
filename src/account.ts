@@ -231,13 +231,13 @@ export const handle_login_POST = async (c: any) => {
     const password = body["password"].toString();
 
     if (!username || !password) {
-        return c.text("Username and password are required");
+        throw new Error("Username and password are required");
     }
 
     const user = await c.env.DB.prepare(` SELECT * FROM users WHERE users.username = ?`).bind(username).first();
     if (!user) {
         // though user may not exist, we should not leak this information
-        return c.text("Wrong username or password");
+        throw new Error("Wrong username or password");
     }
 
     const salt = user.password_salt;
@@ -249,10 +249,10 @@ export const handle_login_POST = async (c: any) => {
             const userId = user["user_id"];
             return await createSessionSetCookieAndRedirect(c, userId, username);
         } catch (err) {
-            return c.text("Error");
+            throw new Error("Something went horribly wrong.");
         }
     }
-    return c.text("Wrong password");
+    throw new Error("Wrong username or password");
 };
 
 export const handle_signup_POST = async (c: any) => {
@@ -262,16 +262,16 @@ export const handle_signup_POST = async (c: any) => {
     const email = body["email"].toString();
     const invitation_code = body["invitation_code"].toString();
 
-    if (invitation_code !== "ARUEHW") return c.text("Invalid invitation code");
+    if (invitation_code !== "ARUEHW") throw new Error("Invalid invitation code");
 
-    if (!checkUsername(username)) return c.text("Invalid username");
-    if (password.length < 8) return c.text("Password too short");
-    if (!checkEmail(email)) return c.text("Invalid email");
+    if (!checkUsername(username)) throw new Error("Invalid username");
+    if (password.length < 8) throw new Error("Password too short");
+    if (!checkEmail(email)) throw new Error("Invalid email");
 
     // Check if username already exists
     const existingUser = await c.env.DB.prepare("SELECT username FROM users WHERE username = ?").bind(username).run();
     if (existingUser.results.length > 0) {
-        return c.text("Username already exists. Please choose a different username.");
+        throw new Error("Username already exists. Please choose a different username.");
     }
 
     const salt = randomHash(32);
@@ -304,7 +304,7 @@ export const handle_signup_POST = async (c: any) => {
         );
         return await createSessionSetCookieAndRedirect(c, userId, username);
     } catch (err) {
-        return c.text(err);
+        throw new Error("Something went horribly wrong.");
     }
 };
 
@@ -363,6 +363,7 @@ export const handle_create_mblog_POST = async (c: any) => {
 
     const full_final_url = `https://${slug}.minifeed.net`;
     const full_final_rss_url = `https://${slug}.minifeed.net/rss`;
+
     try {
         const feed_insertion_results = await c.env.DB.prepare(
             "INSERT INTO feeds (title, type, url, rss_url, verified) values (?,?,?,?,?)"
@@ -382,9 +383,9 @@ export const handle_create_mblog_POST = async (c: any) => {
 
             if (mblog_insertion_results.success) {
                 if (c.env.ENVIRONMENT == "dev") {
-                    return c.redirect(`http://localhost:8787/b/${slug}`);
+                    return c.redirect(`/b/${slug}`);
                 } else {
-                    return c.redirect(`https://${slug}.minifeed.net/`);
+                    return c.redirect(`https://${slug}.minifeed.net`);
                 }
             }
 

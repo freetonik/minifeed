@@ -123,7 +123,7 @@ app.onError((err, c) => {
     return c.html(
         renderHTML(
             "Error | minifeed",
-            raw(`<div class="flash flash-red">ERROR: ${err}.</div>`),
+            raw(`<div class="flash flash-red">${err}.</div>`),
             c.get("USERNAME"),
         ),
     );
