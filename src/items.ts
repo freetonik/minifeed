@@ -521,7 +521,7 @@ export const handle_items_single = async (c: any) => {
     <div class="item-actions" style="margin-bottom:3em;">
         <div>
         ${favoriteBlock}
-        <a class="button" href="${item.item_url}" target="_blank">↗ open original</a>
+        <a class="button" href="${item.item_url}" target="_blank">↗ original</a>
         </div>
         <div>
         ${subscriptionBlock}
