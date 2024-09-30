@@ -29,7 +29,7 @@ import { FeedData } from "@extractus/feed-extractor";
 export const handle_blogs = async (c: any) => {
     const user_id = c.get("USER_ID") || -1;
     const userLoggedIn = user_id != -1;
-    const { results } = await c.env.DB.prepare(
+    const { results, meta } = await c.env.DB.prepare(
         `
     SELECT feeds.feed_id, feeds.title, feeds.url, feeds.rss_url, feeds.description, subscriptions.subscription_id, items_top_cache.content from feeds
     LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
@@ -114,6 +114,10 @@ export const handle_blogs = async (c: any) => {
             html`${raw(list)}`,
             c.get("USERNAME"),
             "blogs",
+            "",
+            "",
+            false,
+            user_id == 1 ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``
         ),
     );
 };
@@ -203,8 +207,6 @@ export const handle_blogs_single = async (c: any) => {
     </div>
     `;
 
-
-    console.log(batch[1].results)
     // batch[1] is items
     if (!batch[1].results.length)
         list += `<p>Feed is being updated, come back later...</p>`;
@@ -225,12 +227,21 @@ export const handle_blogs_single = async (c: any) => {
         });
     }
 
+    let debug_info = ``;
+    if (userId == 1) {
+        debug_info = `${batch[0].meta.duration}+${batch[1].meta.duration} ms;,
+            ${batch[0].meta.rows_read}+${batch[1].meta.rows_read} rows read`;
+    }
     return c.html(
         renderHTML(
             `${feedTitle} | minifeed`,
             html`${raw(list)}`,
             c.get("USERNAME"),
             "blogs",
+            "",
+            "",
+            false,
+            debug_info,
         ),
     );
 };

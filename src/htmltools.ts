@@ -8,6 +8,7 @@ export const renderHTML = (
     searchQuery: string = "",
     canonicalUrl: string = "",
     prefix_root_url: boolean = false,
+    debug_info: string = ""
 ) => {
     const root_url = prefix_root_url ? "https://minifeed.net" : "";
 
@@ -455,6 +456,9 @@ export const renderHTML = (
             <a href="${root_url}/about/changelog">changelog</a> /
             <a href="https://status.minifeed.net/">status</a> /
             <a href="${root_url}/feedback">feedback</a>
+        </p>
+        <p>
+            ${debug_info}
         </p>
     </footer>
 

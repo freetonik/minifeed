@@ -20,7 +20,7 @@ export const handle_global = async (c: any) => {
     const itemsPerPage = 30;
     const page = Number(c.req.query("p")) || 1;
     const offset = page * itemsPerPage - itemsPerPage;
-    const { results } = await c.env.DB.prepare(
+    const { results, meta } = await c.env.DB.prepare(
         `
         SELECT items.item_id, items.item_sqid, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
         FROM items
@@ -76,6 +76,10 @@ export const handle_global = async (c: any) => {
             html`${raw(list)}`,
             c.get("USERNAME"),
             "global",
+            "",
+            "",
+            false,
+            userId == 1 ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``
         ),
     );
 };
@@ -87,7 +91,8 @@ export const handle_my = async (c: any) => {
     const offset = page * itemsPerPage - itemsPerPage;
 
     const userId = c.get("USER_ID");
-    const { results } = await c.env.DB.prepare(
+
+    const { results, meta } = await c.env.DB.prepare(
         `
     SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
     FROM items
@@ -122,6 +127,7 @@ export const handle_my = async (c: any) => {
         .bind(userId, userId, userId, userId, userId, itemsPerPage, offset)
         .all();
 
+
     let list = `
     ${render_my_subsections("my")}
     `;
@@ -145,12 +151,17 @@ export const handle_my = async (c: any) => {
         }
     }
 
+
     return c.html(
         renderHTML(
             "My feed | minifeed",
             html`${raw(list)}`,
             c.get("USERNAME"),
             "my",
+            "",
+            "",
+            false,
+            userId == 1 ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``
         ),
     );
 };
@@ -161,7 +172,7 @@ export const handle_my_subscriptions = async (c: any) => {
     const offset = page * itemsPerPage - itemsPerPage;
 
     const userId = c.get("USER_ID");
-    const { results } = await c.env.DB.prepare(
+    const { results, meta } = await c.env.DB.prepare(
         `
     SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
     FROM items
@@ -200,7 +211,16 @@ export const handle_my_subscriptions = async (c: any) => {
         list += `</div>`;
     }
     return c.html(
-        renderHTML("My subscriptions", html`${raw(list)}`, c.get("USERNAME"), "my"),
+        renderHTML(
+            "My subscriptions",
+            html`${raw(list)}`,
+            c.get("USERNAME"),
+            "my",
+            "",
+            "",
+            false,
+            userId == 1 ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``
+        ),
     );
 };
 
@@ -210,7 +230,7 @@ export const handle_my_friendfeed = async (c: any) => {
     const offset = page * itemsPerPage - itemsPerPage;
 
     const userId = c.get("USER_ID");
-    const { results } = await c.env.DB.prepare(
+    const { results, meta } = await c.env.DB.prepare(
         `
     SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
     FROM items
@@ -251,7 +271,16 @@ export const handle_my_friendfeed = async (c: any) => {
     }
 
     return c.html(
-        renderHTML("My friendfeed", html`${raw(list)}`, c.get("USERNAME"), "my"),
+        renderHTML(
+            "My friendfeed",
+            html`${raw(list)}`,
+            c.get("USERNAME"),
+            "my",
+            "",
+            "",
+            false,
+            userId == 1 ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``
+        ),
     );
 };
 
@@ -261,7 +290,7 @@ export const handle_my_favorites = async (c: any) => {
     const offset = page * itemsPerPage - itemsPerPage;
 
     const userId = c.get("USER_ID");
-    const { results } = await c.env.DB.prepare(
+    const { results, meta } = await c.env.DB.prepare(
         `
     SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
     FROM items
@@ -301,7 +330,16 @@ export const handle_my_favorites = async (c: any) => {
     list += `</div>`;
 
     return c.html(
-        renderHTML("My favorites", html`${raw(list)}`, c.get("USERNAME"), "my"),
+        renderHTML(
+            "My favorites",
+            html`${raw(list)}`,
+            c.get("USERNAME"),
+            "my",
+            "",
+            "",
+            false,
+            userId == 1 ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``
+        ),
     );
 };
 
@@ -496,7 +534,10 @@ export const handle_items_single = async (c: any) => {
     ${otherItemsBlock}
     `;
 
+    let debug_info = '';
     if (c.get("USER_ID") == 1) {
+        debug_info = `${batch[0].meta.duration}+${batch[1].meta.duration}+${batch[2].meta.duration} ms.;
+            ${batch[0].meta.rows_read}+${batch[1].meta.rows_read}+${batch[2].meta.rows_read} rows read`
         const show_content_html_over_scraped =
             item.content_html &&
             item.content_html_scraped &&
@@ -586,6 +627,8 @@ export const handle_items_single = async (c: any) => {
             "blogs",
             "",
             item.item_url,
+            false,
+            debug_info
         ),
     );
 };
