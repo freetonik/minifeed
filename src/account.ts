@@ -357,9 +357,9 @@ export const handle_create_mblog_POST = async (c: any) => {
 
     const body = await c.req.parseBody();
     const slug = body["address"].toString();
-    if (!slug) return c.text("Address is required");
+    if (!slug) throw new Error("Address is required");
     const title = body["title"].toString();
-    if (!title) return c.text("Title is required");
+    if (!title) throw new Error("Title is required");
 
     const full_final_url = `https://${slug}.minifeed.net`;
     const full_final_rss_url = `https://${slug}.minifeed.net/rss`;
@@ -392,6 +392,6 @@ export const handle_create_mblog_POST = async (c: any) => {
         }
         return c.redirect("/");
     } catch (err) {
-        return c.text(err);
+        throw new Error("Something went horribly wrong.");
     }
 }
