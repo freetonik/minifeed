@@ -71,7 +71,7 @@ export const handle_mblog = async (c: any) => {
         // );
         const postDate = formatDate(new Date(item.pub_date));
         list += `
-            
+
             <li>
                 <span class="muted" style="font-family: monospace; letter-spacing: -0.07em; margin-right: 0.5em;">${postDate}</span>
                 <a href="${item_url_prefix}${item.slug}">
@@ -346,8 +346,6 @@ export const mblogSinglePostEditPostHandler = async (c: any) => {
     const post_content = body["post-content"].toString();
     if (!post_content) return c.text("Post content is required");
 
-
-    console.log(post_content)
 
     const content_html_scraped = marked.parse(post_content);
 

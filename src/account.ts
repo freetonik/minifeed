@@ -371,7 +371,6 @@ export const handle_create_mblog_POST = async (c: any) => {
                 "INSERT INTO mblogs (user_id, feed_id, slug) values (?,?,?)"
             ).bind(user_id, new_feed_id, slug).run();
 
-            console.log(mblog_insertion_results)
             if (mblog_insertion_results.success) {
                 if (c.env.ENVIRONMENT == "dev") {
                     return c.redirect(`http://localhost:8787/b/${slug}`);
