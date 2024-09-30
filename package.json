@@ -1,24 +1,23 @@
 {
-  "scripts": {
-    "dev": "wrangler dev src/index.ts",
-    "dev-remote": "wrangler dev src/index.ts --remote",
-    "deploy": "wrangler deploy --minify src/index.ts",
-    "unused-exports": "./node_modules/.bin/ts-unused-exports ./tsconfig.json"
-  },
-  "dependencies": {
-    "@extractus/feed-extractor": "^7.0.8",
-    "bellajs": "^11.1.2",
-    "hono": "^3.10.0",
-    "marked": "^14.1.2",
-    "rss-url-finder": "^0.0.5-1",
-    "sqids": "^0.3.0",
-    "typesense": "^1.7.2"
-  },
-  "devDependencies": {
-    "@cloudflare/workers-types": "^4.20230914.0",
-    "ts-unused-exports": "^10.0.1",
-    "typedoc": "^0.25.8",
-    "typescript": "^5.3.3",
-    "wrangler": "^3.78.12"
-  }
+    "scripts": {
+        "dev": "wrangler dev src/index.ts --host localhost.dev --port 8181",
+        "dev-sub": "wrangler dev src/index.ts --host blog.localhost.dev --port 8182",
+        "dev-remote": "wrangler dev src/index.ts --remote",
+        "deploy": "wrangler deploy --minify src/index.ts"
+    },
+    "dependencies": {
+        "@extractus/feed-extractor": "^7.0.8",
+        "bellajs": "^11.1.2",
+        "hono": "^3.10.0",
+        "marked": "^14.1.2",
+        "rss-url-finder": "^0.0.5-1",
+        "sqids": "^0.3.0",
+        "typesense": "^1.7.2"
+    },
+    "devDependencies": {
+        "@cloudflare/workers-types": "^4.20230914.0",
+        "typedoc": "^0.25.8",
+        "typescript": "^5.3.3",
+        "wrangler": "^3.78.12"
+    }
 }
