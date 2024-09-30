@@ -15,8 +15,6 @@ export const handle_mblog = async (c: any) => {
     const userId = c.get("USER_ID") || -1;
     const userLoggedIn = c.get("USER_ID") ? true : false;
 
-
-
     const batch = await c.env.DB.batch([
         c.env.DB.prepare(`
         SELECT feeds.title, mblogs.user_id, mblogs.slug
@@ -41,12 +39,13 @@ export const handle_mblog = async (c: any) => {
     const mblog = batch[0].results[0];
     const items = batch[1].results;
 
-    let list = ` <h1> ${mblog.title} </h1>`
+    const url_for_post_request = c.env.ENVIRONMENT === "dev" ? `/b/${mblog.slug}` : `https://minifeed.net/b/${mblog.slug}`;
+    let list = `<h1>${mblog.title}</h1>`
     if (userLoggedIn && userId == mblog.user_id) {
         list += `
-            <form action="https://minifeed.net/b/${mblog.slug}" style="margin-bottom: 3em;" method="POST">
+            <form style="margin-bottom: 3em;" method="POST">
                 <div style="margin-bottom:1em;">
-                    <input type="text" id="post-title" name="post-title" placeholder="Title">
+                    <input type="text" id="post-title" name="post-title" placeholder="New post title...">
                 </div>
                 <div style="margin-bottom:1em;">
                     <textarea id="contentful" name="post-content" placeholder="Here we go..." rows=12></textarea>
@@ -56,25 +55,20 @@ export const handle_mblog = async (c: any) => {
             `
     }
 
-    const item_url_prefix = c.env.ENVIRONMENT === "dev" ? `/b/${mblog.slug}/` : `/`;
 
     const formatDate = (date: Date) => {
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         return `${monthNames[date.getMonth()]} ${date.getDate().toString().padStart(2, '0')}, ${date.getFullYear()}`;
     };
+    const item_url_prefix = c.env.ENVIRONMENT === "dev" ? `/b/${mblog.slug}` : '';
 
     list += `<ul style="list-style-type: none; padding-left: 0;">`
     for (const item of items) {
-        // const postDate = new Date(item.pub_date).toLocaleDateString(
-        //     "en-UK",
-        //     dateFormatOptions,
-        // );
         const postDate = formatDate(new Date(item.pub_date));
         list += `
-
             <li>
                 <span class="muted" style="font-family: monospace; letter-spacing: -0.07em; margin-right: 0.5em;">${postDate}</span>
-                <a href="${item_url_prefix}${item.slug}">
+                <a href="${item_url_prefix}/${item.slug}">
                     ${item.title}
                 </a>
             </li>
@@ -216,19 +210,15 @@ export const mblogSinglePostHandler = async (c: any) => {
         `
 
     if (userLoggedIn && userId == post.user_id) {
-        // add delete button
-        let url_prefix = c.env.ENVIRONMENT == "dev" ? `` : `https://minifeed.net`;
         list += `
             <div style="display: flex; gap: 10px;margin-top:1em;">
-                <form action="${url_prefix}/b/${mblog_slug}/${post_slug}/delete" method="POST">
+                <form action="${post_slug}/delete" method="POST">
                     <input type="submit" value="Delete" onclick="return confirm('Are you sure?')">
                 </form>
-                <form action="${url_prefix}/b/${mblog_slug}/${post_slug}/edit" method="GET">
+                <form action="${post_slug}/edit" method="GET">
                     <input type="submit" value="Edit">
                 </form>
-            </div>
-
-            `
+            </div>`
     }
 
     return c.html(
@@ -263,7 +253,7 @@ export const mblogSinglePostDeleteHandler = async (c: any) => {
 
     const post = mblog_post_entry.results[0];
 
-    if (!userLoggedIn || userId !== post.user_id) return c.redirect("/");
+    if (!userLoggedIn || userId != post.user_id) return c.redirect("/");
     if (userId != post.user_id) return c.redirect("/");
 
     await c.env.DB.prepare("DELETE FROM items WHERE item_id = ?").bind(post.item_id).run();
