@@ -11,7 +11,8 @@ import { scrapeURLIntoObject } from "./scrape";
 import {
     feedSqidToId,
     itemIdToSqid,
-    itemSqidToId
+    itemSqidToId,
+    sanitizeHTML
 } from "./utils";
 
 export const handle_global = async (c: any) => {
@@ -423,24 +424,38 @@ export const handle_items_single = async (c: any) => {
 
     let contentBlock;
     if (user_logged_in) {
+        // User is logged in
         if (item.content_html) {
+            // We have full content from feed
             if (item.content_html_scraped) {
+                // We have scraped content
                 if (
                     item.content_html.length >
                     item.content_html_scraped.length * 0.65
                 ) {
+                    // Full content is longer than 0.65 of scraped content
                     contentBlock = raw(item.content_html);
                 } else {
+                    // Full content is shorted, so use scraped
                     contentBlock = raw(item.content_html_scraped);
                 }
             } else {
+                // No scraped content, use full content
                 contentBlock = raw(item.content_html);
             }
-        } else if (item.content_html_scraped)
+        } else if (item.content_html_scraped) {
             contentBlock = raw(item.content_html_scraped);
-        else contentBlock = item.description;
-    } else
+        }
+        else {
+            contentBlock = item.description;
+        }
+
+        // whatever content block was, sanitize it
+        contentBlock = await sanitizeHTML(contentBlock);
+    } else {
+        // User is not logged in; description has tags scraped, no need to sanitize
         contentBlock = `${item.description} <div class="flash" style="margin-top:1em;"><a href="/login">Log in</a> and subscribe to this blog to view full content</div>`;
+    }
 
     let favoriteBlock = "";
     let subscriptionBlock = "";

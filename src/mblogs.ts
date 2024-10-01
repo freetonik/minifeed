@@ -1,6 +1,6 @@
 import { html, raw } from "hono/html";
 import { renderHTML } from "./htmltools";
-import { itemIdToSqid } from "./utils";
+import { itemIdToSqid, sanitizeHTML } from "./utils";
 import { marked } from 'marked';
 
 export const handle_mblog = async (c: any) => {
@@ -112,7 +112,8 @@ export const handle_mblog_POST = async (c: any) => {
     const post_content = body["post-content"].toString();
     if (!post_content) return c.text("Post content is required");
 
-    const content_html_scraped = marked.parse(post_content);
+    let content_html_scraped = await marked.parse(post_content);
+    content_html_scraped = await sanitizeHTML(content_html_scraped);
 
     try {
         let item_slug = generate_slug(title);
@@ -280,7 +281,7 @@ export const mblogSinglePostEditHandler = async (c: any) => {
 
     const post = mblog_post_entry.results[0];
 
-    if (!userLoggedIn || userId !== post.user_id) return c.redirect("/");
+    if (!userLoggedIn || userId != post.user_id) return c.redirect("/");
     if (userId != post.user_id) return c.redirect("/");
 
     let list = `
@@ -327,7 +328,7 @@ export const mblogSinglePostEditPostHandler = async (c: any) => {
 
     const post = mblog_post_entry.results[0];
 
-    if (!userLoggedIn || userId !== post.user_id) return c.redirect("/");
+    if (!userLoggedIn || userId != post.user_id) return c.redirect("/");
     if (userId != post.user_id) return c.redirect("/");
 
     const body = await c.req.parseBody();
@@ -337,7 +338,10 @@ export const mblogSinglePostEditPostHandler = async (c: any) => {
     if (!post_content) return c.text("Post content is required");
 
 
-    const content_html_scraped = marked.parse(post_content);
+    let content_html_scraped = await marked.parse(post_content);
+    content_html_scraped = await sanitizeHTML(content_html_scraped);
+
+    console.log("content_html_scraped", content_html_scraped)
 
     await c.env.DB.prepare("UPDATE items SET title = ?, content_html = ?, content_html_scraped = ? WHERE item_id = ?")
         .bind(post_title, post_content, content_html_scraped, post.item_id).run();
