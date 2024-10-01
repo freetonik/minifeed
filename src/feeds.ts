@@ -31,7 +31,7 @@ export const handle_blogs = async (c: any) => {
     const userLoggedIn = user_id != -1;
     const { results, meta } = await c.env.DB.prepare(
         `
-    SELECT feeds.feed_id, feeds.title, feeds.url, feeds.rss_url, feeds.description, subscriptions.subscription_id, items_top_cache.content from feeds
+    SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, subscriptions.subscription_id, items_top_cache.content from feeds
     LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
     LEFT JOIN subscriptions on feeds.feed_id = subscriptions.feed_id AND subscriptions.user_id = ?
     WHERE feeds.type = 'blog'
@@ -49,25 +49,22 @@ export const handle_blogs = async (c: any) => {
     }
 
     results.forEach((feed: any) => {
-        const sqid = feedIdToSqid(feed.feed_id);
-
         const subscriptionAction = feed.subscription_id
             ? "unsubscribe"
             : "subscribe";
         const subscriptionButtonText = feed.subscription_id
             ? "subscribed"
             : "subscribe";
-
         const feedDescriptionBlock = feed.description
             ? `<p>${feed.description}</p>`
             : "";
 
         const subscriptionBlock = userLoggedIn
-            ? `<div><span id="subscription-${sqid}">
-            <button hx-post="/feeds/${sqid}/${subscriptionAction}"
+            ? `<div><span id="subscription-${feed.feed_sqid}">
+            <button hx-post="/feeds/${feed.feed_sqid}/${subscriptionAction}"
             class="${subscriptionButtonText}"
             hx-trigger="click"
-            hx-target="#subscription-${sqid}"
+            hx-target="#subscription-${feed.feed_sqid}"
             hx-swap="outerHTML">
             <span class="subscribed-text">${subscriptionButtonText}</span>
             <span class="unsubscribe-text">unsubscribe</span>
@@ -91,14 +88,14 @@ export const handle_blogs = async (c: any) => {
                 top_items_list += `<li><a href="/items/${item.item_sqid}">${item.title}</a></li>`;
             });
             if (items_count > 0) {
-                top_items_list += `<li><i>and <a href="/blogs/${sqid}">${items_count} more...</a></i></li></ul>`;
+                top_items_list += `<li><i>and <a href="/blogs/${feed.feed_sqid}">${items_count} more...</a></i></li></ul>`;
             }
         }
         list += `
         <div class="blog-summary">
 
           <h2>
-            <a class="no-color" href="/blogs/${sqid}">${feed.title}</a>
+            <a class="no-color" href="/blogs/${feed.feed_sqid}">${feed.title}</a>
             <small>(<a href="${feed.url}">site</a> / <a href="${feed.rss_url}">rss</a>)</small>
           </h2>
           ${feedDescriptionBlock}
