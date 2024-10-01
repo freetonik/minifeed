@@ -93,27 +93,21 @@ export const isObject = (val: any) => {
     return ob2Str(val) === "[object Object]" && !Array.isArray(val);
 };
 
-/**
- * Replaces relative image URLs in the given content with absolute URLs based on the provided base URL.
- *
- * @param content - The content string containing HTML with image tags.
- * @param baseUrl - The base URL to resolve relative image URLs.
- * @returns The modified content string with absolute image URLs.
- */
-export function absolitifyImageUrls(content: string, baseUrl: string) {
-    const regex = /<img[^>]+src="([^">]+)"/g;
-    let m;
-    while ((m = regex.exec(content)) !== null) {
-        if (m.index === regex.lastIndex) {
-            regex.lastIndex++;
+export const absolutifyImageUrls = async (html: string, rootUrl: string): Promise<string> => {
+    const rewriter = new HTMLRewriter().on('img', {
+        element(element) {
+            const src = element.getAttribute('src');
+            if (src && !src.startsWith('http') && !src.startsWith('//')) {
+                const absoluteUrl = new URL(src, rootUrl).toString();
+                element.setAttribute('src', absoluteUrl);
+            }
         }
-        const imgSrc = m[1];
-        if (imgSrc.substring(0, 4) != "http") {
-            content = content.replace(imgSrc, new URL(imgSrc, baseUrl).toString());
-        }
-    }
-    return content;
-}
+    });
+
+    const response = new Response(html);
+    const transformedResponse = rewriter.transform(response);
+    return await transformedResponse.text();
+};
 
 /**
  * Returns the root URL of the given URL.
