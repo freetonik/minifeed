@@ -418,7 +418,6 @@ async function addFeed(env: Bindings, url: string, verified: boolean = false) {
         r = await extractRSS(url);
     } catch (err) {
         // if RSS extractor failed, try to get RSS link from URL and then try to use RSS extractor again
-        throw(err);
         RSSUrl = await getRSSLinkFromUrl(url);
         r = await extractRSS(RSSUrl);
     }
