@@ -9,7 +9,9 @@ import {
 import { enqueueItemIndex, enqueueItemScrape } from "./queue";
 import { scrapeURLIntoObject } from "./scrape";
 import {
+    absolutifyImageUrls,
     feedSqidToId,
+    getRootUrl,
     itemIdToSqid,
     itemSqidToId,
     sanitizeHTML
@@ -420,7 +422,6 @@ export const handle_items_single = async (c: any) => {
         "en-UK",
         date_format_opts,
     );
-    // const feed_sqid = feedIdToSqid(item.feed_id);
 
     let contentBlock;
     if (user_logged_in) {
@@ -452,6 +453,8 @@ export const handle_items_single = async (c: any) => {
 
         // whatever content block was, sanitize it
         contentBlock = await sanitizeHTML(contentBlock);
+        // absolutify image urls with base of item url
+        contentBlock = await absolutifyImageUrls(contentBlock, getRootUrl(item.item_url));
     } else {
         // User is not logged in; description has tags scraped, no need to sanitize
         contentBlock = `${item.description} <div class="flash" style="margin-top:1em;"><a href="/login">Log in</a> and subscribe to this blog to view full content</div>`;
