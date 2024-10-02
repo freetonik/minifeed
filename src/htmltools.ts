@@ -162,6 +162,10 @@ export const renderHTML = (
             max-height: 30em;
         }
 
+        figure {
+            margin: 0;
+        }
+
         /* ITEMS */
 
         .item-short {

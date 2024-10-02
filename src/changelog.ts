@@ -102,7 +102,7 @@ export const changelog = `
     <ul>
         <li>New feature: add items to favorites</li>
         <li>New feature: show related items on item view</li>
-        <li>Improvement: Paginated search results</li>
+        <li>Improvement: paginated search results</li>
     </ul>
 
     <h3>0.1.2 (11.01.2024)</h3>
