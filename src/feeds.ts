@@ -411,8 +411,16 @@ export async function feedsGlobalCacheRebuildHandler(c: any) {
 // FEED FUNCTIONS (NOT ROUTE HANDLERS)
 
 async function addFeed(env: Bindings, url: string, verified: boolean = false) {
-    const RSSUrl: string = await getRSSLinkFromUrl(url);
-    const r: FeedData = await extractRSS(RSSUrl);
+    let r: FeedData
+    let RSSUrl: string = url;
+    // first, try to use RSS extractor right away
+    try {
+        r = await extractRSS(url);
+    } catch (err) {
+        // if RSS extractor failed, try to get RSS link from URL and then try to use RSS extractor again
+        RSSUrl = await getRSSLinkFromUrl(url);
+        r = await extractRSS(RSSUrl);
+    }
 
     const feedValidationResult = validateFeedData(r);
     if (!feedValidationResult.validated) {
