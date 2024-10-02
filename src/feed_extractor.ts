@@ -36,6 +36,7 @@ export async function extractRSS(RSSUrl: string): Promise<FeedData> {
             };
         },
     });
+    
 }
 
 export interface feedValidationResult {
