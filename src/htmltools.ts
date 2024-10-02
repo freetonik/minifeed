@@ -164,6 +164,7 @@ export const renderHTML = (
 
         figure {
             margin: 0;
+            overflow: scroll;
         }
 
         /* ITEMS */
