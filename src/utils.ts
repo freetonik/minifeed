@@ -41,6 +41,8 @@ export async function getRSSLinkFromUrl(url: string) {
 
     if (!pageContent.length) throw new Error(`Empty content at url: ${url}`);
 
+    console.log(pageContent);
+
     // the content of the page is HTML, try to find RSS link
     if (
         pageContent.includes("<html") ||
