@@ -199,13 +199,14 @@ export const handle_mblog_post_single = async (c: any) => {
 
     let list = `
         <a href="/"><h3>${subdomain}</h3></a>
-        <h1>${post.title} <small>(${post.status})</small></h1>
+        <h1>${post.title}</h1>
         <div>${post.content_html_scraped}</div>
         <time>${post_date}</time>
         `
 
     if (userLoggedIn && userId == post.user_id) {
         list += `
+            | <strong>${post.status}</strong>
             <div style="display: flex; gap: 10px;margin-top:1em;">
                 <form action="${post_slug}/delete" method="POST">
                     <input type="submit" value="Delete" onclick="return confirm('Are you sure?')">
