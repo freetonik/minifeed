@@ -110,7 +110,7 @@ app.use("/items/:item_sqid/delete", adminRequiredMiddleware);
 
 app.use("/admin", adminRequiredMiddleware);
 
-app.notFound((c: Context<any, any, {}>) => {
+const handleNotFound = (c: Context<any, any, {}>) => {
     return c.html(
         renderHTML(
             "404 | minifeed",
@@ -118,9 +118,9 @@ app.notFound((c: Context<any, any, {}>) => {
             c.get("USERNAME"),
         ),
     );
-});
+};
 
-app.onError((err, c: Context<any, any, {}>) => {
+const handleError = (err: any, c: Context<any, any, {}>) => {
     return c.html(
         renderHTML(
             "Error | minifeed",
@@ -128,7 +128,10 @@ app.onError((err, c: Context<any, any, {}>) => {
             c.get("USERNAME"),
         ),
     );
-});
+};
+
+app.notFound(handleNotFound);
+app.onError(handleError);
 
 // APP ROUTES
 app.get("/", (c: any) => {
@@ -209,6 +212,9 @@ subdomainApp.get("/:post_slug", handle_mblog_post_single);
 subdomainApp.get("/:post_slug/edit", handle_mblog_post_edit);
 subdomainApp.post("/:post_slug/edit", handle_mblog_post_edit_POST)
 subdomainApp.post("/:post_slug/delete", handle_mblog_post_delete)
+
+subdomainApp.notFound(handleNotFound);
+subdomainApp.onError(handleError);
 
 // Main app to route based on Host
 const appMain = new Hono<{ Bindings: Bindings }>({
