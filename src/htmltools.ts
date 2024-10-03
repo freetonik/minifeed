@@ -163,6 +163,13 @@ export const renderHTML = (
             overflow: scroll;
         }
 
+        blockquote {
+            border-left: 2px solid #bf0000;
+            padding-left: 1em;
+            margin-left: 1em;
+            font-style: italic;
+        }
+
         /* ITEMS */
 
         .item-short {
