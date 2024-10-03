@@ -16,11 +16,9 @@ export const renderHTML = (
 
     let userBlock = html``;
     if (user_logged_in) {
-        userBlock = html`
-      <a href="/my/account">account</a>
-    `;
+        userBlock = html`<a href="${root_url}/my/account">account</a>`;
     } else {
-        userBlock = html`<span><a href="/login" class="bold">Log in</a> or <a class="bold" href="/signup">sign up</a></span>`;
+        userBlock = html`<span><a href="${root_url}/login" class="bold">Log in</a> or <a class="bold" href="${root_url}/signup">sign up</a></span>`;
     }
 
     return html`
@@ -96,8 +94,6 @@ export const renderHTML = (
             display: flex;
             flex-direction: column;
         }
-
-
 
         header a {
             text-decoration: none;
@@ -329,7 +325,6 @@ export const renderHTML = (
 
         }
 
-
         label,
         label {
             font-size: 14px;
@@ -515,7 +510,6 @@ export const renderItemShort = (
 
 export const renderItemSearchResult = (searchResult: any) => {
     const item = searchResult["document"];
-    // item_id, title, url, feed_title, feed_id, pub_date=''
     const postDate = new Date(item["pub_date"]).toLocaleDateString(
         "en-UK",
         dateFormatOptions,
