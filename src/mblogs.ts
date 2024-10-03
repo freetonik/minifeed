@@ -19,7 +19,7 @@ export const handle_mblog = async (c: any) => {
         ).bind(subdomain),
 
         c.env.DB.prepare(`
-        SELECT items.item_id, items.title, items.content_html_scraped, mblog_items.slug, items.created, items.pub_date
+        SELECT items.item_id, items.title, items.content_html_scraped, mblog_items.slug, items.created, items.pub_date, mblog_items.status
         FROM items
         JOIN feeds ON feeds.feed_id = items.feed_id
         JOIN mblogs ON mblogs.feed_id = feeds.feed_id
@@ -44,7 +44,10 @@ export const handle_mblog = async (c: any) => {
                 <div style="margin-bottom:1em;">
                     <textarea id="contentful" name="post-content" placeholder="Here we go..." rows=12></textarea>
                 </div>
-                <input type="submit" value="Publish">
+                <div>
+                    <input type="submit" name="action" value="Publish">
+                    <input type="submit" name="action" value="Save">
+                </div>
             </form>
             `
     }
@@ -55,15 +58,18 @@ export const handle_mblog = async (c: any) => {
         return `${monthNames[date.getMonth()]} ${date.getDate().toString().padStart(2, '0')}, ${date.getFullYear()}`;
     };
 
+
     list += `<ul style="list-style-type: none; padding-left: 0;">`
     for (const item of items) {
         const postDate = formatDate(new Date(item.pub_date));
+        let status_block = "";
+        if (userLoggedIn && userId == mblog.user_id) {
+            status_block = `(${item.status})`
+        }
         list += `
             <li>
                 <span class="muted" style="font-family: monospace; letter-spacing: -0.07em; margin-right: 0.5em;">${postDate}</span>
-                <a href="/${item.slug}">
-                    ${item.title}
-                </a>
+                <a href="/${item.slug}">${item.title}</a> ${status_block}
             </li>
             `
     }
@@ -108,6 +114,8 @@ export const handle_mblog_POST = async (c: any) => {
     let content_html_scraped = await marked.parse(post_content);
     content_html_scraped = await sanitizeHTML(content_html_scraped);
 
+    
+
     try {
         let item_slug = generate_slug(title);
 
@@ -128,17 +136,19 @@ export const handle_mblog_POST = async (c: any) => {
         }
 
         const pub_date = new Date().toISOString();
+        const status = body["action"].toString().toLowerCase() == "publish" ? "public" : "draft";
         const insertion_results = await c.env.DB.prepare(
             "INSERT INTO items (feed_id, title, description, content_html, content_html_scraped, url, pub_date) values (?, ?, ?, ?, ?, ?, ?)",
         ).bind(mblog.feed_id, title, title, post_content, content_html_scraped, item_slug, pub_date).run();
+
 
         const new_item_id = insertion_results.meta.last_row_id;
         const new_item_sqid = itemIdToSqid(new_item_id);
         await c.env.DB.prepare("UPDATE items SET item_sqid = ? WHERE item_id = ?")
             .bind(new_item_sqid, new_item_id).run();
 
-        await c.env.DB.prepare("INSERT INTO mblog_items (mblog_id, item_id, slug) values (?, ?, ?)")
-            .bind(mblog.mblog_id, new_item_id, item_slug).run();
+        await c.env.DB.prepare("INSERT INTO mblog_items (mblog_id, item_id, slug, status) values (?, ?, ?, ?)")
+            .bind(mblog.mblog_id, new_item_id, item_slug, status).run();
 
         return c.redirect(`/${item_slug}`);
 
@@ -165,7 +175,7 @@ export const handle_mblog_post_single = async (c: any) => {
 
     const mblog_post_entry = await c.env.DB.prepare(
         `
-            SELECT items.title, items.content_html_scraped, mblogs.user_id, items.pub_date
+            SELECT items.title, items.content_html_scraped, mblogs.user_id, items.pub_date, mblog_items.status
             FROM items
             JOIN mblog_items ON mblog_items.item_id = items.item_id
             JOIN feeds ON feeds.feed_id = items.feed_id
@@ -189,7 +199,7 @@ export const handle_mblog_post_single = async (c: any) => {
 
     let list = `
         <a href="/"><h3>${subdomain}</h3></a>
-        <h1>${post.title}</h1>
+        <h1>${post.title} <small>(${post.status})</small></h1>
         <div>${post.content_html_scraped}</div>
         <time>${post_date}</time>
         `
@@ -261,16 +271,19 @@ export const handle_mblog_post_edit = async (c: any) => {
     if (!userLoggedIn || userId != post.user_id) return c.text("Unauthorized", 401);
 
     const list = html`
-        <div class="form-mblog">
-        <form action="/${post_slug}/edit" method="POST">
-            <div style="margin-bottom:1em;">
-            <input type="text" name="post-title" value="${post.title}" style="width: 100%; font-size: 1.5em;">
-            </div>
-            <div style="margin-bottom:1em;">
-            <textarea name="post-content" style="height: 70vh;">${post.content_html}</textarea>
-            </div>
-            <input type="submit" value="Save">
-        </form></div>`
+        <p><a href="/${post_slug}">← ${post.title}</a></p>
+        <form style="margin-bottom: 3em;" method="POST">
+                <div style="margin-bottom:1em;">
+                    <input type="text" id="post-title" name="post-title" value="${post.title}">
+                </div>
+                <div style="margin-bottom:1em;">
+                    <textarea style="height: 70vh;" id="contentful" name="post-content" rows=12>${post.content_html}</textarea>
+                </div>
+                <div>
+                    <input type="submit" name="action" value="Save as draft">
+                    <input type="submit" name="action" value="Publish">
+                </div>
+            </form>`
 
     return c.html(
         renderHTML(
@@ -306,6 +319,7 @@ export const handle_mblog_post_edit_POST = async (c: any) => {
     if (userId != post.user_id) return c.redirect("/");
 
     const body = await c.req.parseBody();
+    console.log("body", body)
     const post_title = body["post-title"].toString();
     if (!post_title) return c.text("Post title is required");
     const post_content = body["post-content"].toString();
@@ -314,8 +328,13 @@ export const handle_mblog_post_edit_POST = async (c: any) => {
     let content_html_scraped = await marked.parse(post_content);
     content_html_scraped = await sanitizeHTML(content_html_scraped);
 
-    await c.env.DB.prepare("UPDATE items SET title = ?, content_html = ?, content_html_scraped = ? WHERE item_id = ?")
-        .bind(post_title, post_content, content_html_scraped, post.item_id).run();
+    const status = body["action"].toString().toLowerCase() == "publish" ? "public" : "draft";
+    await c.env.DB.batch([
+        c.env.DB.prepare("UPDATE items SET title = ?, content_html = ?, content_html_scraped = ? WHERE item_id = ?")
+            .bind(post_title, post_content, content_html_scraped, post.item_id),
+        c.env.DB.prepare("UPDATE mblog_items SET status = ? WHERE item_id = ?")
+            .bind(status, post.item_id)
+    ]);
 
     return c.redirect(`/${post_slug}`);
 }
