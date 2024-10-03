@@ -41,3 +41,14 @@ export async function adminRequiredMiddleware(
     }
     await next();
 }
+
+export async function subdomainMiddleware( c: Context<any, any, {}>, next: () => any, ) {
+    const host = c.req.raw.headers.get("host");
+    if (host) {
+        const subdomain = host.split(".")[0];
+        c.set("SUBDOMAIN", subdomain);
+    } else {
+        throw new Error("Host header is missing");
+    }
+    await next();
+}

@@ -1,4 +1,4 @@
-import { Context, Hono } from "hono";
+import { Context, Env, Hono } from "hono";
 import { raw } from "hono/html";
 import {
     handle_create_mblog_POST,
@@ -47,11 +47,12 @@ import {
     itemsRemoveFromFavoritesHandler,
     itemsScrapeHandler,
 } from "./items";
-import { handle_mblog, handle_mblog_POST, mblogRSSHandler, mblogSinglePostDeleteHandler, mblogSinglePostEditHandler, mblogSinglePostEditPostHandler, mblogSinglePostHandler } from "./mblogs";
+import { handle_mblog, handle_mblog_POST, mblogRSSHandler, handle_mblog_post_single, handle_mblog_post_edit, handle_mblog_post_edit_POST, handle_mblog_post_delete } from "./mblogs";
 import {
     adminRequiredMiddleware,
     authMiddleware,
     authRequiredMiddleware,
+    subdomainMiddleware,
 } from "./middlewares";
 import { enqueueScrapeAllItemsOfFeed, enqueueUpdateAllFeeds } from "./queue";
 import { scrapeItem } from "./scrape";
@@ -109,7 +110,7 @@ app.use("/items/:item_sqid/delete", adminRequiredMiddleware);
 
 app.use("/admin", adminRequiredMiddleware);
 
-app.notFound((c) => {
+app.notFound((c: Context<any, any, {}>) => {
     return c.html(
         renderHTML(
             "404 | minifeed",
@@ -119,7 +120,7 @@ app.notFound((c) => {
     );
 });
 
-app.onError((err, c) => {
+app.onError((err, c: Context<any, any, {}>) => {
     return c.html(
         renderHTML(
             "Error | minifeed",
@@ -175,13 +176,6 @@ app.post("/feeds/:feed_sqid/rebuild_cache", feedsCacheRebuildHandler);
 app.post("/feeds/index", feedsGlobalIndexHandler);
 app.post("/feeds/rebuild_cache", feedsGlobalCacheRebuildHandler);
 
-app.get("/b/:slug", handle_mblog)
-app.get("/b/:slug/rss", mblogRSSHandler)
-app.get("/b/:slug/:post_slug", mblogSinglePostHandler)
-app.get("/b/:slug/:post_slug/edit", mblogSinglePostEditHandler)
-app.post("/b/:slug", handle_mblog_POST)
-app.post("/b/:slug/:post_slug/edit", mblogSinglePostEditPostHandler)
-app.post("/b/:slug/:post_slug/delete", mblogSinglePostDeleteHandler)
 
 app.get("/podcasts", (c: any) => { return c.html(renderHTML("Podcasts | minifeed", raw("Coming soon"), c.get("USERNAME"), "podcasts",),); });
 app.get("/channels", (c: any) => { return c.html(renderHTML("Channels | minifeed", raw("Coming soon"), c.get("USERNAME"), "channels",),); });
@@ -197,44 +191,34 @@ app.get("/users/:username", handle_users_single);
 app.post("/users/:username/follow", usersFollowPostHandler);
 app.post("/users/:username/unfollow", usersUnfollowPostHandler);
 
-app.get("/about/changelog", async (c) =>
+app.get("/about/changelog", async (c: Context<any, any, {}>) =>
     c.html(renderHTML("Changelog | minifeed", raw(changelog), c.get("USERNAME"))),
 );
 
-// This handles subdomain blogs
-const handleMblogRootSubdomain = async (c: Context<any, any, {}>) => {
-    const host = c.req.raw.headers.get("host");
-    if (host) {
-        const subdomain = host.split(".")[0];
-        c.set("SUBDOMAIN", subdomain);
-        return await handle_mblog(c);
-    }
-    throw new Error("Host header is missing");
-}
-
-const handleMblogItemSubdomain = async (c: Context<any, any, {}>) => {
-    const host = c.req.raw.headers.get("host");
-    if (host) {
-        const subdomain = host.split(".")[0];
-        c.set("SUBDOMAIN", subdomain);
-        return await mblogSinglePostHandler(c);
-    }
-    throw new Error("Host header is missing");
-}
-
-const subdomainApp = new Hono();
+const subdomainApp = new Hono<{ Bindings: Bindings }>({
+    strict: false,
+});
 subdomainApp.use("*", authMiddleware);
-subdomainApp.get("/", handleMblogRootSubdomain);
-subdomainApp.get("/:post_slug", handleMblogItemSubdomain);
+subdomainApp.use("*", subdomainMiddleware);
 
+subdomainApp.get("/", handle_mblog);
+subdomainApp.post("/", handle_mblog_POST)
+
+subdomainApp.get("/rss", mblogRSSHandler)
+subdomainApp.get("/:post_slug", handle_mblog_post_single);
+subdomainApp.get("/:post_slug/edit", handle_mblog_post_edit);
+subdomainApp.post("/:post_slug/edit", handle_mblog_post_edit_POST)
+subdomainApp.post("/:post_slug/delete", handle_mblog_post_delete)
 
 // Main app to route based on Host
-const appMain = new Hono();
+const appMain = new Hono<{ Bindings: Bindings }>({
+    strict: false,
+});
 
 appMain.all("*", async (c: Context<any, any, {}>, next: () => any) => {
     const host = c.req.raw.headers.get("host"); // Cloudflare Workers use lowercase 'host'
     if (host) {
-        if (host.split(".").length === 3) {
+        if (host.split(".").length === 3) {  // if subdomain is in the form of sub.example.com
             return await subdomainApp.fetch(c.req, c.env, c.ctx);
         }
         // Default to root app for the main domain (example.com)
@@ -245,7 +229,7 @@ appMain.all("*", async (c: Context<any, any, {}>, next: () => any) => {
 
 // MAIN EXPORT
 export default {
-    fetch: (req, env, ctx) => appMain.fetch(req, env, ctx), // normal processing of requests
+    fetch: (req: Request, env: Env, ctx: ExecutionContext) => appMain.fetch(req, env, ctx), // normal processing of requests
 
     async queue(batch: MessageBatch<any>, env: Bindings) {
         // consumer of queue FEED_UPDATE_QUEUE
