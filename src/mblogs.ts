@@ -61,6 +61,7 @@ export const handle_mblog = async (c: any) => {
 
     list += `<ul style="list-style-type: none; padding-left: 0;">`
     for (const item of items) {
+        if (item.status != "public" && (!userLoggedIn || userId != mblog.user_id)) continue;
         const postDate = formatDate(new Date(item.pub_date));
         let status_block = "";
         if (userLoggedIn && userId == mblog.user_id) {
