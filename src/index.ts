@@ -214,6 +214,9 @@ const handleMblogRootSubdomain = async (c: Context<any, any, {}>) => {
 
 const handleMblogItemSubdomain = async (c: Context<any, any, {}>) => {
     const host = c.req.raw.headers.get("host");
+    if (host == "mf.rakhim.org") {
+        return c.html("Good!")
+    }
     if (host) {
         const subdomain = host.split(".")[0];
         c.set("SUBDOMAIN", subdomain);
