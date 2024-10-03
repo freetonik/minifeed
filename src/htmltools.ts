@@ -10,8 +10,6 @@ export const renderHTML = (
     prefix_root_url: boolean = false,
     debug_info: string = ""
 ) => {
-    const start = performance.now();
-    
     const root_url = prefix_root_url ? "https://minifeed.net" : "";
 
     const canonicalUrlBlock = canonicalUrl ? html`<link rel="canonical" href="${canonicalUrl}" />` : "";
@@ -24,10 +22,6 @@ export const renderHTML = (
     } else {
         userBlock = html`<span><a href="/login" class="bold">Log in</a> or <a class="bold" href="/signup">sign up</a></span>`;
     }
-
-    const end = performance.now();
-    const timing = end - start; // 0
-    debug_info += `<br>${timing}`
 
     return html`
     <!DOCTYPE html>
