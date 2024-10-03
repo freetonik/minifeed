@@ -186,6 +186,7 @@ export const handle_mblog_post_single = async (c: any) => {
 
     const post = mblog_post_entry.results[0];
     if (!post) return c.notFound();
+    if ((!userLoggedIn || userId != post.user_id) && post.status != "public") return c.notFound();
 
     const date_format_opts: Intl.DateTimeFormatOptions = {
         year: "numeric",
