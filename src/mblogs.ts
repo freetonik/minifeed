@@ -1,5 +1,5 @@
 import { html, raw } from "hono/html";
-import { renderHTML } from "./htmltools";
+import { render_mblog_editor, renderHTML } from "./htmltools";
 import { itemIdToSqid, sanitizeHTML } from "./utils";
 import { marked } from 'marked';
 
@@ -36,20 +36,7 @@ export const handle_mblog = async (c: any) => {
 
     let list = `<h1>${mblog.title}</h1>`
     if (userLoggedIn && userId == mblog.user_id) {
-        list += `
-            <form style="margin-bottom: 3em;" method="POST">
-                <div style="margin-bottom:1em;">
-                    <input type="text" id="post-title" name="post-title" placeholder="New post title...">
-                </div>
-                <div style="margin-bottom:1em;">
-                    <textarea id="contentful" name="post-content" placeholder="Here we go..." rows=12></textarea>
-                </div>
-                <div>
-                    <input type="submit" name="action" value="Publish">
-                    <input type="submit" name="action" value="Save">
-                </div>
-            </form>
-            `
+        list += render_mblog_editor("test")
     }
 
 
@@ -273,25 +260,13 @@ export const handle_mblog_post_edit = async (c: any) => {
 
     if (!userLoggedIn || userId != post.user_id) return c.text("Unauthorized", 401);
 
-    const list = html`
-        <p><a href="/${post_slug}">← ${post.title}</a></p>
-        <form style="margin-bottom: 3em;" method="POST">
-                <div style="margin-bottom:1em;">
-                    <input type="text" id="post-title" name="post-title" value="${post.title}">
-                </div>
-                <div style="margin-bottom:1em;">
-                    <textarea style="height: 70vh;" id="contentful" name="post-content" rows=12>${post.content_html}</textarea>
-                </div>
-                <div>
-                    <input type="submit" name="action" value="Save as draft">
-                    <input type="submit" name="action" value="Publish">
-                </div>
-            </form>`
+    let list = ` <p><a href="/${post_slug}">← ${post.title}</a></p> `
+    list += render_mblog_editor(post.title, post.content_html)
 
     return c.html(
         renderHTML(
             `${post.title} | ${post.feed_title}`,
-            list,
+            html`${raw(list)} `,
             c.get("USERNAME"),
             "blogs",
             "",
