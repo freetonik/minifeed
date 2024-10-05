@@ -123,11 +123,13 @@ export const handle_mblog_POST = async (c: any) => {
             }
         }
 
+        const item_url = `https://${subdomain}.minifeed.io/${item_slug}`;
+
         const pub_date = new Date().toISOString();
         const status = body["action"].toString().toLowerCase() == "publish" ? "public" : "draft";
         const insertion_results = await c.env.DB.prepare(
             "INSERT INTO items (feed_id, title, description, content_html, content_html_scraped, url, pub_date) values (?, ?, ?, ?, ?, ?, ?)",
-        ).bind(mblog.feed_id, title, title, post_content, content_html_scraped, item_slug, pub_date).run();
+        ).bind(mblog.feed_id, title, title, post_content, content_html_scraped, item_url, pub_date).run();
 
 
         const new_item_id = insertion_results.meta.last_row_id;
