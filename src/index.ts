@@ -236,6 +236,7 @@ subdomainApp.post("/:post_slug/delete", handle_mblog_post_delete)
 
 subdomainApp.notFound(handleNotFound);
 subdomainApp.onError(handleError);
+subdomainApp.get("/robots.txt", async (c) => c.text("User-agent: *\nAllow: /"));
 
 // Main app to route based on Host
 const appMain = new Hono<{ Bindings: Bindings }>({

@@ -6,6 +6,7 @@ export const changelog = `
     <h3>0.5.0 (06.10.2024)</h3>
     <ul>
         <li>Lists, private beta.</li>
+        <li>Markdown blog post editor.</li>
     </ul>
     <h3>0.4.0 (29.09.2024)</h3>
     <ul>
