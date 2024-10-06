@@ -345,7 +345,7 @@ export const blogsNewPostHandler = async (c: any) => {
     const url = body["url"].toString();
     let rssUrl;
     try {
-        const verified = c.get("USER_ID") === 1 ? true : false;
+        const verified = c.get("USER_ID") == 1 ? true : false;
         rssUrl = await addFeed(c.env, url, verified); // MAIN MEAT!
     } catch (e: any) {
         return c.html(
