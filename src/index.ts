@@ -34,6 +34,12 @@ import {
 import { renderHTML } from "./htmltools";
 import {
     handle_global,
+    handle_items_lists,
+    handle_items_lists_POST,
+    handle_items_lists_add_POST,
+    handle_items_lists_new_POST,
+    handle_items_lists_new_form,
+    handle_items_lists_remove_POST,
     handle_items_single,
     handle_my,
     handle_my_favorites,
@@ -67,6 +73,7 @@ import {
     usersHandler,
     usersUnfollowPostHandler,
 } from "./users";
+import { handle_lists, handle_lists_single } from "./lists";
 
 // ///////////////////////////////////////////////////////////
 // ///////////////////////////////////////////////////////////////
@@ -90,6 +97,11 @@ app.use("/feeds/:feed_sqid/subscribe", authRequiredMiddleware);
 app.use("/feeds/:feed_sqid/unsubscribe", authRequiredMiddleware);
 app.use("/items/:feed_sqid/favorite", authRequiredMiddleware);
 app.use("/items/:feed_sqid/unfavorite", authRequiredMiddleware);
+
+app.use("/items/:item_sqid/lists", authMiddleware);
+app.use("/items/:item_sqid/lists/new", authMiddleware);
+app.use("/items/:item_sqid/lists/:list_sqid/add", authMiddleware);
+app.use("/items/:item_sqid/lists/:list_sqid/remove", authMiddleware);
 
 // all routes below this line require admin privileges
 app.use("/b/*", adminRequiredMiddleware);
@@ -184,10 +196,19 @@ app.get("/podcasts", (c: any) => { return c.html(renderHTML("Podcasts | minifeed
 app.get("/channels", (c: any) => { return c.html(renderHTML("Channels | minifeed", raw("Coming soon"), c.get("USERNAME"), "channels",),); });
 
 app.get("/items/:item_sqid", handle_items_single);
+app.get("/items/:item_sqid/lists", handle_items_lists);
+app.get("/items/:item_sqid/lists/new", handle_items_lists_new_form);
+app.post("/items/:item_sqid/lists", handle_items_lists_new_POST);
+app.post("/items/:item_sqid/lists/:list_sqid/add", handle_items_lists_add_POST);
+app.post("/items/:item_sqid/lists/:list_sqid/remove", handle_items_lists_remove_POST);
+
 app.post("/items/:item_sqid/favorite", itemsAddToFavoritesHandler);
 app.post("/items/:item_sqid/unfavorite", itemsRemoveFromFavoritesHandler);
 app.post("/items/:item_sqid/scrape", itemsScrapeHandler);
 app.post("/items/:item_sqid/index", itemsIndexHandler);
+
+app.get("/lists", handle_lists);
+app.get("/lists/:list_sqid", handle_lists_single);
 
 app.get("/users", usersHandler);
 app.get("/users/:username", handle_users_single);

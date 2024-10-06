@@ -187,6 +187,14 @@ export const renderHTML = (
             justify-content: space-between;
         }
 
+        .lists-section {
+            background-color: #ebebe8;
+            padding: 1em;
+            margin: 20px 0;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+
         /* BUTTONS */
 
         button,
@@ -660,6 +668,7 @@ export const renderHTML = (
                     <a href="${root_url}/my" class="${active === "my" ? "bold" : ""}">My feed</a>
                     <a href="${root_url}/global" class="${active === "global" ? "bold" : ""}" style="margin-left: 0.5em">Global feed</a>
                     <a href="${root_url}/blogs" class="${active === "blogs" ? "bold" : ""}" style="margin-left: 0.5em">Blogs</a>
+                    <a href="${root_url}/lists" class="${active === "lists" ? "bold" : ""}" style="margin-left: 0.5em">Lists</a>
                     <a href="${root_url}/users" class="${active === "users" ? "bold" : ""}" style="margin-left: 0.5em">Users</a>
                 </div>
                     ${userBlock}

@@ -44,6 +44,21 @@ export const handle_my_account = async (c: any) => {
         listOfMblogs += `</ul>`;
     }
 
+    let list_of_lists = ``;
+    const lists = await c.env.DB.prepare(
+        `SELECT *
+        FROM item_lists 
+        WHERE user_id = ?`
+    ).bind(user_id).all();
+    console.log("lists", lists)
+    if (lists.results.length > 0) {
+        list_of_lists = `<h3>My lists</h3><ul>`;
+        for (const list of lists.results) {
+            list_of_lists += `<li><a href="/lists/${list.list_sqid}">${list.title}</a></li>`;
+        }
+        list_of_lists += `</ul>`;
+    }
+
     let new_mblog_form = ``;
     if (user_id == 1) {
         new_mblog_form = `
@@ -84,6 +99,7 @@ export const handle_my_account = async (c: any) => {
     </p>
     ${listOfMblogs}
     ${new_mblog_form}
+    ${list_of_lists}
     <p style="margin-top:3em;">
         <a href="/logout">Log out</a>
     </p>`;

@@ -75,17 +75,26 @@ export const handle_users_single = async (c: any) => {
         JOIN users on favorites.user_id = users.user_id
         WHERE users.username = ?`,
         ).bind(username),
+
+        // lists batch[5]
+        c.env.DB.prepare(
+            `
+        SELECT list_id, title, list_sqid
+        FROM item_lists
+        JOIN users on item_lists.user_id = users.user_id
+        WHERE users.username = ?`,
+        ).bind(username),
     ]);
 
     if (!batch[0].results.length) return c.notFound();
 
-    let list = "";
+    let inner = "";
 
     // user favorited these jabronis
-    list += `<h2>Favorites:</h2>`;
-    if (!batch[4].results.length) list += `<p><i>None yet</i></p>`;
+    inner += `<h2>Favorites:</h2>`;
+    if (!batch[4].results.length) inner += `<p><i>None yet</i></p>`;
     batch[4].results.forEach((item: any) => {
-        list += renderItemShort(
+        inner += renderItemShort(
             item.item_sqid,
             item.title,
             item.url,
@@ -95,28 +104,35 @@ export const handle_users_single = async (c: any) => {
         );
     });
 
+    // user created these lists
+    inner += `<h2>Lists:</h2>`;
+    if (!batch[5].results.length) inner += `<p><i>None yet</i></p>`;
+    batch[5].results.forEach((list: any) => {
+        inner += `<li><a href="/lists/${list.list_sqid}">${list.title}</a></li>`;
+    });
+
     // user subscribed to these jabronis
-    list += `<h2>Subscriptions:</h2>`;
-    if (!batch[1].results.length) list += `<p><i>None yet</i></p>`;
+    inner += `<h2>Subscriptions:</h2>`;
+    if (!batch[1].results.length) inner += `<p><i>None yet</i></p>`;
     batch[1].results.forEach((feed: any) => {
         const sqid = feedIdToSqid(feed.feed_id);
-        list += `<li><a href="/blogs/${sqid}">${feed.title}</a></li>`;
+        inner += `<li><a href="/blogs/${sqid}">${feed.title}</a></li>`;
     });
 
     // user follows these jabronis
-    list += `<h2>Follows:</h2>`;
-    if (!batch[2].results.length) list += `<p><i>None yet</i></p>`;
+    inner += `<h2>Follows:</h2>`;
+    if (!batch[2].results.length) inner += `<p><i>None yet</i></p>`;
     batch[2].results.forEach((user: any) => {
-        list += `<li><a href="${user.followed}">${user.followed}</a></li>`;
+        inner += `<li><a href="${user.followed}">${user.followed}</a></li>`;
     });
 
-    list += `<h2>Followers:</h2>`;
+    inner += `<h2>Followers:</h2>`;
     let followButtonText = "follow";
-    if (!batch[3].results.length) list += `<p><i>None yet</i></p>`;
+    if (!batch[3].results.length) inner += `<p><i>None yet</i></p>`;
     batch[3].results.forEach((user: any) => {
         followButtonText =
             user.follower === currentUsername ? "unfollow" : "follow";
-        list += `<li><a href="${user.follower}">${user.follower}</a></li>`;
+        inner += `<li><a href="${user.follower}">${user.follower}</a></li>`;
     });
 
     let top_block = `<h1>@${username}</h1>`;
@@ -139,12 +155,12 @@ export const handle_users_single = async (c: any) => {
         top_block += `<div class="flash"><a href="/login">Log in</a> to follow users and read their feeds on your home page.</div>`;
     }
 
-    list = top_block + list;
+    inner = top_block + inner;
 
     return c.html(
         renderHTML(
             `${username} | minifeed`,
-            html`${raw(list)}`,
+            html`${raw(inner)}`,
             c.get("USERNAME"),
             "users",
         ),

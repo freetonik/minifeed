@@ -20,7 +20,7 @@ import {
 export const handle_global = async (c: any) => {
     const userId = c.get("USER_ID") || -1;
     const user_logged_in = userId != -1;
-    const itemsPerPage = 30;
+    const itemsPerPage = 60;
     const page = Number(c.req.query("p")) || 1;
     const offset = page * itemsPerPage - itemsPerPage;
     const { results, meta } = await c.env.DB.prepare(
@@ -467,8 +467,19 @@ export const handle_items_single = async (c: any) => {
 
     let favoriteBlock = "";
     let subscriptionBlock = "";
-
+    let lists_block = "";
     if (user_logged_in) {
+        lists_block = `
+        <span id="lists">
+            <button hx-get="/items/${item_sqid}/lists"
+            hx-trigger="click"
+            hx-target="#lists_section"
+            hx-swap="outerHTML">
+            ⛬ add to list
+            </button>
+            </span>
+        `
+        
         if (item.favorite_id) {
             favoriteBlock = `<span id="favorite">
             <button hx-post="/items/${item_sqid}/unfavorite"
@@ -514,6 +525,7 @@ export const handle_items_single = async (c: any) => {
             </span>`;
         }
     } else {
+        lists_block = `<span id="favorite"> <button title="Log in to add to list" disabled>⛬ add to list</button> </span>`
         favoriteBlock = `<span id="favorite"> <button title="Log in to favorite" disabled> ☆ favorite </button> </span>`;
         subscriptionBlock = `<span id="subscription"> <button disabled title="Login to subscribe"> <span>subscribe</span> </button> </span>`;
     }
@@ -540,17 +552,18 @@ export const handle_items_single = async (c: any) => {
 
     let list = `
     <h1 style="margin-bottom: 0.25em;">${item.item_title} </h1>
-    <div style="margin-bottom:1.25em;">from ${item.type} <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time></div>
-    <div class="item-actions" style="margin-bottom:3em;">
-        <div>
+    <div style="margin-bottom:1.25em;">from ${item.type} <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time> | <a href="${item.item_url}" target="_blank">↗ original</a></div>
+    <div class="item-actions">
+        <div style="display: flex; gap: 0.25em;">
         ${favoriteBlock}
-        <a class="button" href="${item.item_url}" target="_blank">↗ original</a>
+        ${lists_block}
         </div>
         <div>
         ${subscriptionBlock}
         </div>
     </div>
-    <article>
+    <div id="lists_section"></div>
+    <article style="margin-top:3em;">
     ${contentBlock}
     </article>
 
@@ -655,6 +668,119 @@ export const handle_items_single = async (c: any) => {
         ),
     );
 };
+
+// Renders lists for item
+export const handle_items_lists = async (c: any) => {
+    const itemSqid = c.req.param("item_sqid");
+    const itemId: number = itemSqidToId(itemSqid);
+    const userId = c.get("USER_ID");
+
+    const lists = await c.env.DB.prepare(
+        `SELECT item_lists.list_id, item_lists.title, item_lists.list_sqid, item_list_items.item_id
+        FROM item_lists 
+        LEFT JOIN item_list_items ON item_list_items.list_id = item_lists.list_id
+        WHERE user_id = ?`
+    ).bind(userId).all();
+
+    let lists_html = '';
+
+    // lists.results contains instances of lists with items
+    const lists_with_current_item = lists.results.filter((list: any) => list.item_id == itemId);
+    let lists_without_current_item = lists.results
+        // remove list instances that already have the item
+        // .filter((list: any) => list.item_id != itemId)
+        // substract lists_with_current_item
+        .filter((list: any) => !lists_with_current_item.some((listWithItem: any) => listWithItem.list_id === list.list_id))
+        // remove duplicates
+        .filter((list: any, index: number, self: any) =>
+        index === self.findIndex((t: any) => t.list_id === list.list_id)
+    );
+
+    console.log("lists_with_current_item", lists_with_current_item);
+    console.log("lists_without_current_item", lists_without_current_item);
+
+    for (const list of lists_with_current_item) {
+        lists_html += `<strong>${list.title}</strong> <a hx-post="/items/${itemSqid}/lists/${list.list_sqid}/remove">remove</a><br>`
+    }
+
+    for (const list of lists_without_current_item) {
+        lists_html += `${list.title} <a hx-post="/items/${itemSqid}/lists/${list.list_sqid}/add">add</a><br>`
+    }
+
+    const content = `
+    <div id="lists_section" class="lists-section">
+    ${lists_html}
+    <strong><a href="" hx-get="/items/${itemSqid}/lists/new" hx-trigger="click" hx-target="this" hx-swap="outerHTML">New list</a></strong>
+    </div>
+    `
+
+    return c.html(content)
+}
+
+export const handle_items_lists_new_form = async (c: any) => {
+    const itemSqid = c.req.param("item_sqid");
+    return c.html(`<form hx-post="/items/${itemSqid}/lists" hx-target="this" hx-swap="outerHTML" style="margin-top:0.5em;">
+    <input type="text" name="list_title" placeholder="Type list title and press Enter" style="font-size: inherit !important;padding: 0.25em 0.5em !important;">
+    </form>`)
+}
+
+export const handle_items_lists_new_POST = async (c: any) => {
+    const body = await c.req.parseBody();
+    const list_title = body["list_title"].toString();
+
+    const result = await c.env.DB.prepare(
+        `INSERT INTO item_lists (user_id, title) VALUES (?, ?)`,
+    ).bind(c.get("USER_ID"), list_title).run();
+
+    const list_id = result.meta.last_row_id;
+    const list_sqid = itemIdToSqid(list_id);
+
+    // set sqid of list
+    await c.env.DB.prepare(
+        `UPDATE item_lists SET list_sqid = ? WHERE list_id = ?`,
+    ).bind(list_sqid, list_id).run();
+
+    const itemSqid = c.req.param("item_sqid");
+    const itemId: number = itemSqidToId(itemSqid);
+    // add item to list
+    await c.env.DB.prepare(
+        `INSERT INTO item_list_items (list_id, item_id) VALUES (?, ?)`,
+    ).bind(list_id, itemId).run();
+
+    return c.html(`<strong>${list_title}</strong> <a hx-post="/items/${itemSqid}/lists/${list_sqid}/remove">remove</a><br>`)
+}
+
+export const handle_items_lists_POST = async (c: any) => {
+    
+}
+
+// add item to list
+export const handle_items_lists_add_POST = async (c: any) => {
+    const item_sqid = c.req.param("item_sqid");
+    const list_sqid = c.req.param("list_sqid");
+    const item_id = itemSqidToId(item_sqid);
+    const list_id = itemSqidToId(list_sqid);
+
+    const result = await c.env.DB.prepare(
+        `INSERT INTO item_list_items (list_id, item_id) VALUES (?, ?)`,
+    ).bind(list_id, item_id).run();
+
+    return c.html("added")
+}
+
+export const handle_items_lists_remove_POST = async (c: any) => {
+    const item_sqid = c.req.param("item_sqid");
+    const list_sqid = c.req.param("list_sqid");
+    const item_id = itemSqidToId(item_sqid);
+    const list_id = itemSqidToId(list_sqid);
+
+    const result = await c.env.DB.prepare(
+        `DELETE FROM item_list_items WHERE list_id = ? AND item_id = ?`,
+    ).bind(list_id, item_id).run();
+
+    return c.html("removed")
+}
+
 
 export const itemsAddToFavoritesHandler = async (c: any) => {
     const itemSqid = c.req.param("item_sqid");
