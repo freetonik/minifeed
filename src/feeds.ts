@@ -62,7 +62,7 @@ export const handle_blogs = async (c: any) => {
         const subscriptionBlock = userLoggedIn
             ? `<div><span id="subscription-${feed.feed_sqid}">
             <button hx-post="/feeds/${feed.feed_sqid}/${subscriptionAction}"
-            class="${subscriptionButtonText}"
+            class="button ${subscriptionButtonText}"
             hx-trigger="click"
             hx-target="#subscription-${feed.feed_sqid}"
             hx-swap="outerHTML">
@@ -71,7 +71,7 @@ export const handle_blogs = async (c: any) => {
             </button>
         </span></div>`
             : `<div><span id="subscription">
-            <button disabled title="Login to subscribe">
+            <button class="button"disabled title="Login to subscribe">
             <span>${subscriptionButtonText}</span>
             </button>
         </span></div>`;
@@ -165,7 +165,7 @@ export const handle_blogs_single = async (c: any) => {
         ? `
       <span id="subscription">
         <button hx-post="/feeds/${feedSqid}/${subscriptionAction}"
-          class="${subscriptionButtonText}"
+          class="button ${subscriptionButtonText}"
           hx-trigger="click"
           hx-target="#subscription"
           hx-swap="outerHTML">
@@ -175,7 +175,7 @@ export const handle_blogs_single = async (c: any) => {
       </span>`
         : `
       <span id="subscription">
-        <button disabled title="Login to subscribe">
+        <button class="button" disabled title="Login to subscribe">
             <span>${subscriptionButtonText}</span>
         </button>
       </span>
@@ -265,7 +265,7 @@ export const feedsSubscribeHandler = async (c: any) => {
         return c.html(`
       <span id="subscription-${feedSqid}">
             <button hx-post="/feeds/${feedSqid}/unsubscribe"
-            class="subscribed"
+            class="button subscribed"
             hx-trigger="click"
             hx-target="#subscription-${feedSqid}"
             hx-swap="outerHTML">
@@ -306,7 +306,7 @@ export const feedsUnsubscribeHandler = async (c: any) => {
     return c.html(`
       <span id="subscription-${feedSqid}">
         <button hx-post="/feeds/${feedSqid}/subscribe"
-          class="subscribe"
+          class="button subscribe"
           hx-trigger="click"
           hx-target="#subscription-${feedSqid}"
           hx-swap="outerHTML">

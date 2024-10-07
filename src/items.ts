@@ -471,7 +471,8 @@ export const handle_items_single = async (c: any) => {
     if (user_logged_in) {
         lists_block = `
         <span id="lists">
-            <button hx-get="/items/${item_sqid}/lists"
+            <button class="button" hx-get="/items/${item_sqid}/lists"
+            class="button"
             hx-trigger="click"
             hx-target="#lists_section"
             hx-swap="outerHTML">
@@ -483,6 +484,7 @@ export const handle_items_single = async (c: any) => {
         if (item.favorite_id) {
             favoriteBlock = `<span id="favorite">
             <button hx-post="/items/${item_sqid}/unfavorite"
+            class="button"
             hx-trigger="click"
             hx-target="#favorite"
             hx-swap="outerHTML">
@@ -492,6 +494,7 @@ export const handle_items_single = async (c: any) => {
         } else {
             favoriteBlock = `<span id="favorite">
             <button hx-post="/items/${item_sqid}/favorite"
+            class="button"
             hx-trigger="click"
             hx-target="#favorite"
             hx-swap="outerHTML">
@@ -504,7 +507,7 @@ export const handle_items_single = async (c: any) => {
             subscriptionBlock = `
             <span id="subscription-${item.feed_sqid}">
             <button hx-post="/feeds/${item.feed_sqid}/unsubscribe"
-            class="subscribed"
+            class="button subscribed"
             hx-trigger="click"
             hx-target="#subscription-${item.feed_sqid}"
             hx-swap="outerHTML">
@@ -516,7 +519,7 @@ export const handle_items_single = async (c: any) => {
             subscriptionBlock = `
             <span id="subscription-${item.feed_sqid}">
             <button hx-post="/feeds/${item.feed_sqid}/subscribe"
-            class="subscribe"
+            class="button subscribe"
             hx-trigger="click"
             hx-target="#subscription-${item.feed_sqid}"
             hx-swap="outerHTML">
@@ -525,9 +528,9 @@ export const handle_items_single = async (c: any) => {
             </span>`;
         }
     } else {
-        lists_block = `<span id="favorite"> <button title="Log in to add to list" disabled>⛬ add to list</button> </span>`
-        favoriteBlock = `<span id="favorite"> <button title="Log in to favorite" disabled> ☆ favorite </button> </span>`;
-        subscriptionBlock = `<span id="subscription"> <button disabled title="Login to subscribe"> <span>subscribe</span> </button> </span>`;
+        lists_block = `<span id="favorite"> <button class="button" title="Log in to add to list" disabled>⛬ add to list</button> </span>`
+        favoriteBlock = `<span id="favorite"> <button class="button" title="Log in to favorite" disabled> ☆ favorite </button> </span>`;
+        subscriptionBlock = `<span id="subscription"> <button class="button" disabled title="Login to subscribe"> <span>subscribe</span> </button> </span>`;
     }
 
     let otherItemsBlock = "";
@@ -682,8 +685,6 @@ export const handle_items_lists = async (c: any) => {
         WHERE user_id = ?`
     ).bind(userId).all();
 
-    let lists_html = '';
-
     // lists.results contains instances of lists with items
     const lists_with_current_item = lists.results.filter((list: any) => list.item_id == itemId);
     let lists_without_current_item = lists.results
@@ -696,21 +697,26 @@ export const handle_items_lists = async (c: any) => {
         index === self.findIndex((t: any) => t.list_id === list.list_id)
     );
 
-    console.log("lists_with_current_item", lists_with_current_item);
-    console.log("lists_without_current_item", lists_without_current_item);
 
+    let list_objects: { [key: string]: string } = {};
     for (const list of lists_with_current_item) {
-        lists_html += `<strong>${list.title}</strong> <a hx-post="/items/${itemSqid}/lists/${list.list_sqid}/remove">remove</a><br>`
+        list_objects[list.title] = `<strong><a class="no-underline no-color" href="/lists/${list.list_sqid}">${list.title}</a></strong> <a href="" hx-post="/items/${itemSqid}/lists/${list.list_sqid}/remove" hx-swap="outerHTML transition:true">[- remove from list]</a><br>`
     }
 
     for (const list of lists_without_current_item) {
-        lists_html += `${list.title} <a hx-post="/items/${itemSqid}/lists/${list.list_sqid}/add">add</a><br>`
+        list_objects[list.title] = `<a class="no-underline no-color" href="/lists/${list.list_sqid}">${list.title}</a> <a href="" hx-post="/items/${itemSqid}/lists/${list.list_sqid}/add" hx-swap="outerHTML transition:true"><strong>[+ add to list]</strong></a><br>`
     }
+
+    const lists_html = Object.keys(list_objects).sort().map(key => list_objects[key]).join('');
 
     const content = `
     <div id="lists_section" class="lists-section">
     ${lists_html}
-    <strong><a href="" hx-get="/items/${itemSqid}/lists/new" hx-trigger="click" hx-target="this" hx-swap="outerHTML">New list</a></strong>
+    <strong>
+    <a href="" hx-get="/items/${itemSqid}/lists/new" hx-trigger="click" hx-target="this" hx-swap="outerHTML"><br>
+        [create new list and add to it]
+    </a>
+    </strong>
     </div>
     `
 
@@ -747,7 +753,7 @@ export const handle_items_lists_new_POST = async (c: any) => {
         `INSERT INTO item_list_items (list_id, item_id) VALUES (?, ?)`,
     ).bind(list_id, itemId).run();
 
-    return c.html(`<strong>${list_title}</strong> <a hx-post="/items/${itemSqid}/lists/${list_sqid}/remove">remove</a><br>`)
+    return c.html(`<a class="no-underline no-color" href="/lists/${list_sqid}">${list_title}</a> <a hx-post="/items/${itemSqid}/lists/${list_sqid}/remove" hx-swap="outerHTML transition:true">[- remove from list]</a><br>`)
 }
 
 export const handle_items_lists_POST = async (c: any) => {
@@ -765,7 +771,7 @@ export const handle_items_lists_add_POST = async (c: any) => {
         `INSERT INTO item_list_items (list_id, item_id) VALUES (?, ?)`,
     ).bind(list_id, item_id).run();
 
-    return c.html("added")
+    return c.html("[added]")
 }
 
 export const handle_items_lists_remove_POST = async (c: any) => {
@@ -778,7 +784,7 @@ export const handle_items_lists_remove_POST = async (c: any) => {
         `DELETE FROM item_list_items WHERE list_id = ? AND item_id = ?`,
     ).bind(list_id, item_id).run();
 
-    return c.html("removed")
+    return c.html("[removed]")
 }
 
 
@@ -804,6 +810,7 @@ export const itemsAddToFavoritesHandler = async (c: any) => {
         return c.html(`
         <span id="favorite">
         <button hx-post="/items/${itemSqid}/unfavorite"
+        class="button"
         hx-trigger="click"
         hx-target="#favorite"
         hx-swap="outerHTML">
@@ -842,6 +849,7 @@ export const itemsRemoveFromFavoritesHandler = async (c: any) => {
         return c.html(`
         <span id="favorite">
         <button hx-post="/items/${itemSqid}/favorite"
+        class="button"
         hx-trigger="click"
         hx-target="#favorite"
         hx-swap="outerHTML">

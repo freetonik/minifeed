@@ -195,7 +195,6 @@ export const renderHTML = (
 
         /* BUTTONS */
 
-        button,
         .button,
         a.button:visited {
             appearance: none;
@@ -225,70 +224,57 @@ export const renderHTML = (
             word-wrap: break-word;
         }
 
-        button:hover,
-        a.button:hover {
+        .button:hover {
             background-color: hsl(0, 0%, 86%);
             text-decoration: none;
             transition-duration: 0.1s;
         }
 
-        button:disabled,
-        a.button:disabled {
+        .button:disabled {
             color: #959da5;
             border-color: #959da5;
             pointer-events: none;
         }
 
-        button:disabled:hover,
-        a.button:disabled:hover {
+        .button:disabled:hover {
             background-color: #FAFBFC;
         }
 
-        button:enabled:active,
-        a.button:active {
+        .button:active {
             background-color: #edeff2;
             box-shadow: rgba(225, 228, 232, 0.2) 0 1px 0 inset;
             transition: none 0s;
         }
 
-        button:focus,
-        a.button:focus {
+        .button:focus {
             outline: 1px transparent;
         }
 
-        button:before {
-            display: none;
-        }
-
-        button:-webkit-details-marker {
-            display: none;
-        }
-
-        button.subscribed {
+        .button.subscribed {
             background-color: var(--color-green);
             color: white;
             box-shadow: none;
             min-width: 9em;
         }
 
-        button.subscribe {
+        .button.subscribe {
             min-width: 9em;
         }
 
-        button.subscribe .unsubscribe-text,
+        .button.subscribe .unsubscribe-text,
         button.subscribed .unsubscribe-text {
             display: none;
         }
 
-        button.subscribed:hover .subscribed-text {
+        .button.subscribed:hover .subscribed-text {
             display: none;
         }
 
-        button.subscribed:hover .unsubscribe-text {
+        .button.subscribed:hover .unsubscribe-text {
             display: inline;
         }
 
-        button.subscribed:hover {
+        .button.subscribed:hover {
             background-color: var(--color-red);
         }
 
@@ -454,7 +440,7 @@ export const renderHTML = (
                 <div>
                     <a href="${root_url}/" class="logo"><span>⬤</span> <span class="bold" style="margin-left: 0.2em;margin-right:1.5em;">minifeed</span></a>
                     <a href="${root_url}/my" class="${active === "my" ? "bold" : ""}">My feed</a>
-                    <a href="${root_url}/global" class="${active === "global" ? "bold" : ""}" style="margin-left: 0.5em">Global feed</a>
+                    <a href="${root_url}/global" class="${active === "global" ? "bold" : ""}" style="margin-left: 0.5em">Global</a>
                     <a href="${root_url}/blogs" class="${active === "blogs" ? "bold" : ""}" style="margin-left: 0.5em">Blogs</a>
                     <a href="${root_url}/lists" class="${active === "lists" ? "bold" : ""}" style="margin-left: 0.5em">Lists</a>
                     <a href="${root_url}/users" class="${active === "users" ? "bold" : ""}" style="margin-left: 0.5em">Users</a>

@@ -73,7 +73,7 @@ import {
     usersHandler,
     usersUnfollowPostHandler,
 } from "./users";
-import { handle_lists, handle_lists_single } from "./lists";
+import { handle_lists, handle_lists_single, handle_lists_single_delete_POST } from "./lists";
 
 // ///////////////////////////////////////////////////////////
 // ///////////////////////////////////////////////////////////////
@@ -209,6 +209,7 @@ app.post("/items/:item_sqid/index", itemsIndexHandler);
 
 app.get("/lists", handle_lists);
 app.get("/lists/:list_sqid", handle_lists_single);
+app.post("/lists/:list_sqid/delete", handle_lists_single_delete_POST);
 
 app.get("/users", usersHandler);
 app.get("/users/:username", handle_users_single);

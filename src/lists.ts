@@ -34,30 +34,43 @@ export const handle_lists = async (c: any) => {
 export const handle_lists_single = async (c: any) => {
     const list_sqid = c.req.param("list_sqid");
     const list_id = itemSqidToId(list_sqid);
+    const user_id = c.get("USER_ID");
 
-    const list = await c.env.DB.prepare(
-        `SELECT * 
-        FROM item_lists 
-        JOIN users ON users.user_id = item_lists.user_id
-        WHERE list_id = ?`
-    ).bind(list_id).first();
+    const [list, list_items] = await c.env.DB.batch([
+        c.env.DB.prepare(
+            `SELECT * 
+            FROM item_lists 
+            JOIN users ON users.user_id = item_lists.user_id
+            WHERE list_id = ?`
+        ).bind(list_id),
+        c.env.DB.prepare(
+            `SELECT * 
+            FROM item_list_items 
+            JOIN items ON items.item_id = item_list_items.item_id
+            WHERE list_id = ?`
+        ).bind(list_id)
+    ]);
 
-    const list_items = await c.env.DB.prepare(
-        `SELECT * 
-        FROM item_list_items 
-        JOIN items ON items.item_id = item_list_items.item_id
-        WHERE list_id = ?`
-    ).bind(list_id).all();
+    const list_entry = list.results[0];
+    if (!list_entry) return c.notFound();
+    
 
-    let inner = `<h1>List "${list.title}"</h1>
-    <p>by @${list.username}</p>`
+
+    let inner = `<h1>List "${list_entry.title}"</h1>
+    <p>by <a href="/users/${list_entry.username}">@${list_entry.username}</a></p>`
     for (const item of list_items.results) {
         inner += `<li><a href="/items/${item.item_sqid}">${item.title}</a></li>`
     }
 
+    if (user_id == list_entry.user_id) {
+        inner += `<p><button hx-confirm="Are you sure?" hx-swap="outerHTML transition:true" hx-post="/lists/${list_sqid}/delete">Delete list</button></p>`
+    }
+
+
+
     return c.html(
         renderHTML(
-            "List ${list.title} | minifeed",
+            `List ${list.title} | minifeed`,
             html`${raw(inner)}`,
             c.get("USERNAME"),
             "lists",
@@ -67,4 +80,18 @@ export const handle_lists_single = async (c: any) => {
         ),
     );
 
+}
+
+export const handle_lists_single_delete_POST = async (c: any) => {
+    const list_id = itemSqidToId(c.req.param("list_sqid"));
+    const user_id = c.get("USER_ID");
+
+    const list = await c.env.DB.prepare("SELECT * FROM item_lists WHERE list_id = ?").bind(list_id).first();
+    if (!list || list.user_id != user_id) return c.text("Unauthorized", 401);
+
+    await c.env.DB.prepare("DELETE FROM item_lists WHERE list_id = ?").bind(list_id).run();
+
+    return c.html(`
+        <div class="flash">List deleted. This page is now a ghost. Refresh it to let it ascent into ether.</div>
+        `)
 }
