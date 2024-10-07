@@ -11,15 +11,14 @@ export const renderHTML = (
     debug_info: string = ""
 ) => {
     const root_url = prefix_root_url ? "https://minifeed.net" : "";
-
     const canonicalUrlBlock = canonicalUrl ? html`<link rel="canonical" href="${canonicalUrl}" />` : "";
 
     let userBlock = html``;
-    if (user_logged_in) {
+    if (user_logged_in)
         userBlock = html`<a href="${root_url}/my/account">account</a>`;
-    } else {
+    else
         userBlock = html`<span><a href="${root_url}/login" class="bold">Log in</a> or <a class="bold" href="${root_url}/signup">sign up</a></span>`;
-    }
+
 
     return html`
     <!DOCTYPE html>
@@ -35,7 +34,6 @@ export const renderHTML = (
         :root {
             --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
                 sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-            --font-serif: "PT Serif", Georgia, serif;
             --font-monospace: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas,
                 "Liberation Mono", monospace;
 
@@ -193,7 +191,7 @@ export const renderHTML = (
             margin: 20px 0;
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        
+
 
         /* BUTTONS */
 
@@ -439,220 +437,10 @@ export const renderHTML = (
             }
         }
 
-        // TinyMDE
-        .TinyMDE {
-        background-color:#fff;
-        color:#000;
-        font-size:16px;
-        line-height:24px;
-        outline: none;
-        padding:5px;
-        height: 100%;
-        }
 
-        .TMBlankLine {
-        height:24px;
-        }
-
-        .TMH1, .TMSetextH1 {
-        font-size:22px;
-        line-height:32px;
-        font-weight:bold;
-        margin-bottom:8px;
-        }
-
-        .TMSetextH1 {
-        margin-bottom:0px;
-        }
-
-        .TMSetextH1Marker {
-        margin-bottom:8px;
-        }
-
-        .TMH2, .TMSetextH2 {
-        font-size:20px;
-        line-height:28px;
-        font-weight:bold;
-        margin-bottom:4px;
-        }
-
-        .TMMark_TMCode {
-        font-family:monospace;
-        font-size:.9em;  
-        }
-
-        .TMFencedCodeBacktick, .TMFencedCodeTilde, .TMIndentedCode, .TMCode {
-        font-family:monospace;
-        font-size:.9em;
-        background-color:#e0e0e0;
-        }
-
-        .TMCodeFenceBacktickOpen, .TMCodeFenceTildeOpen {
-        border-bottom: 1px solid #c0c0c0;
-        font-family: monospace;
-        font-size:.9em;
-        }
-
-        .TMCodeFenceBacktickClose, .TMCodeFenceTildeClose {
-        border-top: 1px solid #c0c0c0;
-        font-family: monospace;
-        font-size:.9em;
-        }
-
-        .TMInfoString {
-        color: #0000ff;
-        }
-
-        .TMCode {
-        border:1px solid #c0c0c0;
-        border-radius: 2px;
-        }
-
-        .TMBlockquote {
-        font-style: italic;
-        border-left:2px solid #c0c0c0;
-        padding-left:10px;
-        margin-left:10px;
-        }
-
-        .TMMark {
-        color:#a0a0a0;
-        }
-
-        .TMMark_TMH1, .TMMark_TMH2 {
-        color:#ff8080;
-        }
-
-        .TMMark_TMUL, .TMMark_TMOL {
-        color:#ff8080;
-        }
-
-        .TMImage {
-        text-decoration: underline;
-        text-decoration-color: #00ff00;
-        }
-
-        .TMLink {
-        text-decoration: underline;
-        text-decoration-color: #0000ff;
-        }
-
-        .TMLinkLabel {
-        text-decoration: underline;
-        font-family: monospace;
-        }
-
-        .TMLinkLabel_Definition, .TMLinkLabel_Valid {
-        color: #40c040;
-        }
-
-        .TMLinkLabel_Invalid {
-        color: #ff0000;
-        }
-
-        .TMLinkTitle {
-        font-style:italic;
-        }
-
-        .TMLinkDestination, .TMAutolink {
-        text-decoration: underline;
-        color: #0000ff;
-        }
-
-        .TMHR { 
-        position: relative;
-        }
-
-        .TMHR:before { 
-        content: '';
-        position: absolute;
-        bottom: 50%;
-        left: 40%;
-        border-bottom: 2px solid #808080;
-        width: 20%;
-        z-index:0;
-        }
-
-        .TMHTML, .TMHTMLBlock {
-        font-family:monospace;
-        font-size:.9em;
-        color:#8000ff;
-        }
-
-        .TMHTMLBlock {
-        color:#6000c0;
-        }
-
-        .TMCommandBar {
-        background-color:#f8f8f8;
-        height:24px;
-        border:4px solid #f8f8f8;
-        box-sizing: content-box;
-        display:flex;
-        -webkit-user-select: none;
-                user-select: none;
-        overflow-x: scroll;
-            overflow-y: hidden;
-        scrollbar-width: none;  
-        -ms-overflow-style: none; 
-        }
-
-        .TMCommandBar::-webkit-scrollbar {
-        display: none;
-        }
-
-        .TMCommandButton {
-        box-sizing: border-box;
-        display: inline-block;
-        height:24px;
-        width:24px;
-        padding:3px;
-        margin-right:4px; 
-        color:#404040;
-        fill:#404040;
-        text-align: center;
-        cursor: pointer;
-        vertical-align: middle;
-        font-size:20px;
-        line-height:18px;
-        font-family: sans-serif;
-        }
-
-        .TMCommandDivider {
-        box-sizing: content-box;
-        height:24px;
-        margin-left:4px;
-        margin-right:8px;
-        width:0px;
-        border-left:1px solid #c0c0c0;
-        border-right:1px solid #ffffff;
-        }
-
-        .TMCommandButton_Active {
-        font-weight:bold;
-        color:#000080;
-        background-color: #c0c0ff;
-        fill:#000080;
-        }
-
-        .TMCommandButton_Inactive {
-        background-color:#f8f8f8;
-        }
-
-        .TMCommandButton_Disabled {
-        color:#a0a0a0;
-        fill:#a0a0a0;
-        }
-
-        @media (hover: hover) {
-        .TMCommandButton_Active:hover, .TMCommandButton_Disabled:hover, .TMCommandButton_Inactive:hover {
-            background-color:#e0e0ff;
-            fill:#000000;
-        }
-        }
         </style>
         <script defer src="https://unpkg.com/htmx.org@2.0.2" integrity="sha384-Y7hw+L/jvKeWIRRkqWYfPcvVxHzVzn5REgzbawhxAuQGwX1XWe70vji+VSeHOThJ" crossorigin="anonymous"></script>
-        
+
     </head>
 
     <body>
@@ -886,9 +674,10 @@ export const render_mblog_editor = (title: string, content: string = "") => {
             <input type="submit" name="action" value="Publish">
             <input type="submit" name="action" value="Save">
         </div>
+
     </form>
 
-    
+
     <script>
     var tinyMDE = new TinyMDE.Editor({element: 'tinymde', textarea: "txt" });
     var commandBar = new TinyMDE.CommandBar({
@@ -896,7 +685,219 @@ export const render_mblog_editor = (title: string, content: string = "") => {
         editor: tinyMDE,
         commands: ['bold', 'italic', 'strikethrough', '|', 'code', 'h2', 'ul', 'ol', 'blockquote', '|', 'insertLink', 'insertImage',]
     });
-
     </script>
+
+    <style>
+    .TinyMDE {
+    background-color:#fff;
+    color:#000;
+    font-size:16px;
+    line-height:24px;
+    outline: none;
+    padding:5px;
+    height: 100% !important;
+    }
+
+    .TMBlankLine {
+    height:24px;
+    }
+
+    .TMH1, .TMSetextH1 {
+    font-size:22px;
+    line-height:32px;
+    font-weight:bold;
+    margin-bottom:8px;
+    }
+
+    .TMSetextH1 {
+    margin-bottom:0px;
+    }
+
+    .TMSetextH1Marker {
+    margin-bottom:8px;
+    }
+
+    .TMH2, .TMSetextH2 {
+    font-size:20px;
+    line-height:28px;
+    font-weight:bold;
+    margin-bottom:4px;
+    }
+
+    .TMMark_TMCode {
+    font-family:monospace;
+    font-size:.9em;
+    }
+
+    .TMFencedCodeBacktick, .TMFencedCodeTilde, .TMIndentedCode, .TMCode {
+    font-family:monospace;
+    font-size:.9em;
+    background-color:#e0e0e0;
+    }
+
+    .TMCodeFenceBacktickOpen, .TMCodeFenceTildeOpen {
+    border-bottom: 1px solid #c0c0c0;
+    font-family: monospace;
+    font-size:.9em;
+    }
+
+    .TMCodeFenceBacktickClose, .TMCodeFenceTildeClose {
+    border-top: 1px solid #c0c0c0;
+    font-family: monospace;
+    font-size:.9em;
+    }
+
+    .TMInfoString {
+    color: #0000ff;
+    }
+
+    .TMCode {
+    border:1px solid #c0c0c0;
+    border-radius: 2px;
+    }
+
+    .TMBlockquote {
+    font-style: italic;
+    border-left:2px solid #c0c0c0;
+    padding-left:10px;
+    margin-left:10px;
+    }
+
+    .TMMark {
+    color:#a0a0a0;
+    }
+
+    .TMMark_TMH1, .TMMark_TMH2 {
+    color:#ff8080;
+    }
+
+    .TMMark_TMUL, .TMMark_TMOL {
+    color:#ff8080;
+    }
+
+    .TMImage {
+    text-decoration: underline;
+    text-decoration-color: #00ff00;
+    }
+
+    .TMLink {
+    text-decoration: underline;
+    text-decoration-color: #0000ff;
+    }
+
+    .TMLinkLabel {
+    text-decoration: underline;
+    font-family: monospace;
+    }
+
+    .TMLinkLabel_Definition, .TMLinkLabel_Valid {
+    color: #40c040;
+    }
+
+    .TMLinkLabel_Invalid {
+    color: #ff0000;
+    }
+
+    .TMLinkTitle {
+    font-style:italic;
+    }
+
+    .TMLinkDestination, .TMAutolink {
+    text-decoration: underline;
+    color: #0000ff;
+    }
+
+    .TMHR {
+    position: relative;
+    }
+
+    .TMHR:before {
+    content: '';
+    position: absolute;
+    bottom: 50%;
+    left: 40%;
+    border-bottom: 2px solid #808080;
+    width: 20%;
+    z-index:0;
+    }
+
+    .TMHTML, .TMHTMLBlock {
+    font-family:monospace;
+    font-size:.9em;
+    color:#8000ff;
+    }
+
+    .TMHTMLBlock {
+    color:#6000c0;
+    }
+
+    .TMCommandBar {
+    background-color:#f8f8f8;
+    height:24px;
+    border:4px solid #f8f8f8;
+    box-sizing: content-box;
+    display:flex;
+    -webkit-user-select: none;
+            user-select: none;
+    overflow-x: scroll;
+        overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    }
+
+    .TMCommandBar::-webkit-scrollbar {
+    display: none;
+    }
+
+    .TMCommandButton {
+    box-sizing: border-box;
+    display: inline-block;
+    height:24px;
+    width:24px;
+    padding:3px;
+    margin-right:4px;
+    color:#404040;
+    fill:#404040;
+    text-align: center;
+    cursor: pointer;
+    vertical-align: middle;
+    font-size:20px;
+    line-height:18px;
+    font-family: sans-serif;
+    }
+
+    .TMCommandDivider {
+    box-sizing: content-box;
+    height:24px;
+    margin-left:4px;
+    margin-right:8px;
+    width:0px;
+    border-left:1px solid #c0c0c0;
+    border-right:1px solid #ffffff;
+    }
+
+    .TMCommandButton_Active {
+    font-weight:bold;
+    color:#000080;
+    background-color: #c0c0ff;
+    fill:#000080;
+    }
+
+    .TMCommandButton_Inactive {
+    background-color:#f8f8f8;
+    }
+
+    .TMCommandButton_Disabled {
+    color:#a0a0a0;
+    fill:#a0a0a0;
+    }
+
+    @media (hover: hover) {
+    .TMCommandButton_Active:hover, .TMCommandButton_Disabled:hover, .TMCommandButton_Inactive:hover {
+        background-color:#e0e0ff;
+        fill:#000000;
+    }
+    }
+    </style>
     `
 }
