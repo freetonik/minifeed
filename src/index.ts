@@ -74,6 +74,7 @@ import {
     usersUnfollowPostHandler,
 } from "./users";
 import { handle_lists, handle_lists_single, handle_lists_single_delete_POST } from "./lists";
+import { about } from "./about";
 
 // ///////////////////////////////////////////////////////////
 // ///////////////////////////////////////////////////////////////
@@ -216,6 +217,9 @@ app.get("/users/:username", handle_users_single);
 app.post("/users/:username/follow", usersFollowPostHandler);
 app.post("/users/:username/unfollow", usersUnfollowPostHandler);
 
+app.get("/about", async (c: Context<any, any, {}>) =>
+    c.html(renderHTML("About | minifeed", raw(about), c.get("USERNAME"))),
+);
 app.get("/about/changelog", async (c: Context<any, any, {}>) =>
     c.html(renderHTML("Changelog | minifeed", raw(changelog), c.get("USERNAME"))),
 );
