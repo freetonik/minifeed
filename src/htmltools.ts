@@ -455,6 +455,7 @@ export const renderHTML = (
     <footer>
         <p>
             Minifeed.net ::
+            <a href="${root_url}/about">about</a> /
             <a href="${root_url}/about/changelog">changelog</a> /
             <a href="https://status.minifeed.net/">status</a> /
             <a href="${root_url}/feedback">feedback</a>
