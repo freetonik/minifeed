@@ -13,9 +13,13 @@ export async function authMiddleware(
             const values = kv_value.split(";");
             c.set("USER_ID", values[0]);
             c.set("USERNAME", values[1]);
+            c.set("USER_LOGGED_IN", true);
+            c.set("USER_IS_ADMIN", values[0] == 1);
             await c.env.SESSIONS_KV.put(sessionKey, kv_value, {
                 expirationTtl: 31536000, // 1 year
             });
+        } else {
+            c.set("USER_LOGGED_IN", false);
         }
     }
     await next();

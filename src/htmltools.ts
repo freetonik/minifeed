@@ -682,7 +682,7 @@ export const render_mblog_editor = (title: string, content: string = "") => {
     line-height:24px;
     outline: none;
     padding:5px;
-    height: 100% !important;
+    height: 100%;
     }
 
     .TMBlankLine {

@@ -18,11 +18,10 @@ import {
 } from "./utils";
 
 export const handle_global = async (c: any) => {
-    const userId = c.get("USER_ID") || -1;
-    const user_logged_in = userId != -1;
-    const itemsPerPage = 60;
+    const user_id = c.get("USER_ID") || -1;
+    const items_per_page = 60;
     const page = Number(c.req.query("p")) || 1;
-    const offset = page * itemsPerPage - itemsPerPage;
+    const offset = page * items_per_page - items_per_page;
     const { results, meta } = await c.env.DB.prepare(
         `
         SELECT items.item_id, items.item_sqid, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
@@ -33,11 +32,11 @@ export const handle_global = async (c: any) => {
         ORDER BY items.pub_date DESC
         LIMIT ? OFFSET ?`,
     )
-        .bind(userId, itemsPerPage, offset)
+        .bind(user_id, items_per_page, offset)
         .run();
 
     let list = ``;
-    if (!user_logged_in) {
+    if (!c.get("USER_LOGGED_IN")) {
         list += `<div class="flash">
     <strong>Minifeed</strong> is a curated blog reader and blog search engine.
     We collect humans-written blogs to make them discoverable and searchable.
@@ -77,23 +76,22 @@ export const handle_global = async (c: any) => {
         renderHTML(
             "Global feed | minifeed",
             html`${raw(list)}`,
-            c.get("USERNAME"),
+            c.get("USER_LOGGED_IN"),
             "global",
             "",
             "",
             false,
-            userId == 1 ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``
+            c.get("USER_IS_ADMIN") ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``
         ),
     );
 };
 
 // // MY HOME FEED: subs + favorites + friendfeed
 export const handle_my = async (c: any) => {
-    const itemsPerPage = 30;
+    const user_id = c.get("USER_ID");
+    const items_per_page = 30;
     const page = Number(c.req.query("p")) || 1;
-    const offset = page * itemsPerPage - itemsPerPage;
-
-    const userId = c.get("USER_ID");
+    const offset = page * items_per_page - items_per_page;
 
     const { results, meta } = await c.env.DB.prepare(
         `
@@ -127,13 +125,11 @@ export const handle_my = async (c: any) => {
     LIMIT ? OFFSET ?
     `,
     )
-        .bind(userId, userId, userId, userId, userId, itemsPerPage, offset)
+        .bind(user_id, user_id, user_id, user_id, user_id, items_per_page, offset)
         .all();
 
 
-    let list = `
-    ${render_my_subsections("my")}
-    `;
+    let list = ` ${render_my_subsections("my")} `;
     if (results.length) {
         results.forEach((item: any) => {
             let title = item.favorite_id ? `★ ${item.title}` : item.title;
@@ -159,22 +155,22 @@ export const handle_my = async (c: any) => {
         renderHTML(
             "My feed | minifeed",
             html`${raw(list)}`,
-            c.get("USERNAME"),
+            c.get("USER_LOGGED_IN"),
             "my",
             "",
             "",
             false,
-            userId == 1 ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``
+            c.get("USER_IS_ADMIN") ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``
         ),
     );
 };
 
 export const handle_my_subscriptions = async (c: any) => {
-    const itemsPerPage = 30;
+    const user_id = c.get("USER_ID");
+    const items_per_page = 30;
     const page = Number(c.req.query("p")) || 1;
-    const offset = page * itemsPerPage - itemsPerPage;
+    const offset = page * items_per_page - items_per_page;
 
-    const userId = c.get("USER_ID");
     const { results, meta } = await c.env.DB.prepare(
         `
     SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
@@ -187,7 +183,7 @@ export const handle_my_subscriptions = async (c: any) => {
     LIMIT ? OFFSET ?
     `,
     )
-        .bind(userId, userId, itemsPerPage, offset)
+        .bind(user_id, user_id, items_per_page, offset)
         .all();
 
     let list = ` ${render_my_subsections("subscriptions")}
@@ -217,22 +213,22 @@ export const handle_my_subscriptions = async (c: any) => {
         renderHTML(
             "My subscriptions",
             html`${raw(list)}`,
-            c.get("USERNAME"),
+            c.get("USER_LOGGED_IN"),
             "my",
             "",
             "",
             false,
-            userId == 1 ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``
+            c.get("USER_IS_ADMIN") ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``
         ),
     );
 };
 
 export const handle_my_friendfeed = async (c: any) => {
+    const userId = c.get("USER_ID");
     const itemsPerPage = 30;
     const page = Number(c.req.query("p")) || 1;
     const offset = page * itemsPerPage - itemsPerPage;
 
-    const userId = c.get("USER_ID");
     const { results, meta } = await c.env.DB.prepare(
         `
     SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
