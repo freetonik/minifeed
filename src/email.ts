@@ -1,47 +1,39 @@
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+import { Bindings } from "./bindings";
+
 export const sendEmail = async (
+    env: Bindings,
     to: string,
-    name: string,
-    from: string,
+    from: string = "no-reply@minifeed.net",
     subject: string,
     body: string,
-    dev: boolean = false,
 ) => {
-    if (dev) {
-        console.log(
-            `Email to ${to}\nfrom ${from}\nsubject ${subject}\nbody:${body}`,
-        );
-        return;
-    }
-    const send_request = new Request("https://api.mailchannels.net/tx/v1/send", {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-        },
-        body: JSON.stringify({
-            personalizations: [
-                {
-                    to: [{ email: to, name: name }],
-                },
-            ],
-            from: {
-                email: from,
-                name: "minifeed.net",
+
+    const mail = new SendEmailCommand({
+        Source: from,
+        ReturnPath: from,
+        Destination: { ToAddresses: [to] },
+        Message: {
+            Subject: { Data: subject },
+            Body: {
+                Html: { Data: body },
             },
-            subject: subject,
-            content: [
-                {
-                    type: "text/plain",
-                    value: body,
-                },
-            ],
-        }),
-    });
-
-    let respContent = "";
-    // only send the mail on "POST", to avoid spiders, etc.
-    const resp = await fetch(send_request);
-    const respText = await resp.text();
-
-    respContent = resp.status + " " + resp.statusText + "\n\n" + respText;
-    return respContent;
+        }
+    })
+    
+    const client = new SESClient({
+        region: "eu-north-1",
+        credentials: {
+            accessKeyId: env.AWS_SES_ACCESS_KEY,
+            secretAccessKey: env.AWS_SES_ACCESS_KEY_SECRET
+        },
+    })
+    
+    try {
+        await client.send(mail)
+    } catch (e: unknown) {
+        console.error(e);
+        return e instanceof Error ? e.toString() : 'An unknown error occurred';
+    }
+    return true;
 };

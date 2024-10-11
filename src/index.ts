@@ -9,6 +9,7 @@ import {
     handle_signup,
     handle_signup_POST,
     handle_verify_email,
+    test_passwords,
 } from "./account";
 import { handle_admin } from "./admin";
 import { Bindings } from "./bindings";
