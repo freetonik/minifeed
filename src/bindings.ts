@@ -12,4 +12,6 @@ export type Bindings = {
 
     AWS_SES_ACCESS_KEY: string;
     AWS_SES_ACCESS_KEY_SECRET: string;
+
+    ENVIRONMENT: string;
 };
