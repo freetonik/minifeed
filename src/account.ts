@@ -30,16 +30,10 @@ export const handle_my_account = async (c: any) => {
     const status = user["results"][0]["status"];
 
     let listOfMblogs = "";
-    if (user_mblogs["results"]) {
+    if (user_mblogs["results"].length >0 ) {
         listOfMblogs += `<h3>My blogs hosted at minifeed</h3><ul>`;
-        if (c.env.ENVIRONMENT == "dev") {
-            for (const mblog of user_mblogs["results"]) {
-                listOfMblogs += `<li><a href="/b/${mblog["slug"]}">${mblog["title"]}</a></li>`;
-            }
-        } else {
-            for (const mblog of user_mblogs["results"]) {
-                listOfMblogs += `<li><a href="https://${mblog["slug"]}.minifeed.net">${mblog["title"]}</a></li>`;
-            }
+        for (const mblog of user_mblogs["results"]) {
+            listOfMblogs += `<li><a href="https://${mblog["slug"]}.minifeed.net">${mblog["title"]}</a></li>`;
         }
         listOfMblogs += `</ul>`;
     }
@@ -279,7 +273,7 @@ export const handle_signup_POST = async (c: any) => {
     const invitation_code = body["invitation_code"].toString();
 
     if (invitation_code !== "ARUEHW") throw new Error("Invalid invitation code");
-
+    
     if (!checkUsername(username)) throw new Error("Invalid username");
     if (password.length < 8) throw new Error("Password too short");
     if (!checkEmail(email)) throw new Error("Invalid email");
@@ -307,18 +301,18 @@ export const handle_signup_POST = async (c: any) => {
         )
             .bind(userId, email_verification_code)
             .run();
-        const emailVerificationLink = `${c.env.ENVIRONMENT == "dev" ? "http://localhost:8787" : "https://minifeed.net"}/verify_email?code=${email_verification_code}`;
-        const emailBody = `Welcome to minifeed, ${username}! Please verify your email by clicking this link: ${emailVerificationLink}`;
+        const emailVerificationLink = `${c.env.ENVIRONMENT == "dev" ? "http://localhost:8181" : "https://minifeed.net"}/verify_email?code=${email_verification_code}`;
+        const emailBody = `Welcome to minifeed, ${username}!<br>Please, verify your email by clicking on <strong><a href="${emailVerificationLink}">this link</a></strong>.`;
 
         await sendEmail(
+            c.env,
             email,
             username,
             "no-reply@minifeed.net",
             "Welcome to minifeed",
             emailBody,
-            c.env.ENVIRONMENT == "dev",
         );
-        return await createSessionSetCookieAndRedirect(c, userId, username);
+        return await createSessionSetCookieAndRedirect(c, userId, username, '/', true); // first login ever
     } catch (err) {
         throw new Error("Something went horribly wrong.");
     }
@@ -329,6 +323,7 @@ const createSessionSetCookieAndRedirect = async (
     userId: number,
     username: string,
     redirectTo = "/",
+    first_login = false,
 ) => {
     const sessionKey = randomHash(16);
     const kv_value = `${userId};${username}`
@@ -340,6 +335,20 @@ const createSessionSetCookieAndRedirect = async (
         httpOnly: true,
         maxAge: 34560000,
     });
+
+    if (first_login) {
+        return c.html(
+            renderHTML(
+                "Account created | minifeed",
+                html`<div class="flash flash-blue">
+                    Great! You are now registered and logged in. Check your email for a verification link. Go browse some <a href="/blogs">blogs</a>, <a href="/lists">lists</a>, and <a href="/users">users</a> to subscribe to.
+                </div>`,
+                true,
+                "",
+            ),
+        );
+    }
+    
     return c.redirect(redirectTo);
 };
 
@@ -359,6 +368,60 @@ function randomHash(len: number): string {
         (b) => ("0" + (b & 0xff).toString(16)).slice(-2),
     ).join("");
 }
+
+// export async function hashPassword(password: string, providedSalt?: Uint8Array ): Promise<[string, string]> {
+//     const encoder = new TextEncoder();
+//     // Use provided salt if available, otherwise generate a new one
+//     const salt = providedSalt || crypto.getRandomValues(new Uint8Array(16));
+    
+//     const keyMaterial = await crypto.subtle.importKey(
+//         "raw",
+//         encoder.encode(password),
+//         { name: "PBKDF2" },
+//         false,
+//         ["deriveBits", "deriveKey"]
+//     );
+
+//     const key = await crypto.subtle.deriveKey(
+//         {
+//             name: "PBKDF2",
+//             salt: salt,
+//             iterations: 100000,
+//             hash: "SHA-256",
+//         },
+//         keyMaterial,
+//         { name: "AES-GCM", length: 256 },
+//         true,
+//         ["encrypt", "decrypt"]
+//     );
+//     const exportedKey = (await crypto.subtle.exportKey( "raw", key )) as ArrayBuffer; 
+    
+//     const hashBuffer = new Uint8Array(exportedKey);
+//     const hashArray = Array.from(hashBuffer);
+//     const hashHex = hashArray
+//       .map((b) => b.toString(16).padStart(2, "0"))
+//       .join("");
+//     const saltHex = Array.from(salt)
+//       .map((b) => b.toString(16).padStart(2, "0"))
+//       .join("");
+    
+//       return [hashHex, saltHex];
+// }
+
+// export async function verifyPassword(hash: string, salt:string, passwordAttempt: string ): Promise<boolean> {
+//     const matchResult = salt.match(/.{1,2}/g);
+//     if (!matchResult) throw new Error("Invalid salt format");
+
+//     const saltUint = new Uint8Array(matchResult.map((byte) => parseInt(byte, 16)));
+//     const [attemptHash, _] = await hashPassword(passwordAttempt, saltUint);
+//     return attemptHash === hash;
+// }
+
+// export const test_passwords = async (c:any) => {
+//     const [originalHash, saltHex] = await hashPassword("abc");
+//     const verified = verifyPassword(originalHash, saltHex, "abc")
+//     return c.html(verified)
+// };
 
 function checkUsername(username: string) {
     return /^[a-zA-Z0-9_]{3,16}$/.test(username);
