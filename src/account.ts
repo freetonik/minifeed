@@ -307,9 +307,9 @@ export const handle_signup = async (c: any) => {
 export const handle_login_POST = async (c: any) => {
     const body = await c.req.parseBody();
     const username = body["username"].toString();
-    const password = body["password"].toString();
+    const attempted_password = body["password"].toString();
 
-    if (!username || !password) {
+    if (!username || !attempted_password) {
         throw new Error("Username and password are required");
     }
 
@@ -319,14 +319,10 @@ export const handle_login_POST = async (c: any) => {
         throw new Error("Wrong username or password");
     }
 
-    const salt = user.password_salt;
-    const submittedPasswordHashed = await hashPassword(password, salt);
-
-    if (user.password_hash === submittedPasswordHashed) {
+    const verified = await verifyPassword(user['password_hash'], user['password_salt'], attempted_password);
+    if (verified) {
         try {
-            // remove unnecessary query
-            const userId = user["user_id"];
-            return await createSessionSetCookieAndRedirect(c, userId, username);
+            return await createSessionSetCookieAndRedirect(c, user["user_id"], user["username"]);
         } catch (err) {
             throw new Error("Something went horribly wrong.");
         }
@@ -354,27 +350,24 @@ export const handle_signup_POST = async (c: any) => {
     }
     // Check if email already exists
     const existing_email = await c.env.DB.prepare("SELECT email FROM users WHERE email = ?").bind(email).first();
-    if (existing_email['email'] == email) {
+    if (existing_email && existing_email['email'] == email) {
         throw new Error("Email already taken. Please use a different email.");
     }
 
-    const salt = randomHash(32);
-    const passwordHashed = await hashPassword(password, salt);
+    const [password_hash, salt] = await hashPassword(password);
     try {
         await c.env.DB.prepare(
             "INSERT INTO users (username, email, password_hash, password_salt) values (?, ?, ?, ?)",
-        ).bind(username, email, passwordHashed, salt).run();
+        ).bind(username, email, password_hash, salt).run();
 
         const userId = (
-            await c.env.DB.prepare("SELECT users.user_id FROM users WHERE username = ?").bind(username).run()
-        ).results[0]["user_id"];
+            await c.env.DB.prepare("SELECT users.user_id FROM users WHERE username = ?").bind(username).first()
+        )["user_id"];
 
         const email_verification_code = randomHash(32);
         await c.env.DB.prepare(
             "INSERT INTO email_verifications (user_id, verification_code) values (?, ?)",
-        )
-            .bind(userId, email_verification_code)
-            .run();
+        ).bind(userId, email_verification_code).run();
 
         await send_email_verification_link(c.env, username, email, email_verification_code);
         return await createSessionSetCookieAndRedirect(c, userId, username, '/', true); // first login ever
@@ -431,15 +424,6 @@ const createSessionSetCookieAndRedirect = async (
     return c.redirect(redirectTo);
 };
 
-async function hashPassword(password: string, salt: string) {
-    const saltedPassword = new TextEncoder().encode(password + salt);
-    const digest = await crypto.subtle.digest(
-        { name: "SHA-256" },
-        saltedPassword,
-    );
-    const hashArray = Array.from(new Uint8Array(digest));
-    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join(""); // convert bytes to hex string
-}
 
 function randomHash(len: number): string {
     return Array.from(
@@ -448,59 +432,54 @@ function randomHash(len: number): string {
     ).join("");
 }
 
-// export async function hashPassword(password: string, providedSalt?: Uint8Array ): Promise<[string, string]> {
-//     const encoder = new TextEncoder();
-//     // Use provided salt if available, otherwise generate a new one
-//     const salt = providedSalt || crypto.getRandomValues(new Uint8Array(16));
+export async function hashPassword(password: string, providedSalt?: Uint8Array ): Promise<[string, string]> {
+    const encoder = new TextEncoder();
+    // Use provided salt if available, otherwise generate a new one
+    const salt = providedSalt || crypto.getRandomValues(new Uint8Array(16));
     
-//     const keyMaterial = await crypto.subtle.importKey(
-//         "raw",
-//         encoder.encode(password),
-//         { name: "PBKDF2" },
-//         false,
-//         ["deriveBits", "deriveKey"]
-//     );
+    const keyMaterial = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(password),
+        { name: "PBKDF2" },
+        false,
+        ["deriveBits", "deriveKey"]
+    );
 
-//     const key = await crypto.subtle.deriveKey(
-//         {
-//             name: "PBKDF2",
-//             salt: salt,
-//             iterations: 100000,
-//             hash: "SHA-256",
-//         },
-//         keyMaterial,
-//         { name: "AES-GCM", length: 256 },
-//         true,
-//         ["encrypt", "decrypt"]
-//     );
-//     const exportedKey = (await crypto.subtle.exportKey( "raw", key )) as ArrayBuffer; 
+    const key = await crypto.subtle.deriveKey(
+        {
+            name: "PBKDF2",
+            salt: salt,
+            iterations: 100000,
+            hash: "SHA-256",
+        },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        true,
+        ["encrypt", "decrypt"]
+    );
+    const exportedKey = (await crypto.subtle.exportKey( "raw", key )) as ArrayBuffer; 
     
-//     const hashBuffer = new Uint8Array(exportedKey);
-//     const hashArray = Array.from(hashBuffer);
-//     const hashHex = hashArray
-//       .map((b) => b.toString(16).padStart(2, "0"))
-//       .join("");
-//     const saltHex = Array.from(salt)
-//       .map((b) => b.toString(16).padStart(2, "0"))
-//       .join("");
+    const hashBuffer = new Uint8Array(exportedKey);
+    const hashArray = Array.from(hashBuffer);
+    const hashHex = hashArray
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    const saltHex = Array.from(salt)
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
     
-//       return [hashHex, saltHex];
-// }
+    return [hashHex, saltHex];
+}
 
-// export async function verifyPassword(hash: string, salt:string, passwordAttempt: string ): Promise<boolean> {
-//     const matchResult = salt.match(/.{1,2}/g);
-//     if (!matchResult) throw new Error("Invalid salt format");
+export async function verifyPassword(hash: string, salt:string, passwordAttempt: string ): Promise<boolean> {
+    const matchResult = salt.match(/.{1,2}/g);
+    if (!matchResult) throw new Error("Invalid salt format");
 
-//     const saltUint = new Uint8Array(matchResult.map((byte) => parseInt(byte, 16)));
-//     const [attemptHash, _] = await hashPassword(passwordAttempt, saltUint);
-//     return attemptHash === hash;
-// }
+    const saltUint = new Uint8Array(matchResult.map((byte) => parseInt(byte, 16)));
+    const [attemptHash, _] = await hashPassword(passwordAttempt, saltUint);
+    return attemptHash === hash;
+}
 
-// export const test_passwords = async (c:any) => {
-//     const [originalHash, saltHex] = await hashPassword("abc");
-//     const verified = verifyPassword(originalHash, saltHex, "abc")
-//     return c.html(verified)
-// };
 
 function checkUsername(username: string) {
     return /^[a-zA-Z0-9_]{3,16}$/.test(username);
