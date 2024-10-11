@@ -340,8 +340,13 @@ export const handle_set_password_POST = async (c: any) => {
     if (!updating_query.success) 
         throw new Error("Something went wrong when updating your password.");
 
-    // Delete all  password reset codes of user
-    await c.env.DB.prepare( "DELETE FROM password_resets WHERE user_id = ?", ).bind(user_id).run();
+    // Delete all password reset codes of user, verify their email
+    await c.env.DB.batch([
+        c.env.DB.prepare("DELETE FROM password_resets WHERE user_id = ?", ).bind(user_id),
+        c.env.DB.prepare("UPDATE users SET email_verified = 1 WHERE user_id = ?").bind(user_id),
+        c.env.DB.prepare("DELETE FROM email_verifications WHERE user_id = ?").bind(user_id)
+    ]);
+
     const inner = html`<div class="flash flash-blue">Password reset successfully. <a href="/login">Log in now</a>.</div>`
 
     return c.html(
