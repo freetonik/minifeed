@@ -210,9 +210,11 @@ export const handle_login = async (c: any) => {
                 <input type="submit" value="Log in">
             </form>
         </div>
-        <p style="text-align:center;">Don't have an account? <a href="/signup">Sign up here</a>.</p>
+        <p style="text-align:center;">
+            Forgot your password? <a href="/reset_password">Reset it here</a>.<br>
+            Don't have an account? <a href="/signup">Sign up here</a>.
+        </p>
     </div>
-
 
     `;
     return c.html(
@@ -225,6 +227,38 @@ export const handle_login = async (c: any) => {
         ),
     );
 };
+
+export const handle_reset_password = async (c: any) => {
+    if (c.get("USER_LOGGED_IN")) return c.redirect("/my");
+
+    let list = `
+    <div style="max-width:25em;margin:auto;">
+        <div class="borderbox">
+            <h2 style="margin-top:0;">Reset password</h2>
+            <form action="/reset_password" method="POST">
+                <div style="margin-bottom:2em;">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" required />
+                </div>
+                <input type="submit" value="Reset password">
+            </form>
+        </div>
+    </div>
+    `;
+    return c.html(
+        renderHTML(
+            "Reset password | minifeed",
+            html`${raw(list)}`,
+            false,
+            "",
+            "",
+        ),
+    );
+}
+
+export const handle_reset_password_POST = async (c: any) => {
+    
+}
 
 export const handle_signup = async (c: any) => {
     if (c.get("USER_LOGGED_IN")) return c.redirect("/my");
