@@ -131,12 +131,10 @@ export const handle_verify_email = async (c: any) => {
     }
 
     const userId = result.results[0]["user_id"];
-    await c.env.DB.prepare(
-        "UPDATE users SET email_verified = 1 WHERE user_id = ?",
-    ).bind(userId).run();
-    await c.env.DB.prepare(
-        "DELETE FROM email_verifications WHERE verification_code = ?",
-    ).bind(code).run();
+    await c.env.DB.batch([
+        c.env.DB.prepare("UPDATE users SET email_verified = 1 WHERE user_id = ?").bind(userId),
+        c.env.DB.prepare("DELETE FROM email_verifications WHERE user_id = ?").bind(userId)
+    ]);
 
     const message_flash = username ?
         html`<div class="flash flash-blue">You can now go to <a href="/my">your feed</a>... Or contemplate life.</div>` :
@@ -230,10 +228,36 @@ export const handle_login = async (c: any) => {
 
 export const handle_reset_password = async (c: any) => {
     if (c.get("USER_LOGGED_IN")) return c.redirect("/my");
+    const code = c.req.query("code");
+    let list = html``;
+    
+    if (code) {
+        const result = await c.env.DB.prepare(
+            "SELECT * from password_resets WHERE reset_code = ?",
+            ).bind(code).first();
+        if (!result) throw new Error("Reset code is invalid or has been used already");
 
-    let list = `
-    <div style="max-width:25em;margin:auto;">
-        <div class="borderbox">
+        list = html`
+            <div style="max-width:25em;margin:auto;">
+                <div class="borderbox">
+                    <h2 style="margin-top:0;">Set new password</h2>
+                    <form action="/set_password" method="POST">
+                        
+                        <div style="margin-bottom:2em;">
+                            <label for="pass">Password (8 characters minimum)</label>
+                            <input type="password" id="password" name="password" minlength="8" required />
+                            <input type="text" id="reset_code" name="reset_code" required value="${code}" readonly="readonly" hidden  />
+                        </div>
+                        <input type="submit" value="Set password">
+                    </form>
+                </div>
+            </div>`
+        
+    } else {
+        // no code provided, show form to enter email
+        list = html`
+        <div style="max-width:25em;margin:auto;">
+            <div class="borderbox">
             <h2 style="margin-top:0;">Reset password</h2>
             <form action="/reset_password" method="POST">
                 <div style="margin-bottom:2em;">
@@ -242,13 +266,15 @@ export const handle_reset_password = async (c: any) => {
                 </div>
                 <input type="submit" value="Reset password">
             </form>
+            </div>
         </div>
-    </div>
-    `;
+        `;
+    }
+    
     return c.html(
         renderHTML(
             "Reset password | minifeed",
-            html`${raw(list)}`,
+            list,
             false,
             "",
             "",
@@ -257,7 +283,76 @@ export const handle_reset_password = async (c: any) => {
 }
 
 export const handle_reset_password_POST = async (c: any) => {
-    
+    const body = await c.req.parseBody();
+    const email = body["email"].toString().toLowerCase();
+
+    if (!email) throw new Error("Email is required");
+    if (!checkEmail(email)) throw new Error("Invalid email");
+
+    const existing_user = await c.env.DB.prepare(
+        `SELECT user_id, username, email FROM users WHERE email = ?`,
+    ).bind(email).first();
+
+    if (existing_user) {
+        const password_reset_code = randomHash(32);
+        await c.env.DB.prepare(
+            "INSERT INTO password_resets (user_id, reset_code) VALUES (?, ?)",
+        ).bind(existing_user["user_id"], password_reset_code).run();
+
+        await send_password_reset_link(
+            c.env,
+            email,
+            password_reset_code,
+        );
+    }
+
+    return c.html(
+        renderHTML(
+            "Password reset | minifeed",
+            html`<div class="flash flash-blue">
+                If the email address you entered is associated with an account, you will receive an email with a link to reset your password.
+            </div>`,
+            false,
+            "",
+        ),
+    );
+}
+
+export const handle_set_password_POST = async (c: any) => {
+    const body = await c.req.parseBody();
+    const password = body["password"].toString();
+    const reset_code = body["reset_code"].toString();
+
+    if (password.length < 8) throw new Error("Password too short");
+
+    const code_from_db = await c.env.DB.prepare(
+        "SELECT * from password_resets WHERE reset_code = ?",
+    ).bind(reset_code).first();
+
+    if (!code_from_db) throw new Error("Reset code is invalid or has been used already.")
+
+    const user_id = code_from_db["user_id"];
+    const [new_password_hash, new_salt] = await hashPassword(password);
+    const updating_query = await c.env.DB.prepare(
+        "UPDATE users SET password_hash = ?, password_salt = ? WHERE user_id = ?",
+    ).bind(new_password_hash, new_salt, user_id).run();
+
+    if (!updating_query.success) 
+        throw new Error("Something went wrong when updating your password.");
+
+    // Delete all  password reset codes of user
+    await c.env.DB.prepare( "DELETE FROM password_resets WHERE user_id = ?", ).bind(user_id).run();
+    const inner = html`<div class="flash flash-blue">Password reset successfully. <a href="/login">Log in now</a>.</div>`
+
+    return c.html(
+        renderHTML(
+            "Reset password | minifeed",
+            inner,
+            false,
+            "",
+            "",
+        ),
+    );
 }
 
 export const handle_signup = async (c: any) => {
@@ -386,6 +481,20 @@ const send_email_verification_link = async (env: Bindings, username: string, ema
         email,
         "no-reply@minifeed.net",
         "Welcome to minifeed",
+        emailBody,
+    );
+}
+
+const send_password_reset_link = async (env: Bindings, email: string, password_reset_code: string) => {
+    const passwordResetLink = `${env.ENVIRONMENT == "dev" ? "http://localhost:8181" : "https://minifeed.net"}/reset_password?code=${password_reset_code}`;
+
+    const emailBody = `You have requested to reset your password for your minifeed account. If you did not request it, please ignore this email. Otherwise, please click on <strong><a href="${passwordResetLink}">this link</a></strong> to reset your password.`;
+ 
+    await sendEmail(
+        env,
+        email,
+        "no-reply@minifeed.net",
+        "Password reset request",
         emailBody,
     );
 }

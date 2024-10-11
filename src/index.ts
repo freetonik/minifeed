@@ -8,6 +8,8 @@ import {
     handle_my_account,
     handle_resend_verification_link_POST,
     handle_reset_password,
+    handle_reset_password_POST,
+    handle_set_password_POST,
     handle_signup,
     handle_signup_POST,
     handle_verify_email,
@@ -162,6 +164,8 @@ app.get("/suggest", handle_suggest_blog);
 
 app.get("/login", handle_login);
 app.get("/reset_password", handle_reset_password);
+app.post("/reset_password", handle_reset_password_POST);
+app.post("/set_password", handle_set_password_POST);
 app.get("/signup", handle_signup);
 app.post("/login", handle_login_POST);
 app.post("/signup", handle_signup_POST);
