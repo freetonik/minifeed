@@ -6,10 +6,10 @@ import {
     handle_login_POST,
     handle_logout,
     handle_my_account,
+    handle_resend_verification_link_POST,
     handle_signup,
     handle_signup_POST,
     handle_verify_email,
-    test_passwords,
 } from "./account";
 import { handle_admin } from "./admin";
 import { Bindings } from "./bindings";
@@ -171,6 +171,7 @@ app.get("/my/friendfeed", handle_my_friendfeed);
 app.get("/my/favorites", handle_my_favorites);
 app.get("/my/account", handle_my_account);
 app.post("/my/account/create_mblog", handle_create_mblog_POST);
+app.post("/my/account/resend_verification_link", handle_resend_verification_link_POST);
 app.get("/verify_email", handle_verify_email);
 
 app.post("/items/:item_sqid/delete", itemDeleteHandler);

@@ -3,6 +3,7 @@ import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { renderHTML } from "./htmltools";
 import { sendEmail } from "./email";
 import { feedIdToSqid } from "./utils";
+import { Bindings } from "./bindings";
 
 export const handle_my_account = async (c: any) => {
     const user_id = c.get("USER_ID");
@@ -24,7 +25,14 @@ export const handle_my_account = async (c: any) => {
     const user = batch[0];
     const user_mblogs = batch[1];
 
-    const verified = user["results"][0]["email_verified"] ? "yes" : "no";
+    let resend_verification_link_form = ``
+    if (!user["results"][0]["email_verified"]) {
+        resend_verification_link_form = `<form action="/my/account/resend_verification_link" method="post">
+        <input type="submit" value="Resend verification link">
+        </form>`;
+    }
+
+    const verified = user["results"][0]["email_verified"] ? "yes" : `no ${resend_verification_link_form}`;
     const email = user["results"][0]["email"] ? user["results"][0]["email"] : "no";
     const username = user["results"][0]["username"];
     const status = user["results"][0]["status"];
@@ -87,14 +95,16 @@ export const handle_my_account = async (c: any) => {
     <p>
         Username: ${username}<br>
         Profile: <a href="/users/${username}">${username}</a><br>
+        Account status: ${status}<br>
+    </p>
+    <p>
         Email: ${email}<br>
         Email verified: ${verified}<br>
-        Account status: ${status}<br>
     </p>
     ${listOfMblogs}
     ${new_mblog_form}
     ${list_of_lists}
-    <p style="margin-top:3em;">
+    <p style="margin-top:2em;">
         <a href="/logout">Log out</a>
     </p>`;
     return c.html(
@@ -128,21 +138,46 @@ export const handle_verify_email = async (c: any) => {
         "DELETE FROM email_verifications WHERE verification_code = ?",
     ).bind(code).run();
 
-    let message = `Email verified!`;
-    if (username) {
-        message += ` You can now go to <a href="/my">your feed</a>... Or contemplate life.`;
-    } else {
-        message += ` You can now <a href="/login">log in</a>.`;
-    }
+    const message_flash = username ?
+        html`<div class="flash flash-blue">You can now go to <a href="/my">your feed</a>... Or contemplate life.</div>` :
+        html`<div class="flash flash-blue">You can now <a href="/login">log in</a>.</div>`
+
     return c.html(
         renderHTML(
             "Email verification | minifeed",
-            html`<div class="flash flash-blue">Email verified!</div>`,
+            message_flash,
             username,
             "",
         ),
     );
 };
+
+export const handle_resend_verification_link_POST = async (c: any) => {
+    const result = await c.env.DB.prepare(
+        `SELECT verification_code, email, username
+        FROM email_verifications 
+        JOIN users ON email_verifications.user_id = users.user_id
+        WHERE email_verifications.user_id = ?`,
+    ).bind(c.get("USER_ID")).first();
+
+    console.log(result)
+
+    await send_email_verification_link(
+        c.env, 
+        result["username"],
+        result["email"],
+        result["verification_code"]
+    );
+
+    return c.html(
+        renderHTML(
+            "Email verification | minifeed",
+            html`<div class="flash flash-blue">Verification link is sent</div>`,
+            true,
+            "",
+        ),
+    );
+}
 
 export const handle_logout = async (c: any) => {
     const sessionKey = getCookie(c, "minifeed_session");
@@ -192,7 +227,7 @@ export const handle_login = async (c: any) => {
 };
 
 export const handle_signup = async (c: any) => {
-    if (c.get("USER_ID")) return c.redirect("/my");
+    if (c.get("USER_LOGGED_IN")) return c.redirect("/my");
 
     let list = `
     <div style="max-width:25em;margin:auto;">
@@ -269,7 +304,7 @@ export const handle_signup_POST = async (c: any) => {
     const body = await c.req.parseBody();
     const username = body["username"].toString();
     const password = body["password"].toString();
-    const email = body["email"].toString();
+    const email = body["email"].toString().toLowerCase();
     const invitation_code = body["invitation_code"].toString();
 
     if (invitation_code !== "ARUEHW") throw new Error("Invalid invitation code");
@@ -279,9 +314,14 @@ export const handle_signup_POST = async (c: any) => {
     if (!checkEmail(email)) throw new Error("Invalid email");
 
     // Check if username already exists
-    const existingUser = await c.env.DB.prepare("SELECT username FROM users WHERE username = ?").bind(username).run();
-    if (existingUser.results.length > 0) {
-        throw new Error("Username already exists. Please choose a different username.");
+    const existingUser = await c.env.DB.prepare("SELECT username FROM users WHERE username = ?").bind(username.toLowerCase()).first();
+    if (existingUser) {
+        throw new Error("Username already taken. Please choose a different username.");
+    }
+    // Check if email already exists
+    const existing_email = await c.env.DB.prepare("SELECT email FROM users WHERE email = ?").bind(email).first();
+    if (existing_email['email'] == email) {
+        throw new Error("Email already taken. Please use a different email.");
     }
 
     const salt = randomHash(32);
@@ -301,21 +341,27 @@ export const handle_signup_POST = async (c: any) => {
         )
             .bind(userId, email_verification_code)
             .run();
-        const emailVerificationLink = `${c.env.ENVIRONMENT == "dev" ? "http://localhost:8181" : "https://minifeed.net"}/verify_email?code=${email_verification_code}`;
-        const emailBody = `Welcome to minifeed, ${username}!<br><br>Please, verify your email by clicking on <strong><a href="${emailVerificationLink}">this link</a></strong>.`;
 
-        await sendEmail(
-            c.env,
-            email,
-            "no-reply@minifeed.net",
-            "Welcome to minifeed",
-            emailBody,
-        );
+        await send_email_verification_link(c.env, username, email, email_verification_code);
         return await createSessionSetCookieAndRedirect(c, userId, username, '/', true); // first login ever
     } catch (err) {
         throw new Error("Something went horribly wrong.");
     }
 };
+
+const send_email_verification_link = async (env: Bindings, username: string, email: string, email_verification_code: string) => {
+    const emailVerificationLink = `${env.ENVIRONMENT == "dev" ? "http://localhost:8181" : "https://minifeed.net"}/verify_email?code=${email_verification_code}`;
+    
+    const emailBody = `Welcome to minifeed, ${username}!<br><br>Please, verify your email by clicking on <strong><a href="${emailVerificationLink}">this link</a></strong>.`;
+
+    await sendEmail(
+        env,
+        email,
+        "no-reply@minifeed.net",
+        "Welcome to minifeed",
+        emailBody,
+    );
+}
 
 const createSessionSetCookieAndRedirect = async (
     c: any,
