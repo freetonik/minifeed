@@ -141,7 +141,7 @@ export const handle_users_single = async (c: any) => {
         if (userId != batch[0].results[0]["user_id"]) {
             top_block += `
             <span id="follow">
-            <button hx-post="/users/${username}/${followButtonText}"
+            <button class="button" hx-post="/users/${username}/${followButtonText}"
             hx-trigger="click"
             hx-target="#follow"
             hx-swap="outerHTML">
@@ -194,7 +194,7 @@ export const usersFollowPostHandler = async (c: any) => {
         c.status(201);
         return c.html(`
         <span id="follow">
-        <button hx-post="/users/${username}/unfollow"
+        <button class="button" hx-post="/users/${username}/unfollow"
         hx-trigger="click"
         hx-target="#follow"
         hx-swap="outerHTML">
@@ -235,7 +235,7 @@ export const usersUnfollowPostHandler = async (c: any) => {
     c.status(201);
     return c.html(`
         <span id="follow">
-        <button hx-post="/users/${username}/follow"
+        <button class="button" hx-post="/users/${username}/follow"
         hx-trigger="click"
         hx-target="#follow"
         hx-swap="outerHTML">
