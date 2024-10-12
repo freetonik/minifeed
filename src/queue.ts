@@ -78,3 +78,23 @@ export async function enqueueIndexAllItemsOfFeed(
         feed_id: feed_id,
     });
 }
+
+///////////////////////////////
+// VECTORIZING/////////////////
+export async function enqueueVectorizeStoreItem(env: Bindings, item_id: number) {
+    await env.FEED_UPDATE_QUEUE.send({
+        type: "item_vectorize_store",
+        item_id: item_id,
+    });
+}
+
+// export async function enqueueVectorizeStoreItemsInRange(
+//     env: Bindings,
+//     start_id: number,
+//     end_id: number,
+// ) {
+//     // iterate over all items in range
+//     for (let i = start_id; i <= end_id; i++) {
+//         await enqueueVectorizeStoreItem(env, i);
+//     }
+// }

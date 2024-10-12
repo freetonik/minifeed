@@ -79,6 +79,7 @@ import {
 } from "./users";
 import { handle_lists, handle_lists_single, handle_lists_single_delete_POST } from "./lists";
 import { about } from "./about";
+import { handle_vectorize, vectorize_and_store_item, vectorize_text } from "./ai";
 
 // ///////////////////////////////////////////////////////////
 // ///////////////////////////////////////////////////////////////
@@ -109,7 +110,6 @@ app.use("/items/:item_sqid/lists/:list_sqid/add", authMiddleware);
 app.use("/items/:item_sqid/lists/:list_sqid/remove", authMiddleware);
 
 // all routes below this line require admin privileges
-app.use("/b/*", adminRequiredMiddleware);
 app.use("/my/account/create_mblog", adminRequiredMiddleware);
 app.use("/blogs/:feed_sqid/new", adminRequiredMiddleware);
 app.use("/blogs/:feed_sqid/new", adminRequiredMiddleware);
@@ -126,6 +126,7 @@ app.use("/items/:item_sqid/index", adminRequiredMiddleware);
 app.use("/items/:item_sqid/delete", adminRequiredMiddleware);
 
 app.use("/admin", adminRequiredMiddleware);
+app.use("/admin/*", adminRequiredMiddleware);
 
 const handleNotFound = (c: Context<any, any, {}>) => {
     return c.html(
@@ -157,6 +158,7 @@ app.get("/", (c: any) => {
 });
 
 app.get("/admin", handle_admin);
+app.get("/admin/vectorize", handle_vectorize);
 app.get("/search", handle_search);
 app.get("/global", handle_global);
 app.get("/feedback", handle_feedback);
@@ -321,6 +323,14 @@ export default {
                         await regenerateTopItemsCacheForFeed(env, message.body.feed_id);
                     } catch (e: any) {
                         console.log(`Error regenerating top items cache for feed ${message.body.feed_id}: ${e.toString()}`,);
+                    }
+                    break;
+
+                case "item_vectorize_store":
+                    try {
+                        await vectorize_and_store_item(env, message.body.item_id);
+                    } catch (e: any) {
+                        console.log(`Error vectorizing and storing item ${message.body.item_id}: ${e.toString()}`,);
                     }
                     break;
             }

@@ -17,6 +17,7 @@ import {
     sanitizeHTML,
     stripTags
 } from "./utils";
+import { vectorize_and_store_item } from "./ai";
 
 // import retextKeywords from 'retext-keywords'
 // import {toString} from 'nlcst-to-string'
@@ -556,71 +557,41 @@ export const handle_items_single = async (c: any) => {
         otherItemsBlock += `</div>`;
     }
 
-    // let extraction_result = '';
-    // const file = await retext()
-    // .use(retextPos) // Make sure to use `retext-pos` before `retext-keywords`.
-    // .use(retextKeywords)
-    // .process(stripTags(contentBlock))
 
-    // if (file.data.keywords) {
-    // for (const keyword of file.data.keywords) {
-    //     extraction_result += toString(keyword.matches[0].node) + ", "
-    // }
-    // }
-
-    // extraction_result += 'Key-phrases:'
-
-    // if (file.data.keyphrases) {
-    // for (const phrase of file.data.keyphrases) {
-    //     extraction_result += (toString(phrase.matches[0].nodes) + "; ")
-    // }
-    // }
-    interface EmbeddingResponse {
-        shape: number[];
-        data: number[][];
-    }
-
-    if (c.env.ENVIRONMENT != "dev" && c.get("USER_IS_ADMIN")){
-        const stories = [
-            stripTags(contentBlock)
-        ]
-
-        const modelResp: EmbeddingResponse = await c.env.AI.run(
-            "@cf/baai/bge-base-en-v1.5",
-            {
-            text: stories,
-            },
-        );
-
-        let vectors: VectorizeVector[] = [];
-        let id = item_id;
-        modelResp.data.forEach((vector) => {
-            vectors.push({ id: `${id}`, values: vector });
-            id++;
-        });
-
-        let inserted = await c.env.VECTORIZE.upsert(vectors);
-        console.log(JSON.stringify(Response.json(inserted)));
-        
-        const queryVector: EmbeddingResponse = await c.env.AI.run(
-            "@cf/baai/bge-base-en-v1.5",
-            {
-                text: ['chess design cache'],
-            },
-            );
+    let similar_items = ``;
+    if (c.get("USER_IS_ADMIN")) {
+        const vectors = await c.env.VECTORIZE.getByIds([`${item_id}`]);
+        if (vectors.length) {
+            let matches = await c.env.VECTORIZE.query(vectors[0].values, { topK: 12, });
             
-            let matches = await c.env.VECTORIZE.query(queryVector.data[0], {
-                topK: 1,
-            });
-            console.log(JSON.stringify(Response.json({
-                
-                matches: matches,
-            })));
+            let in_list:Array<string> = [];
+            for (const match of matches.matches) {
+                if (match.id == item_id) continue; 
+                in_list.push(match.id);
+            }
             
-    }
+            const placeholders = in_list.map(() => '?').join(',');  // Generate placeholders
+            const db_items = await c.env.DB.prepare(
+                `SELECT item_id, item_sqid, items.title, feeds.title as feed_title
+                FROM items 
+                JOIN  feeds ON items.feed_id = feeds.feed_id
+                WHERE item_id IN (${placeholders})`
+            ).bind(...in_list).all();
+
+            if (db_items.results.length) {
+                similar_items += `<h4>Similar items:</h4><ul>`;
+                db_items.results.forEach((item: any) => {
+                    similar_items += `<li>${item.feed_title} → <a href="/items/${item.item_sqid}" target="_blank">${item.title}</a></li>`;
+                });
+                similar_items += `</ul>`;
+            }
+
+        }
+    }            
 
     let list = `
     <h1 style="margin-bottom: 0.25em;">${item.item_title} </h1>
+    ${similar_items}
     <div style="margin-bottom:1.25em;">from ${item.type} <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time> | <a href="${item.item_url}" target="_blank">↗ original</a></div>
     <div class="item-actions">
         <div style="display: flex; gap: 0.25em;">
