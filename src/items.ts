@@ -575,13 +575,12 @@ export const handle_items_single = async (c: any) => {
     //     extraction_result += (toString(phrase.matches[0].nodes) + "; ")
     // }
     // }
+    interface EmbeddingResponse {
+        shape: number[];
+        data: number[][];
+    }
 
     if (c.env.ENVIRONMENT != "dev" && c.get("USER_IS_ADMIN")){
-        interface EmbeddingResponse {
-            shape: number[];
-            data: number[][];
-        }
-
         const stories = [
             stripTags(contentBlock)
         ]
@@ -601,10 +600,24 @@ export const handle_items_single = async (c: any) => {
         });
 
         let inserted = await c.env.VECTORIZE.upsert(vectors);
-        return c.html(Response.json(inserted))
+        console.log(Response.json(inserted));
+        
+        const queryVector: EmbeddingResponse = await c.env.AI.run(
+            "@cf/baai/bge-base-en-v1.5",
+            {
+                text: ['chess design cache'],
+            },
+            );
+            
+            let matches = await c.env.VECTORIZE.query(queryVector.data[0], {
+                topK: 1,
+            });
+            console.log(Response.json({
+                
+                matches: matches,
+            }));
+            
     }
-
-    
 
     let list = `
     <h1 style="margin-bottom: 0.25em;">${item.item_title} </h1>
