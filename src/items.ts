@@ -14,8 +14,15 @@ import {
     getRootUrl,
     itemIdToSqid,
     itemSqidToId,
-    sanitizeHTML
+    sanitizeHTML,
+    stripTags
 } from "./utils";
+
+// import retextKeywords from 'retext-keywords'
+// import {toString} from 'nlcst-to-string'
+// import {retext} from 'retext'
+// // import retextKeywords from 'retext-keywords'
+// import retextPos from 'retext-pos'
 
 export const handle_global = async (c: any) => {
     const user_id = c.get("USER_ID") || -1;
@@ -547,6 +554,54 @@ export const handle_items_single = async (c: any) => {
             );
         });
         otherItemsBlock += `</div>`;
+    }
+
+    // let extraction_result = '';
+    // const file = await retext()
+    // .use(retextPos) // Make sure to use `retext-pos` before `retext-keywords`.
+    // .use(retextKeywords)
+    // .process(stripTags(contentBlock))
+
+    // if (file.data.keywords) {
+    // for (const keyword of file.data.keywords) {
+    //     extraction_result += toString(keyword.matches[0].node) + ", "
+    // }
+    // }
+
+    // extraction_result += 'Key-phrases:'
+
+    // if (file.data.keyphrases) {
+    // for (const phrase of file.data.keyphrases) {
+    //     extraction_result += (toString(phrase.matches[0].nodes) + "; ")
+    // }
+    // }
+
+    if (c.get("USER_IS_ADMIN")){
+        interface EmbeddingResponse {
+            shape: number[];
+            data: number[][];
+        }
+
+        const stories = [
+            stripTags(contentBlock)
+        ]
+
+        const modelResp: EmbeddingResponse = await c.env.AI.run(
+            "@cf/baai/bge-base-en-v1.5",
+            {
+            text: stories,
+            },
+        );
+
+        let vectors: VectorizeVector[] = [];
+        let id = 1;
+        modelResp.data.forEach((vector) => {
+            vectors.push({ id: `${id}`, values: vector });
+            id++;
+        });
+
+        let inserted = await c.env.VECTORIZE.upsert(vectors);
+        return c.html(Response.json(inserted))
     }
 
     let list = `

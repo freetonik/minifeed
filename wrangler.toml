@@ -12,6 +12,10 @@ TYPESENSE_BLOG_FEEDS_COLLECTION = "blog_feeds"
 TYPESENSE_CLUSTER = "3afyidm6tgzxlvq7p-1.a1.typesense.net"
 TYPESENSE_ITEMS_COLLECTION = "items"
 
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "embeddings-index"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "minifeed"
@@ -36,3 +40,6 @@ crons = ["*/30 * * * *"]
 
 [observability]
 enabled = true
+
+[ai]
+binding = "AI" # available in your Worker on env.AI
