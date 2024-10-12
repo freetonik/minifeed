@@ -600,7 +600,7 @@ export const handle_items_single = async (c: any) => {
         });
 
         let inserted = await c.env.VECTORIZE.upsert(vectors);
-        console.log(Response.json(inserted));
+        console.log(JSON.stringify(Response.json(inserted)));
         
         const queryVector: EmbeddingResponse = await c.env.AI.run(
             "@cf/baai/bge-base-en-v1.5",
@@ -612,10 +612,10 @@ export const handle_items_single = async (c: any) => {
             let matches = await c.env.VECTORIZE.query(queryVector.data[0], {
                 topK: 1,
             });
-            console.log(Response.json({
+            console.log(JSON.stringify(Response.json({
                 
                 matches: matches,
-            }));
+            })));
             
     }
 
