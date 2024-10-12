@@ -576,7 +576,7 @@ export const handle_items_single = async (c: any) => {
     // }
     // }
 
-    if (c.get("USER_IS_ADMIN")){
+    if (c.env.ENVIRONMENT != "dev" && c.get("USER_IS_ADMIN")){
         interface EmbeddingResponse {
             shape: number[];
             data: number[][];
@@ -594,7 +594,7 @@ export const handle_items_single = async (c: any) => {
         );
 
         let vectors: VectorizeVector[] = [];
-        let id = 1;
+        let id = item_id;
         modelResp.data.forEach((vector) => {
             vectors.push({ id: `${id}`, values: vector });
             id++;
@@ -603,6 +603,8 @@ export const handle_items_single = async (c: any) => {
         let inserted = await c.env.VECTORIZE.upsert(vectors);
         return c.html(Response.json(inserted))
     }
+
+    
 
     let list = `
     <h1 style="margin-bottom: 0.25em;">${item.item_title} </h1>
