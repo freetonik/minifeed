@@ -317,7 +317,20 @@ export const feedsUnsubscribeHandler = async (c: any) => {
 };
 
 export const feedsDeleteHandler = async (c: any) => {
-    const feedId: number = feedSqidToId(c.req.param("feed_sqid"));
+    const feedId: number = feedSqidToId(c.req.param('feed_sqid'));
+
+    const ids_of_feed_items = await c.env.DB.prepare(
+        'SELECT item_id FROM items WHERE feed_id = ?'
+    )
+        .bind(feedId)
+        .all();
+
+    if (ids_of_feed_items.results.length > 0) {
+        const item_ids_to_delete_from_vectorize = ids_of_feed_items.results.map(
+            (item: any) => item.item_id.toString()
+        );
+        await c.env.VECTORIZE.delete(item_ids_to_delete_from_vectorize);
+    }
 
     await c.env.DB.prepare(`DELETE from feeds where feed_id = ?`)
         .bind(feedId)
