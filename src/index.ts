@@ -16,7 +16,7 @@ import {
     handle_verify_email,
 } from "./account";
 import { handle_admin } from "./admin";
-import { handle_vectorize, vectorize_and_store_item } from "./ai";
+import { handle_generate_related, handle_vectorize, vectorize_and_store_item } from "./ai";
 import { Bindings } from "./bindings";
 import { changelog } from "./changelog";
 import { handle_feedback, handle_suggest_blog } from "./feedback";
@@ -56,7 +56,8 @@ import {
     itemsAddToFavoritesHandler,
     itemsIndexHandler,
     itemsRemoveFromFavoritesHandler,
-    itemsScrapeHandler
+    itemsScrapeHandler,
+    regenerateRelatedCacheForItem
 } from "./items";
 import { handle_lists, handle_lists_single, handle_lists_single_delete_POST } from "./lists";
 import { handle_mblog, handle_mblog_POST, handle_mblog_post_delete, handle_mblog_post_edit, handle_mblog_post_edit_POST, handle_mblog_post_single, mblogRSSHandler } from "./mblogs";
@@ -158,6 +159,7 @@ app.get("/", (c: any) => {
 
 app.get("/admin", handle_admin);
 app.get("/admin/vectorize", handle_vectorize);
+app.get("/admin/generate_related", handle_generate_related);
 app.get("/search", handle_search);
 app.get("/global", handle_global);
 app.get("/feedback", handle_feedback);
@@ -322,6 +324,14 @@ export default {
                         await regenerateTopItemsCacheForFeed(env, message.body.feed_id);
                     } catch (e: any) {
                         console.log(`Error regenerating top items cache for feed ${message.body.feed_id}: ${e.toString()}`,);
+                    }
+                    break;
+
+                case "item_update_related_cache":
+                    try {
+                        await regenerateRelatedCacheForItem(env, message.body.item_id)
+                    } catch (e: any) {
+                        console.log(`Error regenerating related items cache for item ${message.body.item_id}: ${e.toString()}`,);
                     }
                     break;
 

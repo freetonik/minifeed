@@ -1,5 +1,6 @@
 import { Context } from "hono";
 import { html, raw } from "hono/html";
+import { Bindings } from "./bindings";
 import { addItemsToFeed } from "./feeds";
 import {
     render_my_subsections,
@@ -7,6 +8,7 @@ import {
     renderHTML,
     renderItemShort,
 } from "./htmltools";
+import { RelatedItemCached } from "./interface";
 import { enqueueItemIndex, enqueueItemScrape } from "./queue";
 import { scrapeURLIntoObject } from "./scrape";
 import {
@@ -344,7 +346,7 @@ export const handle_my_favorites = async (c: any) => {
     );
 };
 
-export const handle_items_single = async (c: any) => {
+export const handle_items_single = async (c: Context) => {
     const item_sqid = c.req.param("item_sqid");
     const item_id: number = itemSqidToId(item_sqid);
     const user_id = c.get("USER_ID") || -1;
@@ -375,10 +377,12 @@ export const handle_items_single = async (c: any) => {
         feeds.title AS feed_title,
         feeds.feed_sqid,
         feeds.type,
-        favorite_id
+        favorite_id,
+        items_related_cache.content AS related_content
     FROM items
     JOIN feeds ON items.feed_id = feeds.feed_id
     LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
+    LEFT JOIN items_related_cache on items.item_id = items_related_cache.item_id
     WHERE items.item_id = ?
     ORDER BY items.pub_date DESC`,
         ).bind(user_id, item_id),
@@ -558,6 +562,7 @@ export const handle_items_single = async (c: any) => {
         const vectors = await c.env.VECTORIZE.getByIds([`${item_id}`]);
         if (vectors.length) {
             const matches = await c.env.VECTORIZE.query(vectors[0].values, { topK: 10, filter: { feed_id: { "$ne": `${item.feed_id}` }  }, });
+            // const matchesSameBlog = await c.env.VECTORIZE.query(vectors[0].values, { topK: 10, filter: { feed_id: `${item.feed_id}`  }, });
             
             const in_list:Array<string> = [];
             for (const match of matches.matches) {
@@ -582,11 +587,105 @@ export const handle_items_single = async (c: any) => {
             }
 
         }
-    }            
+    }
+
+    // TEMPORARY
+    const cache_content = {
+        "related_from_other_blogs": [
+            {
+                "title": "The wrong good solution",
+                "item_id": 10026,
+                "item_sqid": "15pihSopHs",
+                "feed_title": "Rakhim's blog",
+                "feed_id": 1,
+                "feed_sqid": "ENivT",
+                "url": "https://rakhim.org/2023/06/the-wrong-good-solution/",
+            },
+            {
+                "title": "The wrong good solution 2",
+                "item_id": 10026,
+                "item_sqid": "15pihSopHs",
+                "feed_title": "Rakhim's blog",
+                "feed_id": 1,
+                "feed_sqid": "ENivT",
+                "url": "https://rakhim.org/2023/06/the-wrong-good-solution/",
+            },
+            {
+                "title": "The wrong good solution 3",
+                "item_id": 10026,
+                "item_sqid": "15pihSopHs",
+                "feed_title": "Rakhim's blog",
+                "feed_id": 1,
+                "feed_sqid": "ENivT",
+                "url": "https://rakhim.org/2023/06/the-wrong-good-solution/",
+            }
+        ],
+        "related_from_this_blog": [
+            {
+                "title": "Aya The wrong good solution",
+                "item_id": 10026,
+                "item_sqid": "15pihSopHs",
+                "feed_title": "Rakhim's blog",
+                "feed_id": 1,
+                "feed_sqid": "ENivT",
+                "url": "https://rakhim.org/2023/06/the-wrong-good-solution/",
+            },
+            {
+                "title": "Bya The wrong good solution 2",
+                "item_id": 10026,
+                "item_sqid": "15pihSopHs",
+                "feed_title": "Rakhim's blog",
+                "feed_id": 1,
+                "feed_sqid": "ENivT",
+                "url": "https://rakhim.org/2023/06/the-wrong-good-solution/",
+            },
+            {
+                "title": "Jep The wrong good solution d3",
+                "item_id": 10026,
+                "item_sqid": "15pihSopHs",
+                "feed_title": "Rakhim's blog",
+                "feed_id": 1,
+                "feed_sqid": "ENivT",
+                "url": "https://rakhim.org/2023/06/the-wrong-good-solution/",
+            }
+        ]
+    }
+    // await c.env.DB.prepare(
+    //     "REPLACE INTO items_related_cache (item_id, content) values (?, ?)",
+    // )
+    //     .bind(item_id, JSON.stringify(cache_content))
+    //     .run();
+    // TEMPORARY
+
+    let related_block = '';
+    if (item.related_content) {
+        const related_content = JSON.parse(item.related_content);
+        const related_from_other_blogs = related_content["related_from_other_blogs"];
+        const related_from_this_blog = related_content["related_from_this_blog"];
+
+        related_block += `<div class="related-items">`;
+
+        if (related_from_other_blogs.length) related_block += `<h4>Related items from other blogs:</h4>`;
+        related_from_other_blogs.forEach((i: RelatedItemCached) => {
+            related_block += `<li><a href="/items/${i.item_sqid}">${i.title}</a>
+            <span class="muted">(<a class="no-underline no-color" href="${i.url}">original ↗</a>)</span>
+            </li>`;
+        });
+
+        if (related_from_this_blog.length) related_block += `<h4 style="margin-top:1.5em;">Related items from this blog:</h4>`;
+        related_from_this_blog.forEach((i: RelatedItemCached) => {
+            related_block += `<li><a href="/items/${i.item_sqid}">${i.title}</a>
+            <span class="muted">(<a class="no-underline no-color" href="${i.url}">original ↗</a>)</span>
+            </li>`;
+        });
+        related_block += `</div>`;
+    }
+
 
     let list = `
     <h1 style="margin-bottom: 0.25em;">${item.item_title} </h1>
     ${similar_items}
+    ${related_block}
     <div style="margin-bottom:1.25em;">from ${item.type} <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time> | <a href="${item.item_url}" target="_blank">↗ original</a></div>
     <div class="item-actions">
         <div style="display: flex; gap: 0.25em;">
@@ -989,14 +1088,107 @@ export const itemsAddItemByUrlPostHandler = async (c: any) => {
     return c.redirect(`/blogs/${feedSqid}`);
 };
 
-export const itemsScrapeHandler = async (c: any) => {
+export const itemsScrapeHandler = async (c: Context) => {
     const itemSqid = c.req.param("item_sqid");
     await enqueueItemScrape(c.env, itemSqidToId(itemSqid));
     return c.html("Scrape queued...");
 };
 
-export const itemsIndexHandler = async (c: any) => {
+export const itemsIndexHandler = async (c: Context) => {
     const itemSqid = c.req.param("item_sqid");
     await enqueueItemIndex(c.env, itemSqidToId(itemSqid));
     return c.html("Indexing queued...");
 };
+
+export const regenerateRelatedCacheForItem = async (env: Bindings, itemId: number) => {
+    const vectors = await env.VECTORIZE.getByIds([`${itemId}`]);
+    if (!vectors.length) return;
+
+    const item = await env.DB.prepare(
+        `SELECT items.item_id, feeds.title as feed_title
+        FROM items 
+        JOIN feeds ON items.feed_id = feeds.feed_id
+        WHERE item_id = ?`
+    ).bind(itemId).first();
+    
+    if (!item) throw new Error(`Item with id ${itemId} not found`);
+    
+    const matchesOtherBlogs = await env.VECTORIZE.query(
+        vectors[0].values, 
+        { 
+            topK: 11, 
+            filter: { feed_id: { "$ne": `${item.feed_id}` } }, 
+        }
+    );
+
+    const matchesSameBlog = await env.VECTORIZE.query(
+        vectors[0].values, 
+        { 
+            topK: 10, 
+            filter: { feed_id: `${item.feed_id}` }, 
+        }
+    );
+    
+    const cache_content: { relatedFromOtherBlogs: RelatedItemCached[], relatedFromThisBlog: RelatedItemCached[] } = {
+        relatedFromOtherBlogs: [],
+        relatedFromThisBlog: []
+    }
+
+    // Processing items from other blogs
+    const relatedIDsOtherBlog:Array<string> = [];
+    for (const match of matchesOtherBlogs.matches) {
+        if (match.id == `${itemId}`) continue; // skip current item itself
+        relatedIDsOtherBlog.push(match.id);
+    }
+    const queryBindPlaceholders = relatedIDsOtherBlog.map(() => '?').join(',');  // Generate '?,?,...,?'
+    const relatedItemsOtherBlog = await env.DB.prepare(
+        `SELECT item_id, item_sqid, items.title, feeds.title as feed_title, items.feed_id, feeds.feed_sqid, items.url
+        FROM items 
+        JOIN  feeds ON items.feed_id = feeds.feed_id
+        WHERE item_id IN (${queryBindPlaceholders})`
+    ).bind(...relatedIDsOtherBlog).all();
+
+   
+    relatedItemsOtherBlog.results.forEach((i: any) => {
+        cache_content.relatedFromOtherBlogs.push({
+            "title": i.title,
+            "item_id": i.item_id,
+            "item_sqid": i.item_sqid,
+            "feed_title": i.feed_title,
+            "feed_id": i.feed_id,
+            "feed_sqid": i.feed_sqid,
+            "url": i.url
+        })
+    });
+
+    // Processing items from SAME blog
+    const relatedIDsSameBlog:Array<string> = [];
+    for (const match of matchesSameBlog.matches) {
+        if (match.id == `${itemId}`) continue; // skip current item itself
+        relatedIDsSameBlog.push(match.id);
+    }
+    const queryBindPlaceholders2 = relatedIDsSameBlog.map(() => '?').join(',');  // Generate '?,?,...,?'
+    const relatedItemsSameBlog = await env.DB.prepare(
+        `SELECT item_id, item_sqid, items.title, feeds.title as feed_title, items.feed_id, feeds.feed_sqid, items.url
+        FROM items 
+        JOIN  feeds ON items.feed_id = feeds.feed_id
+        WHERE item_id IN (${queryBindPlaceholders2})`
+    ).bind(...relatedIDsSameBlog).all();
+
+ 
+    relatedItemsSameBlog.results.forEach((i: any) => {
+        cache_content.relatedFromThisBlog.push({
+            "title": i.title,
+            "item_id": i.item_id,
+            "item_sqid": i.item_sqid,
+            "feed_title": i.feed_title,
+            "feed_id": i.feed_id,
+            "feed_sqid": i.feed_sqid,
+            "url": i.url
+        })
+    });
+
+    await env.DB.prepare(
+        "REPLACE INTO items_related_cache (item_id, content) values (?, ?)",
+    ).bind(itemId, JSON.stringify(cache_content)).run();
+}

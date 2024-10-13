@@ -2,7 +2,7 @@ import { Context } from "hono";
 import { raw } from "hono/html";
 import { Bindings } from "./bindings";
 import { ItemRow } from "./interface";
-import { enqueueVectorizeStoreItem } from "./queue";
+import { enqueueRegenerateItemRelatedCache, enqueueVectorizeStoreItem } from "./queue";
 import { stripNonLinguisticElements, stripTags } from "./utils";
 
 export interface EmbeddingResponse {
@@ -70,16 +70,10 @@ export const handle_vectorize = async (c: Context) => {
 
     if (!start || !stop) return c.text("No start or stop provided", 400);
 
-    type ItemRow = {
-        item_id: number;
-        item_sqid:  string;
-        title: string;
-    };
+
     const items = await env.DB.prepare(
         `SELECT item_id, title, item_sqid FROM items WHERE item_id >= ? AND item_id <= ?`,
-    )
-        .bind(start, stop)
-        .all<ItemRow>();
+    ).bind(start, stop).all<ItemRow>();
 
     let response = '<ol>';
     for (const item of items.results) {
@@ -89,4 +83,24 @@ export const handle_vectorize = async (c: Context) => {
     response += '</ol>';
     return c.html(response);
     
+}
+
+export const handle_generate_related = async (c: Context) => {
+    const env = c.env as Bindings;
+    const start = c.req.query("start");
+    const stop = c.req.query("stop");
+    if (!start || !stop) return c.text("No start or stop provided", 400);
+
+    const items = await env.DB.prepare(
+        `SELECT item_id, title, item_sqid FROM items WHERE item_id >= ? AND item_id <= ?`,
+    ).bind(start, stop).all<ItemRow>();
+
+    let response = '<ol>';
+    for (const item of items.results) {
+        response += `<li>Generating related cache for item <a href="/items/${item.item_sqid}">${item.item_id} / ${item.item_sqid}: ${item.title}</a>`;
+        await enqueueRegenerateItemRelatedCache(c.env, item.item_id);
+    }
+    response += '</ol>';
+    return c.html(response);
+
 }

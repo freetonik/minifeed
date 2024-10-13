@@ -2,7 +2,7 @@ import { html } from "hono/html";
 
 export const renderHTML = (
     title: string,
-    inner: any,
+    inner: string,
     user_logged_in: boolean = false,
     active: string = "all",
     searchQuery: string = "",
@@ -169,6 +169,10 @@ export const renderHTML = (
         }
 
         /* ITEMS */
+
+        .item-tiny {
+            margin-bottom: 1.5em;
+        }
 
         .item-short {
             margin-bottom: 2.5em;
@@ -479,30 +483,28 @@ export const renderItemShort = (
     item_sqid: string,
     title: string,
     url: string,
-    feed_title: string,
-    feed_sqid: string,
-    pub_date: string = "",
-    summary: string = "",
+    feed_title?: string,
+    feed_sqid?: string,
+    pub_date?: string,
+    summary?: string,
 ) => {
-    const postDate = new Date(pub_date).toLocaleDateString(
+    const divClass = summary ? 'item-short' : 'item-tiny';
+
+    const postDate = pub_date ? new Date(pub_date).toLocaleDateString(
         "en-UK",
         dateFormatOptions,
-    );
+    ) + ' | ' :  ""
 
-    const feedLink = feed_title
-        ? `<a href="/blogs/${feed_sqid}">${feed_title}</a> | `
-        : "";
-    const summaryContent = summary
-        ? `<p class="item-summary">${summary}</p>`
-        : "";
+    const feedLink = feed_title ? `<a href="/blogs/${feed_sqid}">${feed_title}</a> | ` : "";
+    const summaryContent = summary ? `<p class="item-summary">${summary}</p>` : "";
 
     return `
-    <div class="item-short">
+    <div class="${divClass}">
         <a href="/items/${item_sqid}" class="bold no-color no-underline">${title}</a> <br>
         <div class="muted">
             <small>
                 ${feedLink}
-                <span>${postDate}</span> |
+                <span>${postDate}</span>
                 <a class="no-underline no-color" href="${url}">original</a>
             </small>
         </div>
@@ -510,6 +512,7 @@ export const renderItemShort = (
     </div>
     `;
 };
+
 
 export const renderItemSearchResult = (searchResult: any) => {
     const item = searchResult["document"];

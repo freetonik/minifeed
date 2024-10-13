@@ -88,6 +88,13 @@ export async function enqueueVectorizeStoreItem(env: Bindings, item_id: number) 
     });
 }
 
+export async function enqueueRegenerateItemRelatedCache(env: Bindings, item_id: number) {
+    await env.FEED_UPDATE_QUEUE.send({
+        type: "item_update_related_cache",
+        item_id: item_id,
+    });
+}
+
 // export async function enqueueVectorizeStoreItemsInRange(
 //     env: Bindings,
 //     start_id: number,
