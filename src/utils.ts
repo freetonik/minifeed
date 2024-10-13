@@ -161,25 +161,37 @@ export async function gatherResponse(response: Response) {
 
 export const truncate = (s: string, len = 140) => {
     const txt = s.toString();
-    const txtlen = txt.length;
-    if (txtlen <= len) return txt;
+    const txt_length = txt.length;
+    if (txt_length <= len) return txt;
 
-    const subtxt = txt.substring(0, len).trim();
-    const subtxtArr = subtxt.split(" ");
-    const subtxtLen = subtxtArr.length;
-    if (subtxtLen > 1) {
-        subtxtArr.pop();
-        return subtxtArr.map((word: string) => word.trim()).join(" ") + "...";
+    const sub_text = txt.substring(0, len).trim();
+    const sub_text_array = sub_text.split(" ");
+    const sub_text_length = sub_text_array.length;
+    if (sub_text_length > 1) {
+        sub_text_array.pop();
+        return sub_text_array.map((word: string) => word.trim()).join(" ") + "...";
     }
-    return subtxt.substring(0, len - 3) + "...";
+    return sub_text.substring(0, len - 3) + "...";
 };
 
-export const stripTags = (s: string) => {
-    return s
-        .toString()
-        .replace(/(<([^>]+)>)/gi, "")
-        .trim();
+export const stripTags = async (s: string) => {
+    const stripped_text = new HTMLRewriter()
+    .on('*', {
+      text(textChunk) {
+        // Keep the text content as-is, effectively stripping tags
+        textChunk.after(textChunk.text, {html: false})
+      },
+      element(element) {
+        // Remove all HTML elements
+        element.removeAndKeepContent()
+      }
+    })
+    .transform(new Response(s))
+    .text();
+
+    return stripped_text;
 };
+
 
 export const extractItemUrl = (item: any, feedRSSUrl: string) => {
     if (!item.link && !item.id)
