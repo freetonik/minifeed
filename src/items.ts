@@ -556,7 +556,7 @@ export const handle_items_single = async (c: any) => {
     if (c.env.ENVIRONMENT != 'dev' && c.get("USER_IS_ADMIN")) {
         const vectors = await c.env.VECTORIZE.getByIds([`${item_id}`]);
         if (vectors.length) {
-            const matches = await c.env.VECTORIZE.query(vectors[0].values, { topK: 12, });
+            const matches = await c.env.VECTORIZE.query(vectors[0].values, { topK: 10, filter: { feed_id: { "$ne": item.feed_id } }, });
             
             const in_list:Array<string> = [];
             for (const match of matches.matches) {
