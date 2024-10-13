@@ -1,5 +1,17 @@
-import { renderAddFeedForm, renderHTML, renderItemShort } from "./htmltools";
+import { FeedData } from "@extractus/feed-extractor";
 import { html, raw } from "hono/html";
+import { Bindings } from "./bindings";
+import { extractRSS, validateFeedData } from "./feed_extractor";
+import { renderAddFeedForm, renderHTML, renderItemShort } from "./htmltools";
+import { MFFeedEntry } from "./interface";
+import {
+    enqueueFeedUpdate,
+    enqueueIndexAllItemsOfFeed,
+    enqueueItemScrape,
+    enqueueRebuildFeedTopItemsCache,
+    enqueueScrapeAllItemsOfFeed,
+} from "./queue";
+import { deleteFeedFromIndex } from "./search";
 import {
     extractItemUrl,
     feedIdToSqid,
@@ -9,20 +21,9 @@ import {
     getRootUrl,
     getText,
     itemIdToSqid,
-    stripTags,
-    truncate,
+    stripTagsSynchronously,
+    truncate
 } from "./utils";
-import { deleteFeedFromIndex } from "./search";
-import { extractRSS, validateFeedData } from "./feed_extractor";
-import { Bindings } from "./bindings";
-import {
-    enqueueIndexAllItemsOfFeed,
-    enqueueFeedUpdate,
-    enqueueItemScrape,
-    enqueueScrapeAllItemsOfFeed,
-    enqueueRebuildFeedTopItemsCache,
-} from "./queue";
-import { FeedData } from "@extractus/feed-extractor";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ROUTE HANDLERS //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -533,29 +534,28 @@ export async function updateFeed(env: Bindings, feedId: number) {
     console.log(`Updated feed ${feedId} (${RSSUrl}), no items fetched`);
 }
 
+
+
 export async function addItemsToFeed(
     env: Bindings,
-    items: Array<any>,
+    items: Array<MFFeedEntry>,
     feedId: number,
     scrapeAfterAdding: boolean = true,
 ) {
     if (!items.length) return;
 
-    // get feed title
     const { results: feeds } = await env.DB.prepare(
         "SELECT title, rss_url FROM feeds WHERE feed_id = ?",
-    )
-        .bind(feedId)
-        .all();
+    ).bind(feedId).all();
     const feedRSSUrl = String(feeds[0]["rss_url"]);
 
     const stmt = env.DB.prepare(
         "INSERT INTO items (feed_id, title, url, pub_date, description, content_html) values (?, ?, ?, ?, ?, ?)",
     );
-    let binds: any[] = [];
+    const binds: D1PreparedStatement[] = [];
 
-    items.forEach((item: any) => {
-        let link = extractItemUrl(item, feedRSSUrl);
+    items.forEach((item) => {
+        const link = extractItemUrl(item, feedRSSUrl);
         if (!item.published) {
             // if date was not properly parsed, try to parse it (expects 'pubdate' to be retrieved by feed_extractor's extractRSS function)
             if (item.pubdate) {
@@ -581,7 +581,7 @@ export async function addItemsToFeed(
                 item.title,
                 link,
                 item.published,
-                truncate(stripTags(item.description), 350),
+                truncate(stripTagsSynchronously(item.description), 350),
                 content_html,
             ),
         );

@@ -45,7 +45,7 @@ export interface feedValidationResult {
 }
 
 export function validateFeedData(feedData: FeedData): feedValidationResult {
-    let result: feedValidationResult = {
+    const result: feedValidationResult = {
         validated: true,
         messages: [],
     };
@@ -67,7 +67,7 @@ export function validateFeedData(feedData: FeedData): feedValidationResult {
                 result.validated = false;
                 result.messages.push(`Feed item title is missing at index ${index}`);
             }
-            let link = item.link || item.id;
+            const link = item.link || item.id;
             if (!link || link.length == 0) {
                 result.validated = false;
                 result.messages.push(`Feed item link is missing at index ${index}`);

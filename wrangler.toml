@@ -14,7 +14,7 @@ TYPESENSE_ITEMS_COLLECTION = "items"
 
 [[vectorize]]
 binding = "VECTORIZE"
-index_name = "embeddings-index"
+index_name = "embeddings-main"
 
 [[d1_databases]]
 binding = "DB"

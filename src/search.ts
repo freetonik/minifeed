@@ -1,6 +1,6 @@
 import { html, raw } from "hono/html";
-import { renderHTML, renderItemSearchResult } from "./htmltools";
 import { Bindings } from "./bindings";
+import { renderHTML, renderItemSearchResult } from "./htmltools";
 import {
     collapseWhitespace,
     gatherResponse,
@@ -191,9 +191,9 @@ export async function updateItemIndex(env: Bindings, item_id: number) {
     let content;
     // prefer scraped content over content_html over description
     if (item["content_html_scraped"] && item["content_html_scraped"].length > 0)
-        content = stripTags(item["content_html_scraped"]);
+        content = await stripTags(item["content_html_scraped"]);
     else if (item["content_html"] && item["content_html"].length > 0)
-        content = stripTags(item["content_html"]);
+        content = await stripTags(item["content_html"]);
     else content = item["description"];
 
     const searchDocument = {

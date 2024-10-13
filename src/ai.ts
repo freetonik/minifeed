@@ -1,6 +1,7 @@
 import { Context } from "hono";
 import { raw } from "hono/html";
 import { Bindings } from "./bindings";
+import { ItemRow } from "./interface";
 import { enqueueVectorizeStoreItem } from "./queue";
 import { stripNonLinguisticElements, stripTags } from "./utils";
 
@@ -25,19 +26,9 @@ export const add_vector_to_db = async (env:Bindings,  id: number, embeddings: Em
 }
 
 export const vectorize_and_store_item = async (env:Bindings,  item_id: number) => {
-    type ItemRow = {
-        item_id: number;
-        feed_id: number;
-        title: string;
-        content_html: string;
-        content_html_scraped: string;
-        description: string;
-    };
     const item = await env.DB.prepare(
         `SELECT item_id, feed_id, title, description, content_html, content_html_scraped FROM items WHERE item_id = ?`,
-    )
-        .bind(item_id)
-        .first<ItemRow>();
+    ).bind(item_id).first<ItemRow>();
 
     if (!item) return;
 
@@ -59,11 +50,9 @@ export const vectorize_and_store_item = async (env:Bindings,  item_id: number) =
         contentBlock = item.description;
     }
 
-    const stripped_non_linguistic = await stripNonLinguisticElements(contentBlock)
-    contentBlock = await stripTags(stripped_non_linguistic)
+    contentBlock = await stripTags(await stripNonLinguisticElements(contentBlock));
 
-    const full_text: string = `${item.title} ${contentBlock}`;
-    const embeddings: EmbeddingResponse = await vectorize_text(env,  full_text);
+    const embeddings: EmbeddingResponse = await vectorize_text(env,  `${item.title}. ${contentBlock}`);
     await add_vector_to_db(env,  item.item_id, embeddings, "items", {
         feed_id: item.feed_id
     });
@@ -87,11 +76,12 @@ export const handle_vectorize = async (c: Context) => {
         .bind(start, stop)
         .all<ItemRow>();
 
-    let response = '';
+    let response = '<ol>';
     for (const item of items.results) {
-        response += `Vectorizing item ${item.item_id} / ${item.item_sqid}: ${item.title}<br>`;
+        response += `<li>Vectorizing item <a href="/items/${item.item_sqid}">${item.item_id} / ${item.item_sqid}: ${item.title}</a>`;
         await enqueueVectorizeStoreItem(c.env, item.item_id);
     }
+    response += '</ol>';
     return c.html(response);
     
 }

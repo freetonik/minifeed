@@ -174,7 +174,7 @@ export const truncate = (s: string, len = 140) => {
     return sub_text.substring(0, len - 3) + "...";
 };
 
-export const stripTags = async (s: string) => {
+export const stripTags = (s: string) => {
     const stripped_text = new HTMLRewriter()
     .on('*', {
       text(textChunk) {
@@ -192,6 +192,11 @@ export const stripTags = async (s: string) => {
     return stripped_text;
 };
 
+export const stripTagsSynchronously = (s: string) => {
+    return s
+        .toString()
+        .replace(/(<([^>]+)>)/gi, "")
+        .trim();
 
 export const extractItemUrl = (item: any, feedRSSUrl: string) => {
     if (!item.link && !item.id)
