@@ -577,7 +577,7 @@ export const handle_items_single = async (c: any) => {
                 db_items.results.forEach((item: any) => {
                     similar_items += `<li>${item.feed_title} → <a href="/items/${item.item_sqid}" target="_blank">${item.title}</a></li>`;
                 });
-                similar_items += `</ul>`;
+                similar_items += `</ul><hr>`;
             }
 
         }
@@ -585,7 +585,6 @@ export const handle_items_single = async (c: any) => {
 
     let list = `
     <h1 style="margin-bottom: 0.25em;">${item.item_title} </h1>
-    <hr>
     ${similar_items}
     <div style="margin-bottom:1.25em;">from ${item.type} <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time> | <a href="${item.item_url}" target="_blank">↗ original</a></div>
     <div class="item-actions">

@@ -197,6 +197,7 @@ export const stripTagsSynchronously = (s: string) => {
         .toString()
         .replace(/(<([^>]+)>)/gi, "")
         .trim();
+}
 
 export const extractItemUrl = (item: any, feedRSSUrl: string) => {
     if (!item.link && !item.id)
