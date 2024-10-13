@@ -1,7 +1,7 @@
-import Sqids from "sqids";
-import { getRssUrlsFromHtmlBody } from "rss-url-finder";
 import { Context } from "hono";
 import { decode } from "html-entities";
+import { getRssUrlsFromHtmlBody } from "rss-url-finder";
+import Sqids from "sqids";
 
 const idToSqid = (id: number, length: number): string => {
     const sqids = new Sqids({
@@ -35,7 +35,7 @@ export async function getRSSLinkFromUrl(url: string) {
     try {
         req = await fetch(url);
     } catch (err) {
-        throw new Error(`Cannot fetch url: ${url}`);
+        throw new Error(`Cannot fetch url: ${url}, error ${err}`);
     }
     const pageContent = await req.text();
 
@@ -206,6 +206,23 @@ export const extractItemUrl = (item: any, feedRSSUrl: string) => {
 
     return link;
 };
+
+// This is used e.g. for preparing plaintext description and for vectorization 
+export const stripNonLinguisticElements = async (s: string) => {
+    const badList = ['img', 'video', 'audio', 'form', 'button', 'code', 'canvas', 'iframe', 'script', 'style', 'input', 'textarea', 'frameset', 'footer', 'header'];
+    const stripped = new HTMLRewriter()
+        .on('*', {
+            element(element) {
+                if (badList.includes(element.tagName)) {
+                    element.remove();
+                }
+            }
+        })
+        .transform(new Response(s))
+        .text();
+
+    return stripped;
+}
 
 export const sanitizeHTML = async (contentBlock: string): Promise<string> => {
     const sanitizedContentBlock = new HTMLRewriter()

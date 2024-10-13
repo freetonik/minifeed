@@ -1,10 +1,11 @@
+import { Context } from "hono";
 import { html, raw } from "hono/html";
 import { addItemsToFeed } from "./feeds";
 import {
+    render_my_subsections,
     renderAddItemByURLForm,
     renderHTML,
     renderItemShort,
-    render_my_subsections,
 } from "./htmltools";
 import { enqueueItemIndex, enqueueItemScrape } from "./queue";
 import { scrapeURLIntoObject } from "./scrape";
@@ -14,18 +15,11 @@ import {
     getRootUrl,
     itemIdToSqid,
     itemSqidToId,
-    sanitizeHTML,
-    stripTags
+    sanitizeHTML
 } from "./utils";
-import { vectorize_and_store_item } from "./ai";
 
-// import retextKeywords from 'retext-keywords'
-// import {toString} from 'nlcst-to-string'
-// import {retext} from 'retext'
-// // import retextKeywords from 'retext-keywords'
-// import retextPos from 'retext-pos'
 
-export const handle_global = async (c: any) => {
+export const handle_global = async (c: Context) => {
     const user_id = c.get("USER_ID") || -1;
     const items_per_page = 60;
     const page = Number(c.req.query("p")) || 1;
@@ -140,7 +134,7 @@ export const handle_my = async (c: any) => {
     let list = ` ${render_my_subsections("my")} `;
     if (results.length) {
         results.forEach((item: any) => {
-            let title = item.favorite_id ? `★ ${item.title}` : item.title;
+            const title = item.favorite_id ? `★ ${item.title}` : item.title;
             list += renderItemShort(
                 item.item_sqid,
                 title,
@@ -199,7 +193,7 @@ export const handle_my_subscriptions = async (c: any) => {
     `;
     if (results.length) {
         results.forEach((item: any) => {
-            let title = item.favorite_id ? `★ ${item.title}` : item.title;
+            const title = item.favorite_id ? `★ ${item.title}` : item.title;
             list += renderItemShort(
                 item.item_sqid,
                 title,
@@ -559,12 +553,12 @@ export const handle_items_single = async (c: any) => {
 
 
     let similar_items = ``;
-    if (c.get("USER_IS_ADMIN")) {
+    if (c.env.ENVIRONMENT != 'dev' && c.get("USER_IS_ADMIN")) {
         const vectors = await c.env.VECTORIZE.getByIds([`${item_id}`]);
         if (vectors.length) {
-            let matches = await c.env.VECTORIZE.query(vectors[0].values, { topK: 12, });
+            const matches = await c.env.VECTORIZE.query(vectors[0].values, { topK: 12, });
             
-            let in_list:Array<string> = [];
+            const in_list:Array<string> = [];
             for (const match of matches.matches) {
                 if (match.id == item_id) continue; 
                 in_list.push(match.id);
@@ -591,6 +585,7 @@ export const handle_items_single = async (c: any) => {
 
     let list = `
     <h1 style="margin-bottom: 0.25em;">${item.item_title} </h1>
+    <hr>
     ${similar_items}
     <div style="margin-bottom:1.25em;">from ${item.type} <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time> | <a href="${item.item_url}" target="_blank">↗ original</a></div>
     <div class="item-actions">
@@ -724,7 +719,7 @@ export const handle_items_lists = async (c: any) => {
 
     // lists.results contains instances of lists with items
     const lists_with_current_item = lists.results.filter((list: any) => list.item_id == itemId);
-    let lists_without_current_item = lists.results
+    const lists_without_current_item = lists.results
         // remove list instances that already have the item
         // .filter((list: any) => list.item_id != itemId)
         // substract lists_with_current_item
@@ -735,7 +730,7 @@ export const handle_items_lists = async (c: any) => {
     );
 
 
-    let list_objects: { [key: string]: string } = {};
+    const list_objects: { [key: string]: string } = {};
     for (const list of lists_with_current_item) {
         list_objects[list.title] = `<strong><a class="no-underline no-color" href="/lists/${list.list_sqid}">${list.title}</a></strong> <a href="" hx-post="/items/${itemSqid}/lists/${list.list_sqid}/remove" hx-swap="outerHTML transition:true">[- remove from list]</a><br>`
     }
@@ -960,7 +955,7 @@ export const itemsAddItemByUrlPostHandler = async (c: any) => {
     // remove empty strings from urls_array
     urls_array = urls_array.filter((url: string) => url !== "");
 
-    let added_items_sqids = [];
+    const added_items_sqids = [];
 
     for (const url_value of urls_array) {
         // check if item url already exists in the db
