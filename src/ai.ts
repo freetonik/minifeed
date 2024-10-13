@@ -51,11 +51,16 @@ export const vectorize_and_store_item = async (env:Bindings,  item_id: number) =
     }
 
     contentBlock = await stripTags(await stripNonLinguisticElements(contentBlock));
-
     const embeddings: EmbeddingResponse = await vectorize_text(env,  `${item.title}. ${contentBlock}`);
-    await add_vector_to_db(env,  item.item_id, embeddings, "items", {
-        feed_id: item.feed_id
-    });
+    await add_vector_to_db(
+        env, 
+        item.item_id, 
+        embeddings, 
+        "items", // namespace
+        {
+            feed_id: item.feed_id // metadata
+        }
+    );
 }
 
 export const handle_vectorize = async (c: Context) => {
