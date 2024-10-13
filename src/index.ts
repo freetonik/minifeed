@@ -1,5 +1,6 @@
 import { Context, Env, Hono } from "hono";
 import { raw } from "hono/html";
+import { about } from "./about";
 import {
     handle_create_mblog_POST,
     handle_login,
@@ -15,6 +16,7 @@ import {
     handle_verify_email,
 } from "./account";
 import { handle_admin } from "./admin";
+import { handle_vectorize, vectorize_and_store_item } from "./ai";
 import { Bindings } from "./bindings";
 import { changelog } from "./changelog";
 import { handle_feedback, handle_suggest_blog } from "./feedback";
@@ -39,7 +41,6 @@ import { renderHTML } from "./htmltools";
 import {
     handle_global,
     handle_items_lists,
-    handle_items_lists_POST,
     handle_items_lists_add_POST,
     handle_items_lists_new_POST,
     handle_items_lists_new_form,
@@ -55,9 +56,10 @@ import {
     itemsAddToFavoritesHandler,
     itemsIndexHandler,
     itemsRemoveFromFavoritesHandler,
-    itemsScrapeHandler,
+    itemsScrapeHandler
 } from "./items";
-import { handle_mblog, handle_mblog_POST, mblogRSSHandler, handle_mblog_post_single, handle_mblog_post_edit, handle_mblog_post_edit_POST, handle_mblog_post_delete } from "./mblogs";
+import { handle_lists, handle_lists_single, handle_lists_single_delete_POST } from "./lists";
+import { handle_mblog, handle_mblog_POST, handle_mblog_post_delete, handle_mblog_post_edit, handle_mblog_post_edit_POST, handle_mblog_post_single, mblogRSSHandler } from "./mblogs";
 import {
     adminRequiredMiddleware,
     authMiddleware,
@@ -77,9 +79,6 @@ import {
     usersHandler,
     usersUnfollowPostHandler,
 } from "./users";
-import { handle_lists, handle_lists_single, handle_lists_single_delete_POST } from "./lists";
-import { about } from "./about";
-import { handle_vectorize, vectorize_and_store_item, vectorize_text } from "./ai";
 
 // ///////////////////////////////////////////////////////////
 // ///////////////////////////////////////////////////////////////
@@ -203,8 +202,8 @@ app.post("/feeds/index", feedsGlobalIndexHandler);
 app.post("/feeds/rebuild_cache", feedsGlobalCacheRebuildHandler);
 
 
-app.get("/podcasts", (c: any) => { return c.html(renderHTML("Podcasts | minifeed", raw("Coming soon"), c.get("USERNAME"), "podcasts",),); });
-app.get("/channels", (c: any) => { return c.html(renderHTML("Channels | minifeed", raw("Coming soon"), c.get("USERNAME"), "channels",),); });
+app.get("/podcasts", (c: Context) => { return c.html(renderHTML("Podcasts | minifeed", raw("Coming soon"), c.get("USERNAME"), "podcasts",),); });
+app.get("/channels", (c: Context) => { return c.html(renderHTML("Channels | minifeed", raw("Coming soon"), c.get("USERNAME"), "channels",),); });
 
 app.get("/items/:item_sqid", handle_items_single);
 app.get("/items/:item_sqid/lists", handle_items_lists);
@@ -317,7 +316,7 @@ export default {
                         console.log(`Error indexing feed ${message.body.feed_id}: ${e.toString()}`,);
                     }
                     break;
-
+ 
                 case "feed_update_top_items_cache":
                     try {
                         await regenerateTopItemsCacheForFeed(env, message.body.feed_id);

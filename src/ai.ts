@@ -1,7 +1,8 @@
-import { Bindings } from "./bindings";
+import { Context } from "hono";
 import { raw } from "hono/html";
-import { stripTags } from "./utils";
+import { Bindings } from "./bindings";
 import { enqueueVectorizeStoreItem } from "./queue";
+import { stripTags } from "./utils";
 
 export interface EmbeddingResponse {
     shape: number[];
@@ -16,7 +17,7 @@ export const vectorize_text = async (env:Bindings,  text: string): Promise<Embed
 }
 
 export const add_vector_to_db = async (env:Bindings,  id: number, embeddings: EmbeddingResponse) => {
-    let vectors: VectorizeVector[] = [];
+    const vectors: VectorizeVector[] = [];
     embeddings.data.forEach((vector) => {
         vectors.push({ id: `${id}`, values: vector });
     });
@@ -64,7 +65,7 @@ export const vectorize_and_store_item = async (env:Bindings,  item_id: number) =
     await add_vector_to_db(env,  item.item_id, embeddings);
 }
 
-export const handle_vectorize = async (c: any) => {
+export const handle_vectorize = async (c: Context) => {
     const env = c.env as Bindings;
     const start = c.req.query("start");
     const stop = c.req.query("stop");
