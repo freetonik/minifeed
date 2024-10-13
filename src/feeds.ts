@@ -330,7 +330,7 @@ export const feedsDeleteHandler = async (c: any) => {
         const item_ids_to_delete_from_vectorize = ids_of_feed_items.results.map(
             (item: any) => item.item_id.toString()
         );
-        await c.env.VECTORIZE.delete(item_ids_to_delete_from_vectorize);
+        await c.env.VECTORIZE.deleteByIds(item_ids_to_delete_from_vectorize);
     }
 
     await c.env.DB.prepare(`DELETE from feeds where feed_id = ?`)
