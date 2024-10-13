@@ -2,7 +2,7 @@ import { Context } from "hono";
 import { raw } from "hono/html";
 import { Bindings } from "./bindings";
 import { enqueueVectorizeStoreItem } from "./queue";
-import { stripTags } from "./utils";
+import { stripNonLinguisticElements, stripTags } from "./utils";
 
 export interface EmbeddingResponse {
     shape: number[];
@@ -16,10 +16,10 @@ export const vectorize_text = async (env:Bindings,  text: string): Promise<Embed
     );
 }
 
-export const add_vector_to_db = async (env:Bindings,  id: number, embeddings: EmbeddingResponse) => {
+export const add_vector_to_db = async (env:Bindings,  id: number, embeddings: EmbeddingResponse, namespace: string, metadata?: Record<string, VectorizeVectorMetadata>) => {
     const vectors: VectorizeVector[] = [];
     embeddings.data.forEach((vector) => {
-        vectors.push({ id: `${id}`, values: vector });
+        vectors.push({ id: `${id}`, values: vector, namespace: namespace, metadata: metadata });
     });
     await env.VECTORIZE.upsert(vectors);
 }
@@ -27,13 +27,14 @@ export const add_vector_to_db = async (env:Bindings,  id: number, embeddings: Em
 export const vectorize_and_store_item = async (env:Bindings,  item_id: number) => {
     type ItemRow = {
         item_id: number;
+        feed_id: number;
         title: string;
         content_html: string;
         content_html_scraped: string;
         description: string;
     };
     const item = await env.DB.prepare(
-        `SELECT item_id, title, description, content_html, content_html_scraped FROM items WHERE item_id = ?`,
+        `SELECT item_id, feed_id, title, description, content_html, content_html_scraped FROM items WHERE item_id = ?`,
     )
         .bind(item_id)
         .first<ItemRow>();
@@ -58,11 +59,14 @@ export const vectorize_and_store_item = async (env:Bindings,  item_id: number) =
         contentBlock = item.description;
     }
 
-    contentBlock = stripTags(contentBlock);
+    const stripped_non_linguistic = await stripNonLinguisticElements(contentBlock)
+    contentBlock = await stripTags(stripped_non_linguistic)
 
     const full_text: string = `${item.title} ${contentBlock}`;
     const embeddings: EmbeddingResponse = await vectorize_text(env,  full_text);
-    await add_vector_to_db(env,  item.item_id, embeddings);
+    await add_vector_to_db(env,  item.item_id, embeddings, "items", {
+        feed_id: item.feed_id
+    });
 }
 
 export const handle_vectorize = async (c: Context) => {
