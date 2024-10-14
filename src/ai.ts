@@ -25,7 +25,7 @@ export const add_vector_to_db = async (env:Bindings,  id: number, embeddings: Em
     });
     const upserted = await env.VECTORIZE.upsert(vectors);
     if (upserted) {
-        await env.DB.prepare( `REPLACE INTO item_vector_relation (item_id, vectorized) VALUES (?, ?)`, ).bind(id, 1).run();
+        await env.DB.prepare( `REPLACE INTO items_vector_relation (item_id, vectorized) VALUES (?, ?)`, ).bind(id, 1).run();
     }
 }
 
@@ -34,7 +34,7 @@ export const vectorize_and_store_item = async (env:Bindings,  item_id: number) =
     const vectors = await env.VECTORIZE.getByIds([`${item_id}`]);
     if (vectors.length) {
         // add to item_vector_relation table
-        await env.DB.prepare( `REPLACE INTO item_vector_relation (item_id, vectorized) VALUES (?, ?)`, ).bind(item_id, 1).run();
+        await env.DB.prepare( `REPLACE INTO items_vector_relation (item_id, vectorized) VALUES (?, ?)`, ).bind(item_id, 1).run();
         return;
     }
 
@@ -43,26 +43,31 @@ export const vectorize_and_store_item = async (env:Bindings,  item_id: number) =
     ).bind(item_id).first<ItemRow>();
     if (!item) return;
 
-    let contentBlock;
-    if (item.content_html) { // We have full content from feed
-        if (item.content_html_scraped) { // We have scraped content
-            if ( item.content_html.length > item.content_html_scraped.length * 0.65 ) {
+    let contentBlock = '';
+    
+    if (!item.description && !item.content_html && !item.content_html_scraped) { // We have nothing but title
+        contentBlock = item.title;
+    } else { // We have some content
+        if (item.content_html) { // We have full content from feed
+            if (item.content_html_scraped) { // We have scraped content
+                if ( item.content_html.length > item.content_html_scraped.length * 0.65 ) {
+                        contentBlock = raw(item.content_html);
+                    } else {
+                        contentBlock = raw(item.content_html_scraped);
+                    }
+                } else { // No scraped content, use full content
                     contentBlock = raw(item.content_html);
-                } else {
-                    contentBlock = raw(item.content_html_scraped);
                 }
-            } else { // No scraped content, use full content
-                contentBlock = raw(item.content_html);
-            }
-    } else if (item.content_html_scraped) { // no full content, use scraped
-        contentBlock = raw(item.content_html_scraped);
-    }
-    else { // nothing but description
-        contentBlock = item.description;
+        } else if (item.content_html_scraped) { // no full content, use scraped
+            contentBlock = raw(item.content_html_scraped);
+        }
+        else { // nothing but description
+            contentBlock = item.description;
+        }
+        contentBlock = item.title + '. ' + await stripTags(await stripNonLinguisticElements(contentBlock));
     }
 
-    contentBlock = await stripTags(await stripNonLinguisticElements(contentBlock));
-    const embeddings: EmbeddingResponse = await vectorize_text(env,  `${item.title}. ${contentBlock}`);
+    const embeddings: EmbeddingResponse = await vectorize_text(env,  `${contentBlock}`);
     await add_vector_to_db(
         env, 
         item.item_id, 
