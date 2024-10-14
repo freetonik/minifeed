@@ -1,9 +1,10 @@
-import { html, raw } from "hono/html";
+import { Context } from "hono";
+import { html } from "hono/html";
 import { renderHTML } from "./htmltools";
 import { getCollection } from "./search";
 
-export const handle_admin = async (c: any) => {
-    let list = "";
+export const handle_admin = async (c: Context) => {
+    let list = ``;
     const feeds = await c.env.DB.prepare(
         "SELECT * FROM feeds LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id ORDER BY feed_id ASC ",
     ).all();
@@ -11,17 +12,25 @@ export const handle_admin = async (c: any) => {
     const feed_count = await c.env.DB.prepare(
         "SELECT COUNT(feed_id) FROM feeds",
     ).all();
-
     list += `<h3>${feed_count.results[0]["COUNT(feed_id)"]} Feeds</h3>`;
 
     const all_items_count = await c.env.DB.prepare(
         "SELECT COUNT(item_id) FROM Items",
     ).all();
-
     list += `<h3>${all_items_count.results[0]["COUNT(item_id)"]} Items</h3>`;
 
     const items_collection = await getCollection(c.env);
     list += `<h3>${items_collection["num_documents"]} Indexed items</h3>`;
+
+    const items_related_cache_count = await c.env.DB.prepare(
+        "SELECT COUNT(item_id) FROM items_related_cache",
+    ).all();
+    list += `<h3>${items_related_cache_count.results[0]["COUNT(item_id)"]} Related items cache</h3>`;
+
+    const items_without_sqid = await c.env.DB.prepare(
+        "SELECT count(item_id) FROM Items where item_sqid=0",
+    ).all();
+    list += `<h3>${items_without_sqid.results[0]["count(item_id)"]} Items without SQID</h3>`;
 
 
     for (const feed of feeds.results) {
@@ -111,6 +120,6 @@ export const handle_admin = async (c: any) => {
     `;
 
     return c.html(
-        renderHTML(`admin | minifeed`, html`${raw(list)}`, c.get("USERNAME"), ""),
+        renderHTML(`admin | minifeed`, html(list), c.get("USERNAME"), ""),
     );
 };

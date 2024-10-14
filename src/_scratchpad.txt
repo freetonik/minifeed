@@ -1,0 +1,99 @@
+// let similar_items = ``;
+    // if (c.env.ENVIRONMENT != 'dev' && c.get("USER_IS_ADMIN")) {
+    //     const vectors = await c.env.VECTORIZE.getByIds([`${item_id}`]);
+    //     if (vectors.length) {
+    //         const matches = await c.env.VECTORIZE.query(vectors[0].values, { topK: 10, filter: { feed_id: `${item.feed_id}`  }, });
+    //         // const matchesSameBlog = await c.env.VECTORIZE.query(vectors[0].values, { topK: 10, filter: { feed_id: `${item.feed_id}`  }, });
+            
+    //         const in_list:Array<string> = [];
+    //         for (const match of matches.matches) {
+    //             if (match.id == item_id) continue; 
+    //             in_list.push(match.id);
+    //         }
+            
+    //         const placeholders = in_list.map(() => '?').join(',');  // Generate placeholders
+    //         const db_items = await c.env.DB.prepare(
+    //             `SELECT item_id, item_sqid, items.title, feeds.title as feed_title
+    //             FROM items 
+    //             JOIN  feeds ON items.feed_id = feeds.feed_id
+    //             WHERE item_id IN (${placeholders})`
+    //         ).bind(...in_list).all();
+
+    //         if (db_items.results.length) {
+    //             similar_items += `<h4>Similar items:</h4><ul>`;
+    //             db_items.results.forEach((item: any) => {
+    //                 similar_items += `<li>${item.feed_title} → <a href="/items/${item.item_sqid}" target="_blank">${item.title}</a></li>`;
+    //             });
+    //             similar_items += `</ul><hr>`;
+    //         }
+
+    //     }
+    // }
+
+    // TEMPORARY
+    // const cache_content = {
+    //     "relatedFromOtherBlogs": [
+    //         {
+    //             "title": "The wrong good solution",
+    //             "item_id": 10026,
+    //             "item_sqid": "15pihSopHs",
+    //             "feed_title": "Rakhim's blog",
+    //             "feed_id": 1,
+    //             "feed_sqid": "ENivT",
+    //             "url": "https://rakhim.org/2023/06/the-wrong-good-solution/",
+    //         },
+    //         {
+    //             "title": "The wrong good solution 2",
+    //             "item_id": 10026,
+    //             "item_sqid": "15pihSopHs",
+    //             "feed_title": "Rakhim's blog",
+    //             "feed_id": 1,
+    //             "feed_sqid": "ENivT",
+    //             "url": "https://rakhim.org/2023/06/the-wrong-good-solution/",
+    //         },
+    //         {
+    //             "title": "The wrong good solution 3",
+    //             "item_id": 10026,
+    //             "item_sqid": "15pihSopHs",
+    //             "feed_title": "Rakhim's blog",
+    //             "feed_id": 1,
+    //             "feed_sqid": "ENivT",
+    //             "url": "https://rakhim.org/2023/06/the-wrong-good-solution/",
+    //         }
+    //     ],
+    //     "relatedFromThisBlog": [
+    //         {
+    //             "title": "Aya The wrong good solution",
+    //             "item_id": 10026,
+    //             "item_sqid": "15pihSopHs",
+    //             "feed_title": "Rakhim's blog",
+    //             "feed_id": 1,
+    //             "feed_sqid": "ENivT",
+    //             "url": "https://rakhim.org/2023/06/the-wrong-good-solution/",
+    //         },
+    //         {
+    //             "title": "Bya The wrong good solution 2",
+    //             "item_id": 10026,
+    //             "item_sqid": "15pihSopHs",
+    //             "feed_title": "Rakhim's blog",
+    //             "feed_id": 1,
+    //             "feed_sqid": "ENivT",
+    //             "url": "https://rakhim.org/2023/06/the-wrong-good-solution/",
+    //         },
+    //         {
+    //             "title": "Jep The wrong good solution d3",
+    //             "item_id": 10026,
+    //             "item_sqid": "15pihSopHs",
+    //             "feed_title": "Rakhim's blog",
+    //             "feed_id": 1,
+    //             "feed_sqid": "ENivT",
+    //             "url": "https://rakhim.org/2023/06/the-wrong-good-solution/",
+    //         }
+    //     ]
+    // }
+    // await c.env.DB.prepare(
+    //     "REPLACE INTO items_related_cache (item_id, content) values (?, ?)",
+    // )
+    //     .bind(item_id, JSON.stringify(cache_content))
+    //     .run();
+    // TEMPORARY

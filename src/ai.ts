@@ -1,6 +1,7 @@
 import { Context } from "hono";
-import { raw } from "hono/html";
+import { html, raw } from "hono/html";
 import { Bindings } from "./bindings";
+import { renderHTML } from "./htmltools";
 import { ItemRow } from "./interface";
 import { enqueueRegenerateItemRelatedCache, enqueueVectorizeStoreItem } from "./queue";
 import { stripNonLinguisticElements, stripTags } from "./utils";
@@ -71,7 +72,13 @@ export const handle_vectorize = async (c: Context) => {
     const start = c.req.query("start");
     const stop = c.req.query("stop");
 
-    if (!start || !stop) return c.text("No start or stop provided", 400);
+    if (!start || !stop) {
+
+        const list = 'Here we will find unvectorized items maybe?'
+        return c.html(
+            renderHTML(`admin | minifeed`, html(list), c.get("USERNAME"), ""),
+        );
+    }
 
 
     const items = await env.DB.prepare(
@@ -80,7 +87,7 @@ export const handle_vectorize = async (c: Context) => {
 
     let response = '<ol>';
     for (const item of items.results) {
-        response += `<li>Vectorizing item <a href="/items/${item.item_sqid}">${item.item_id} / ${item.item_sqid}: ${item.title}</a>`;
+        // response += `<li>Vectorizing item <a href="/items/${item.item_sqid}">${item.item_id} / ${item.item_sqid}: ${item.title}</a>`;
         await enqueueVectorizeStoreItem(c.env, item.item_id);
     }
     response += '</ol>';
