@@ -26,10 +26,13 @@ export const add_vector_to_db = async (env:Bindings,  id: number, embeddings: Em
 }
 
 export const vectorize_and_store_item = async (env:Bindings,  item_id: number) => {
+    // if item is already in vector store, skip
+    const vectors = await env.VECTORIZE.getByIds([`${item_id}`]);
+    if (vectors.length) return;
+
     const item = await env.DB.prepare(
         `SELECT item_id, feed_id, title, description, content_html, content_html_scraped FROM items WHERE item_id = ?`,
     ).bind(item_id).first<ItemRow>();
-
     if (!item) return;
 
     let contentBlock;
