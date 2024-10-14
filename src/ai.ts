@@ -23,13 +23,20 @@ export const add_vector_to_db = async (env:Bindings,  id: number, embeddings: Em
     embeddings.data.forEach((vector) => {
         vectors.push({ id: `${id}`, values: vector, namespace: namespace, metadata: metadata });
     });
-    await env.VECTORIZE.upsert(vectors);
+    const upserted = await env.VECTORIZE.upsert(vectors);
+    if (upserted) {
+        await env.DB.prepare( `REPLACE INTO item_vector_relation (item_id, vectorized) VALUES (?, ?)`, ).bind(id, 1).run();
+    }
 }
 
 export const vectorize_and_store_item = async (env:Bindings,  item_id: number) => {
     // if item is already in vector store, skip
     const vectors = await env.VECTORIZE.getByIds([`${item_id}`]);
-    if (vectors.length) return;
+    if (vectors.length) {
+        // add to item_vector_relation table
+        await env.DB.prepare( `REPLACE INTO item_vector_relation (item_id, vectorized) VALUES (?, ?)`, ).bind(item_id, 1).run();
+        return;
+    }
 
     const item = await env.DB.prepare(
         `SELECT item_id, feed_id, title, description, content_html, content_html_scraped FROM items WHERE item_id = ?`,
