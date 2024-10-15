@@ -1,30 +1,17 @@
-import { Context } from "hono";
-import { html, raw } from "hono/html";
-import { Bindings } from "./bindings";
-import { addItemsToFeed } from "./feeds";
-import {
-    render_my_subsections,
-    renderAddItemByURLForm,
-    renderHTML,
-    renderItemShort,
-} from "./htmltools";
-import { RelatedItemCached } from "./interface";
-import { enqueueItemIndex, enqueueItemScrape } from "./queue";
-import { scrapeURLIntoObject } from "./scrape";
-import {
-    absolutifyImageUrls,
-    feedSqidToId,
-    getRootUrl,
-    itemIdToSqid,
-    itemSqidToId,
-    sanitizeHTML
-} from "./utils";
-
+import { Context } from 'hono';
+import { html, raw } from 'hono/html';
+import { Bindings } from './bindings';
+import { addItemsToFeed } from './feeds';
+import { renderAddItemByURLForm, renderHTML, renderItemShort, render_my_subsections } from './htmltools';
+import { RelatedItemCached } from './interface';
+import { enqueueItemIndex, enqueueItemScrape } from './queue';
+import { scrapeURLIntoObject } from './scrape';
+import { absolutifyImageUrls, feedSqidToId, getRootUrl, itemIdToSqid, itemSqidToId, sanitizeHTML } from './utils';
 
 export const handle_global = async (c: Context) => {
-    const user_id = c.get("USER_ID") || -1;
+    const user_id = c.get('USER_ID') || -1;
     const items_per_page = 60;
-    const page = Number(c.req.query("p")) || 1;
+    const page = Number(c.req.query('p')) || 1;
     const offset = page * items_per_page - items_per_page;
     const { results, meta } = await c.env.DB.prepare(
         `
@@ -40,7 +27,7 @@ export const handle_global = async (c: Context) => {
         .run();
 
     let list = ``;
-    if (!c.get("USER_LOGGED_IN")) {
+    if (!c.get('USER_LOGGED_IN')) {
         list += `<div class="flash">
     <strong>Minifeed</strong> is a curated blog reader and blog search engine.
     We collect humans-written blogs to make them discoverable and searchable.
@@ -51,18 +38,15 @@ export const handle_global = async (c: Context) => {
     } else {
         list += `<div class="flash">
     ↓ Below is a global feed of all items from all blogs.
-    </div>`
+    </div>`;
     }
 
     list += ``;
 
-    if (!results.length)
-        list += `<p><i>Nothing exists on minifeed yet...</i></p>`;
+    if (!results.length) list += `<p><i>Nothing exists on minifeed yet...</i></p>`;
 
     results.forEach((item: any) => {
-        const itemTitle = item.favorite_id
-            ? `★ ${item.item_title}`
-            : item.item_title;
+        const itemTitle = item.favorite_id ? `★ ${item.item_title}` : item.item_title;
 
         list += renderItemShort(
             item.item_sqid,
@@ -78,23 +62,23 @@ export const handle_global = async (c: Context) => {
     if (results.length) list += `<a href="?p=${page + 1}">More</a></p>`;
     return c.html(
         renderHTML(
-            "Global feed | minifeed",
+            'Global feed | minifeed',
             html`${raw(list)}`,
-            c.get("USER_LOGGED_IN"),
-            "global",
-            "",
-            "",
+            c.get('USER_LOGGED_IN'),
+            'global',
+            '',
+            '',
             false,
-            c.get("USER_IS_ADMIN") ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``
+            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``,
         ),
     );
 };
 
 // // MY HOME FEED: subs + favorites + friendfeed
 export const handle_my = async (c: any) => {
-    const user_id = c.get("USER_ID");
+    const user_id = c.get('USER_ID');
     const items_per_page = 30;
-    const page = Number(c.req.query("p")) || 1;
+    const page = Number(c.req.query('p')) || 1;
     const offset = page * items_per_page - items_per_page;
 
     const { results, meta } = await c.env.DB.prepare(
@@ -132,8 +116,7 @@ export const handle_my = async (c: any) => {
         .bind(user_id, user_id, user_id, user_id, user_id, items_per_page, offset)
         .all();
 
-
-    let list = ` ${render_my_subsections("my")} `;
+    let list = ` ${render_my_subsections('my')} `;
     if (results.length) {
         results.forEach((item: any) => {
             const title = item.favorite_id ? `★ ${item.title}` : item.title;
@@ -154,25 +137,24 @@ export const handle_my = async (c: any) => {
         }
     }
 
-
     return c.html(
         renderHTML(
-            "My feed | minifeed",
+            'My feed | minifeed',
             html`${raw(list)}`,
-            c.get("USER_LOGGED_IN"),
-            "my",
-            "",
-            "",
+            c.get('USER_LOGGED_IN'),
+            'my',
+            '',
+            '',
             false,
-            c.get("USER_IS_ADMIN") ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``
+            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``,
         ),
     );
 };
 
 export const handle_my_subscriptions = async (c: any) => {
-    const user_id = c.get("USER_ID");
+    const user_id = c.get('USER_ID');
     const items_per_page = 30;
-    const page = Number(c.req.query("p")) || 1;
+    const page = Number(c.req.query('p')) || 1;
     const offset = page * items_per_page - items_per_page;
 
     const { results, meta } = await c.env.DB.prepare(
@@ -190,7 +172,7 @@ export const handle_my_subscriptions = async (c: any) => {
         .bind(user_id, user_id, items_per_page, offset)
         .all();
 
-    let list = ` ${render_my_subsections("subscriptions")}
+    let list = ` ${render_my_subsections('subscriptions')}
     <div class="main">
     `;
     if (results.length) {
@@ -215,22 +197,22 @@ export const handle_my_subscriptions = async (c: any) => {
     }
     return c.html(
         renderHTML(
-            "My subscriptions",
+            'My subscriptions',
             html`${raw(list)}`,
-            c.get("USER_LOGGED_IN"),
-            "my",
-            "",
-            "",
+            c.get('USER_LOGGED_IN'),
+            'my',
+            '',
+            '',
             false,
-            c.get("USER_IS_ADMIN") ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``
+            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``,
         ),
     );
 };
 
 export const handle_my_friendfeed = async (c: any) => {
-    const userId = c.get("USER_ID");
+    const userId = c.get('USER_ID');
     const itemsPerPage = 30;
-    const page = Number(c.req.query("p")) || 1;
+    const page = Number(c.req.query('p')) || 1;
     const offset = page * itemsPerPage - itemsPerPage;
 
     const { results, meta } = await c.env.DB.prepare(
@@ -250,7 +232,7 @@ export const handle_my_friendfeed = async (c: any) => {
         .all();
 
     let list = `
-    ${render_my_subsections("friendfeed")}
+    ${render_my_subsections('friendfeed')}
     <div class="main">
     `;
     if (results.length) {
@@ -275,24 +257,24 @@ export const handle_my_friendfeed = async (c: any) => {
 
     return c.html(
         renderHTML(
-            "My friendfeed",
+            'My friendfeed',
             html`${raw(list)}`,
-            c.get("USERNAME"),
-            "my",
-            "",
-            "",
+            c.get('USERNAME'),
+            'my',
+            '',
+            '',
             false,
-            userId == 1 ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``
+            userId == 1 ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``,
         ),
     );
 };
 
 export const handle_my_favorites = async (c: any) => {
     const itemsPerPage = 30;
-    const page = Number(c.req.query("p")) || 1;
+    const page = Number(c.req.query('p')) || 1;
     const offset = page * itemsPerPage - itemsPerPage;
 
-    const userId = c.get("USER_ID");
+    const userId = c.get('USER_ID');
     const { results, meta } = await c.env.DB.prepare(
         `
     SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
@@ -308,7 +290,7 @@ export const handle_my_favorites = async (c: any) => {
         .all();
 
     let list = `
-    ${render_my_subsections("favorites")}
+    ${render_my_subsections('favorites')}
     <div class="main">
     `;
     if (results.length) {
@@ -334,23 +316,23 @@ export const handle_my_favorites = async (c: any) => {
 
     return c.html(
         renderHTML(
-            "My favorites",
+            'My favorites',
             html`${raw(list)}`,
-            c.get("USERNAME"),
-            "my",
-            "",
-            "",
+            c.get('USERNAME'),
+            'my',
+            '',
+            '',
             false,
-            userId == 1 ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``
+            userId == 1 ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``,
         ),
     );
 };
 
 export const handle_items_single = async (c: Context) => {
-    const item_sqid = c.req.param("item_sqid");
+    const item_sqid = c.req.param('item_sqid');
     const item_id: number = itemSqidToId(item_sqid);
-    const user_id = c.get("USER_ID") || -1;
-    const user_logged_in = user_id != -1;
+    const user_id = c.get('USER_ID') || -1;
+    const user_logged_in = c.get('USER_LOGGED_IN');
 
     const batch = await c.env.DB.batch([
         // find subscription status of user to this feed
@@ -417,14 +399,11 @@ export const handle_items_single = async (c: Context) => {
 
     const item = batch[1].results[0];
     const date_format_opts: Intl.DateTimeFormatOptions = {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
     };
-    const post_date = new Date(item.pub_date).toLocaleDateString(
-        "en-UK",
-        date_format_opts,
-    );
+    const post_date = new Date(item.pub_date).toLocaleDateString('en-UK', date_format_opts);
 
     let contentBlock;
 
@@ -437,10 +416,7 @@ export const handle_items_single = async (c: Context) => {
                 // We have full content from feed
                 if (item.content_html_scraped) {
                     // We have scraped content
-                    if (
-                        item.content_html.length >
-                        item.content_html_scraped.length * 0.65
-                    ) {
+                    if (item.content_html.length > item.content_html_scraped.length * 0.65) {
                         // Full content is longer than 0.65 of scraped content
                         contentBlock = raw(item.content_html);
                     } else {
@@ -453,8 +429,7 @@ export const handle_items_single = async (c: Context) => {
                 }
             } else if (item.content_html_scraped) {
                 contentBlock = raw(item.content_html_scraped);
-            }
-            else {
+            } else {
                 contentBlock = item.description;
             }
 
@@ -468,9 +443,9 @@ export const handle_items_single = async (c: Context) => {
         }
     }
 
-    let favoriteBlock = "";
-    let subscriptionBlock = "";
-    let lists_block = "";
+    let favoriteBlock = '';
+    let subscriptionBlock = '';
+    let lists_block = '';
     if (user_logged_in) {
         lists_block = `
         <span id="lists">
@@ -482,8 +457,8 @@ export const handle_items_single = async (c: Context) => {
             ⛬ add to list
             </button>
             </span>
-        `
-        
+        `;
+
         if (item.favorite_id) {
             favoriteBlock = `<span id="favorite">
             <button hx-post="/items/${item_sqid}/unfavorite"
@@ -531,24 +506,22 @@ export const handle_items_single = async (c: Context) => {
             </span>`;
         }
     } else {
-        lists_block = `<span id="favorite"> <button class="button" title="Log in to add to list" disabled>⛬ add to list</button> </span>`
+        lists_block = `<span id="favorite"> <button class="button" title="Log in to add to list" disabled>⛬ add to list</button> </span>`;
         favoriteBlock = `<span id="favorite"> <button class="button" title="Log in to favorite" disabled> ☆ favorite </button> </span>`;
         subscriptionBlock = `<span id="subscription"> <button class="button" disabled title="Login to subscribe"> <span>subscribe</span> </button> </span>`;
     }
 
-    let otherItemsBlock = "";
+    let otherItemsBlock = '';
     if (batch[2].results.length) {
         otherItemsBlock += `<div class="related-items"><h4>More from ${item.type} <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a>:</h4>`;
         batch[2].results.forEach((related_item: any) => {
-            const itemTitle = related_item.favorite_id
-                ? `★ ${related_item.item_title}`
-                : related_item.item_title;
+            const itemTitle = related_item.favorite_id ? `★ ${related_item.item_title}` : related_item.item_title;
             otherItemsBlock += renderItemShort(
                 related_item.item_sqid,
                 itemTitle,
                 related_item.item_url,
-                "",
-                "",
+                '',
+                '',
                 related_item.pub_date,
                 related_item.description,
             );
@@ -557,13 +530,14 @@ export const handle_items_single = async (c: Context) => {
     }
 
     let related_block = '';
-    if (c.get("USER_IS_ADMIN")) {
+    if (c.get('USER_IS_ADMIN')) {
         if (item.related_content) {
             const related_content = JSON.parse(item.related_content);
-            const related_from_other_blogs = related_content["relatedFromOtherBlogs"];
+            const related_from_other_blogs = related_content['relatedFromOtherBlogs'];
 
             related_block += `<div class="related-items">`;
-            if (related_from_other_blogs && related_from_other_blogs.length) related_block += `<h4>Related (from other blogs):</h4>`;
+            if (related_from_other_blogs && related_from_other_blogs.length)
+                related_block += `<h4>Related (from other blogs):</h4>`;
             related_from_other_blogs.forEach((i: RelatedItemCached) => {
                 related_block += `<p><a class="no-color no-underline" href="/items/${i.item_sqid}">${i.title}</a><br>
                 <span class="muted"> <small>from <a href="/blogs/${i.feed_sqid}">${i.feed_title}</a> | <a target="_blank" class="no-underline no-color" href="${i.url}">original </a></small>
@@ -573,7 +547,6 @@ export const handle_items_single = async (c: Context) => {
             related_block += `</div>`;
         }
     }
-
 
     let list = `
     <h1 style="margin-bottom: 0.25em;">${item.item_title} </h1>
@@ -597,16 +570,15 @@ export const handle_items_single = async (c: Context) => {
     `;
 
     let debug_info = '';
-    if (c.get("USER_ID") == 1) {
+    if (c.get('USER_ID') == 1) {
         debug_info = `${batch[0].meta.duration}+${batch[1].meta.duration}+${batch[2].meta.duration} ms.;
-            ${batch[0].meta.rows_read}+${batch[1].meta.rows_read}+${batch[2].meta.rows_read} rows read`
+            ${batch[0].meta.rows_read}+${batch[1].meta.rows_read}+${batch[2].meta.rows_read} rows read`;
         const show_content_html_over_scraped =
             item.content_html &&
             item.content_html_scraped &&
             item.content_html.length > item.content_html_scraped.length * 0.65;
-        let show_content_html_over_scraped_block = "not applicable";
-        if (item.content_html_scraped && show_content_html_over_scraped)
-            show_content_html_over_scraped_block = `yes`;
+        let show_content_html_over_scraped_block = 'not applicable';
+        if (item.content_html_scraped && show_content_html_over_scraped) show_content_html_over_scraped_block = `yes`;
         else if (item.content_html_scraped && !show_content_html_over_scraped)
             show_content_html_over_scraped_block = `no`;
         list += `
@@ -639,11 +611,11 @@ export const handle_items_single = async (c: Context) => {
         </tr>
         <tr>
         <td>Scraped:</td>
-        <td>${item.content_html_scraped ? "yes" : "no"}</td>
+        <td>${item.content_html_scraped ? 'yes' : 'no'}</td>
         </tr>
         <tr>
         <td>Length of content_html_scraped:</td>
-        <td>${item.content_html_scraped ? item.content_html_scraped.length : "not applicable"}</td>
+        <td>${item.content_html_scraped ? item.content_html_scraped.length : 'not applicable'}</td>
         </tr>
         </table>
 
@@ -685,28 +657,30 @@ export const handle_items_single = async (c: Context) => {
         renderHTML(
             `${item.item_title} | ${item.feed_title} | minifeed`,
             html`${raw(list)}`,
-            c.get("USERNAME"),
-            "blogs",
-            "",
+            c.get('USERNAME'),
+            'blogs',
+            '',
             item.item_url,
             false,
-            debug_info
+            debug_info,
         ),
     );
 };
 
 // Renders lists for item
 export const handle_items_lists = async (c: any) => {
-    const itemSqid = c.req.param("item_sqid");
+    const itemSqid = c.req.param('item_sqid');
     const itemId: number = itemSqidToId(itemSqid);
-    const userId = c.get("USER_ID");
+    const userId = c.get('USER_ID');
 
     const lists = await c.env.DB.prepare(
         `SELECT item_lists.list_id, item_lists.title, item_lists.list_sqid, item_list_items.item_id
         FROM item_lists 
         LEFT JOIN item_list_items ON item_list_items.list_id = item_lists.list_id
-        WHERE user_id = ?`
-    ).bind(userId).all();
+        WHERE user_id = ?`,
+    )
+        .bind(userId)
+        .all();
 
     // lists.results contains instances of lists with items
     const lists_with_current_item = lists.results.filter((list: any) => list.item_id == itemId);
@@ -714,23 +688,29 @@ export const handle_items_lists = async (c: any) => {
         // remove list instances that already have the item
         // .filter((list: any) => list.item_id != itemId)
         // substract lists_with_current_item
-        .filter((list: any) => !lists_with_current_item.some((listWithItem: any) => listWithItem.list_id === list.list_id))
+        .filter(
+            (list: any) => !lists_with_current_item.some((listWithItem: any) => listWithItem.list_id === list.list_id),
+        )
         // remove duplicates
-        .filter((list: any, index: number, self: any) =>
-        index === self.findIndex((t: any) => t.list_id === list.list_id)
-    );
-
+        .filter(
+            (list: any, index: number, self: any) => index === self.findIndex((t: any) => t.list_id === list.list_id),
+        );
 
     const list_objects: { [key: string]: string } = {};
     for (const list of lists_with_current_item) {
-        list_objects[list.title] = `<strong><a class="no-underline no-color" href="/lists/${list.list_sqid}">${list.title}</a></strong> <a href="" hx-post="/items/${itemSqid}/lists/${list.list_sqid}/remove" hx-swap="outerHTML transition:true">[- remove from list]</a><br>`
+        list_objects[list.title] =
+            `<strong><a class="no-underline no-color" href="/lists/${list.list_sqid}">${list.title}</a></strong> <a href="" hx-post="/items/${itemSqid}/lists/${list.list_sqid}/remove" hx-swap="outerHTML transition:true">[- remove from list]</a><br>`;
     }
 
     for (const list of lists_without_current_item) {
-        list_objects[list.title] = `<a class="no-underline no-color" href="/lists/${list.list_sqid}">${list.title}</a> <a href="" hx-post="/items/${itemSqid}/lists/${list.list_sqid}/add" hx-swap="outerHTML transition:true"><strong>[+ add to list]</strong></a><br>`
+        list_objects[list.title] =
+            `<a class="no-underline no-color" href="/lists/${list.list_sqid}">${list.title}</a> <a href="" hx-post="/items/${itemSqid}/lists/${list.list_sqid}/add" hx-swap="outerHTML transition:true"><strong>[+ add to list]</strong></a><br>`;
     }
 
-    const lists_html = Object.keys(list_objects).sort().map(key => list_objects[key]).join('');
+    const lists_html = Object.keys(list_objects)
+        .sort()
+        .map((key) => list_objects[key])
+        .join('');
 
     const content = `
     <div id="lists_section" class="lists-section">
@@ -741,86 +721,79 @@ export const handle_items_lists = async (c: any) => {
     </a>
     </strong>
     </div>
-    `
+    `;
 
-    return c.html(content)
-}
+    return c.html(content);
+};
 
 export const handle_items_lists_new_form = async (c: any) => {
-    const itemSqid = c.req.param("item_sqid");
+    const itemSqid = c.req.param('item_sqid');
     return c.html(`<form hx-post="/items/${itemSqid}/lists" hx-target="this" hx-swap="outerHTML" style="margin-top:0.5em;">
     <input type="text" name="list_title" placeholder="Type list title and press Enter" style="font-size: inherit !important;padding: 0.25em 0.5em !important;">
-    </form>`)
-}
+    </form>`);
+};
 
 export const handle_items_lists_new_POST = async (c: any) => {
     const body = await c.req.parseBody();
-    const list_title = body["list_title"].toString();
+    const list_title = body['list_title'].toString();
 
-    const result = await c.env.DB.prepare(
-        `INSERT INTO item_lists (user_id, title) VALUES (?, ?)`,
-    ).bind(c.get("USER_ID"), list_title).run();
+    const result = await c.env.DB.prepare(`INSERT INTO item_lists (user_id, title) VALUES (?, ?)`)
+        .bind(c.get('USER_ID'), list_title)
+        .run();
 
     const list_id = result.meta.last_row_id;
     const list_sqid = itemIdToSqid(list_id);
 
     // set sqid of list
-    await c.env.DB.prepare(
-        `UPDATE item_lists SET list_sqid = ? WHERE list_id = ?`,
-    ).bind(list_sqid, list_id).run();
+    await c.env.DB.prepare(`UPDATE item_lists SET list_sqid = ? WHERE list_id = ?`).bind(list_sqid, list_id).run();
 
-    const itemSqid = c.req.param("item_sqid");
+    const itemSqid = c.req.param('item_sqid');
     const itemId: number = itemSqidToId(itemSqid);
     // add item to list
-    await c.env.DB.prepare(
-        `INSERT INTO item_list_items (list_id, item_id) VALUES (?, ?)`,
-    ).bind(list_id, itemId).run();
+    await c.env.DB.prepare(`INSERT INTO item_list_items (list_id, item_id) VALUES (?, ?)`).bind(list_id, itemId).run();
 
-    return c.html(`<a class="no-underline no-color" href="/lists/${list_sqid}">${list_title}</a> <a hx-post="/items/${itemSqid}/lists/${list_sqid}/remove" hx-swap="outerHTML transition:true">[- remove from list]</a><br>`)
-}
+    return c.html(
+        `<a class="no-underline no-color" href="/lists/${list_sqid}">${list_title}</a> <a hx-post="/items/${itemSqid}/lists/${list_sqid}/remove" hx-swap="outerHTML transition:true">[- remove from list]</a><br>`,
+    );
+};
 
-export const handle_items_lists_POST = async (c: any) => {
-    
-}
+export const handle_items_lists_POST = async (c: any) => {};
 
 // add item to list
 export const handle_items_lists_add_POST = async (c: any) => {
-    const item_sqid = c.req.param("item_sqid");
-    const list_sqid = c.req.param("list_sqid");
+    const item_sqid = c.req.param('item_sqid');
+    const list_sqid = c.req.param('list_sqid');
     const item_id = itemSqidToId(item_sqid);
     const list_id = itemSqidToId(list_sqid);
 
-    const result = await c.env.DB.prepare(
-        `INSERT INTO item_list_items (list_id, item_id) VALUES (?, ?)`,
-    ).bind(list_id, item_id).run();
+    const result = await c.env.DB.prepare(`INSERT INTO item_list_items (list_id, item_id) VALUES (?, ?)`)
+        .bind(list_id, item_id)
+        .run();
 
-    return c.html("[added]")
-}
+    return c.html('[added]');
+};
 
 export const handle_items_lists_remove_POST = async (c: any) => {
-    const item_sqid = c.req.param("item_sqid");
-    const list_sqid = c.req.param("list_sqid");
+    const item_sqid = c.req.param('item_sqid');
+    const list_sqid = c.req.param('list_sqid');
     const item_id = itemSqidToId(item_sqid);
     const list_id = itemSqidToId(list_sqid);
 
-    const result = await c.env.DB.prepare(
-        `DELETE FROM item_list_items WHERE list_id = ? AND item_id = ?`,
-    ).bind(list_id, item_id).run();
+    const result = await c.env.DB.prepare(`DELETE FROM item_list_items WHERE list_id = ? AND item_id = ?`)
+        .bind(list_id, item_id)
+        .run();
 
-    return c.html("[removed]")
-}
-
+    return c.html('[removed]');
+};
 
 export const itemsAddToFavoritesHandler = async (c: any) => {
-    const itemSqid = c.req.param("item_sqid");
+    const itemSqid = c.req.param('item_sqid');
     const itemId: number = itemSqidToId(itemSqid);
-    const userId = c.get("USER_ID");
+    const userId = c.get('USER_ID');
 
     let result;
     try {
-        result = await c.env.DB.prepare(
-            `INSERT INTO favorites (user_id, item_id) VALUES (?, ?)`,
-        )
+        result = await c.env.DB.prepare(`INSERT INTO favorites (user_id, item_id) VALUES (?, ?)`)
             .bind(userId, itemId)
             .run();
     } catch (e) {
@@ -851,15 +824,13 @@ export const itemsAddToFavoritesHandler = async (c: any) => {
 };
 
 export const itemsRemoveFromFavoritesHandler = async (c: any) => {
-    const itemSqid = c.req.param("item_sqid");
+    const itemSqid = c.req.param('item_sqid');
     const itemId: number = itemSqidToId(itemSqid);
-    const userId = c.get("USER_ID");
+    const userId = c.get('USER_ID');
 
     let result;
     try {
-        result = await c.env.DB.prepare(
-            `DELETE FROM favorites WHERE user_id = ? AND item_id = ?`,
-        )
+        result = await c.env.DB.prepare(`DELETE FROM favorites WHERE user_id = ? AND item_id = ?`)
             .bind(userId, itemId)
             .run();
     } catch (e) {
@@ -890,50 +861,43 @@ export const itemsRemoveFromFavoritesHandler = async (c: any) => {
 };
 
 export const itemsAddItembyUrlHandler = async (c: any) => {
-    const feedSqid = c.req.param("feed_sqid");
+    const feedSqid = c.req.param('feed_sqid');
     const feedId = feedSqidToId(feedSqid);
 
-    const blog = await c.env.DB.prepare(`SELECT * FROM feeds WHERE feed_id = ?`)
-        .bind(feedId)
-        .all();
+    const blog = await c.env.DB.prepare(`SELECT * FROM feeds WHERE feed_id = ?`).bind(feedId).all();
 
     const blogTitle = blog.results[0].title;
 
     return c.html(
-        renderHTML(
-            "Add new item",
-            html`${renderAddItemByURLForm("", "", "", blogTitle)}`,
-            c.get("USERNAME"),
-            "blogs",
-        ),
+        renderHTML('Add new item', html`${renderAddItemByURLForm('', '', '', blogTitle)}`, c.get('USERNAME'), 'blogs'),
     );
 };
 
 export const itemDeleteHandler = async (c: any) => {
-    const itemSqid = c.req.param("item_sqid");
+    const itemSqid = c.req.param('item_sqid');
     const itemId = itemSqidToId(itemSqid);
 
     const dbDeleteResults = await c.env.DB.prepare(`DELETE FROM items WHERE item_id = ?`).bind(itemId).run();
     await c.env.VECTORIZE.deleteByIds([`${itemId}`]);
     if (dbDeleteResults.success) {
-        return c.html("Item deleted. Delete it from the index yourself dude");
+        return c.html('Item deleted. Delete it from the index yourself dude');
     } else {
-        return c.html("ERROR while deleting item from DB");
+        return c.html('ERROR while deleting item from DB');
     }
-}
+};
 
 export const itemsAddItemByUrlPostHandler = async (c: any) => {
-    const feedSqid = c.req.param("feed_sqid");
+    const feedSqid = c.req.param('feed_sqid');
     const feedId = feedSqidToId(feedSqid);
 
     const body = await c.req.parseBody();
-    const url = body["url"].toString();
-    const urls = body["urls"].toString();
+    const url = body['url'].toString();
+    const urls = body['urls'].toString();
     if (!url && !urls) {
-        return c.html("Both URL and URLs are empty")
+        return c.html('Both URL and URLs are empty');
     }
     if (url && urls) {
-        return c.html("Both URL and URLs are filled in, please only fill in one")
+        return c.html('Both URL and URLs are filled in, please only fill in one');
     }
 
     let urls_array;
@@ -941,19 +905,19 @@ export const itemsAddItemByUrlPostHandler = async (c: any) => {
         urls_array = [url];
     }
     if (urls) {
-        urls_array = urls.split("\r\n");
+        urls_array = urls.split('\r\n');
     }
 
     // remove empty strings from urls_array
-    urls_array = urls_array.filter((url: string) => url !== "");
+    urls_array = urls_array.filter((url: string) => url !== '');
 
     const added_items_sqids = [];
 
     for (const url_value of urls_array) {
         // check if item url already exists in the db
-        const existingItem = await c.env.DB.prepare(
-            `SELECT items.item_id FROM items WHERE url = ?`,
-        ).bind(url_value).run();
+        const existingItem = await c.env.DB.prepare(`SELECT items.item_id FROM items WHERE url = ?`)
+            .bind(url_value)
+            .run();
         if (existingItem.results.length > 0) {
             continue;
         }
@@ -967,7 +931,7 @@ export const itemsAddItemByUrlPostHandler = async (c: any) => {
             content_from_content: articleContent.data.content,
         };
 
-        const insert_results = await addItemsToFeed(c.env, [item], feedId, false);  // don't scrape after adding
+        const insert_results = await addItemsToFeed(c.env, [item], feedId, false); // don't scrape after adding
         const addedItemId = insert_results[0].meta.last_row_id;
         await enqueueItemIndex(c.env, addedItemId);
         const addedItemSqid = itemIdToSqid(addedItemId);
@@ -982,15 +946,15 @@ export const itemsAddItemByUrlPostHandler = async (c: any) => {
 };
 
 export const itemsScrapeHandler = async (c: Context) => {
-    const itemSqid = c.req.param("item_sqid");
+    const itemSqid = c.req.param('item_sqid');
     await enqueueItemScrape(c.env, itemSqidToId(itemSqid));
-    return c.html("Scrape queued...");
+    return c.html('Scrape queued...');
 };
 
 export const itemsIndexHandler = async (c: Context) => {
-    const itemSqid = c.req.param("item_sqid");
+    const itemSqid = c.req.param('item_sqid');
     await enqueueItemIndex(c.env, itemSqidToId(itemSqid));
-    return c.html("Indexing queued...");
+    return c.html('Indexing queued...');
 };
 
 export const regenerateRelatedCacheForItem = async (env: Bindings, itemId: number) => {
@@ -1001,51 +965,52 @@ export const regenerateRelatedCacheForItem = async (env: Bindings, itemId: numbe
         `SELECT items.item_id, feeds.title as feed_title
         FROM items 
         JOIN feeds ON items.feed_id = feeds.feed_id
-        WHERE item_id = ?`
-    ).bind(itemId).first();
-    
+        WHERE item_id = ?`,
+    )
+        .bind(itemId)
+        .first();
+
     if (!item) throw new Error(`Item with id ${itemId} not found`);
-    
-    const cache_content: { relatedFromOtherBlogs: RelatedItemCached[], relatedFromThisBlog: RelatedItemCached[] } = {
+
+    const cache_content: { relatedFromOtherBlogs: RelatedItemCached[]; relatedFromThisBlog: RelatedItemCached[] } = {
         relatedFromOtherBlogs: [],
-        relatedFromThisBlog: []
-    }
+        relatedFromThisBlog: [],
+    };
 
     // Processing items from other blogs
-    const matchesOtherBlogs = await env.VECTORIZE.query(
-        vectors[0].values, 
-        { 
-            topK: 11, 
-            filter: { feed_id: { "$ne": `${item.feed_id}` } }, 
-        }
-    );
+    const matchesOtherBlogs = await env.VECTORIZE.query(vectors[0].values, {
+        topK: 11,
+        filter: { feed_id: { $ne: `${item.feed_id}` } },
+    });
 
-    const relatedIDsOtherBlog:Array<string> = [];
+    const relatedIDsOtherBlog: Array<string> = [];
     for (const match of matchesOtherBlogs.matches) {
         if (match.id == `${itemId}`) continue; // skip current item itself
         relatedIDsOtherBlog.push(match.id);
     }
-    const queryBindPlaceholders = relatedIDsOtherBlog.map(() => '?').join(',');  // Generate '?,?,...,?'
+    const queryBindPlaceholders = relatedIDsOtherBlog.map(() => '?').join(','); // Generate '?,?,...,?'
     const relatedItemsOtherBlog = await env.DB.prepare(
         `SELECT item_id, item_sqid, items.title, feeds.title as feed_title, items.feed_id, feeds.feed_sqid, items.url
         FROM items 
         JOIN  feeds ON items.feed_id = feeds.feed_id
-        WHERE item_id IN (${queryBindPlaceholders})`
-    ).bind(...relatedIDsOtherBlog).all();
+        WHERE item_id IN (${queryBindPlaceholders})`,
+    )
+        .bind(...relatedIDsOtherBlog)
+        .all();
 
     relatedItemsOtherBlog.results.forEach((i: any) => {
         cache_content.relatedFromOtherBlogs.push({
-            "title": i.title,
-            "item_id": i.item_id,
-            "item_sqid": i.item_sqid,
-            "feed_title": i.feed_title,
-            "feed_id": i.feed_id,
-            "feed_sqid": i.feed_sqid,
-            "url": i.url
-        })
+            title: i.title,
+            item_id: i.item_id,
+            item_sqid: i.item_sqid,
+            feed_title: i.feed_title,
+            feed_id: i.feed_id,
+            feed_sqid: i.feed_sqid,
+            url: i.url,
+        });
     });
 
-    await env.DB.prepare(
-        "REPLACE INTO items_related_cache (item_id, content) values (?, ?)",
-    ).bind(itemId, JSON.stringify(cache_content)).run();
-}
+    await env.DB.prepare('REPLACE INTO items_related_cache (item_id, content) values (?, ?)')
+        .bind(itemId, JSON.stringify(cache_content))
+        .run();
+};
