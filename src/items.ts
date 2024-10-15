@@ -914,6 +914,7 @@ export const itemDeleteHandler = async (c: any) => {
     const itemId = itemSqidToId(itemSqid);
 
     const dbDeleteResults = await c.env.DB.prepare(`DELETE FROM items WHERE item_id = ?`).bind(itemId).run();
+    await c.env.VECTORIZE.deleteByIds([`${itemId}`]);
     if (dbDeleteResults.success) {
         return c.html("Item deleted. Delete it from the index yourself dude");
     } else {
