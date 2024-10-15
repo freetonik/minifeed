@@ -1,17 +1,17 @@
-import { Context } from "hono";
-import { decode } from "html-entities";
-import { getRssUrlsFromHtmlBody } from "rss-url-finder";
-import Sqids from "sqids";
+import { Context } from 'hono';
+import { decode } from 'html-entities';
+import { getRssUrlsFromHtmlBody } from 'rss-url-finder';
+import Sqids from 'sqids';
 
 const idToSqid = (id: number, length: number): string => {
     const sqids = new Sqids({
         minLength: length,
-        alphabet: "UV8E4hOJwLiXMpYBsWyQ7rNoeDgm9TGxbFI5aknAztjC2K3uZ6cldSqRv1PfH0",
+        alphabet: 'UV8E4hOJwLiXMpYBsWyQ7rNoeDgm9TGxbFI5aknAztjC2K3uZ6cldSqRv1PfH0',
     });
     return sqids.encode(
         id
             .toString()
-            .split("")
+            .split('')
             .map((char) => parseInt(char, 10)),
     );
 };
@@ -19,16 +19,15 @@ const idToSqid = (id: number, length: number): string => {
 const sqidToId = (sqid: string, length: number): number => {
     const sqids = new Sqids({
         minLength: length,
-        alphabet: "UV8E4hOJwLiXMpYBsWyQ7rNoeDgm9TGxbFI5aknAztjC2K3uZ6cldSqRv1PfH0",
+        alphabet: 'UV8E4hOJwLiXMpYBsWyQ7rNoeDgm9TGxbFI5aknAztjC2K3uZ6cldSqRv1PfH0',
     });
-    return parseInt(sqids.decode(sqid).join(""), 10);
+    return parseInt(sqids.decode(sqid).join(''), 10);
 };
 
 export const feedIdToSqid = (feedId: number): string => idToSqid(feedId, 5);
 export const feedSqidToId = (feedSqid: string): number => sqidToId(feedSqid, 5);
 export const itemIdToSqid = (itemId: number): string => idToSqid(itemId, 10);
-export const itemSqidToId = (itemSqid: string): number =>
-    sqidToId(itemSqid, 10);
+export const itemSqidToId = (itemSqid: string): number => sqidToId(itemSqid, 10);
 
 export async function getRSSLinkFromUrl(url: string) {
     let req;
@@ -42,18 +41,13 @@ export async function getRSSLinkFromUrl(url: string) {
     if (!pageContent.length) throw new Error(`Empty content at url: ${url}`);
 
     // the content of the page is HTML, try to find RSS link
-    if (
-        pageContent.includes("<html") ||
-        pageContent.includes("<!DOCTYPE html>")
-    ) {
+    if (pageContent.includes('<html') || pageContent.includes('<!DOCTYPE html>')) {
         const rssUrlObj = getRssUrlsFromHtmlBody(pageContent);
-        if (!rssUrlObj.length || !rssUrlObj[0]["url"])
-            throw new Error(`Cannot find RSS link in HTML of URL: ${url}`);
-        let foundRSSLink = rssUrlObj[0]["url"];
+        if (!rssUrlObj.length || !rssUrlObj[0]['url']) throw new Error(`Cannot find RSS link in HTML of URL: ${url}`);
+        let foundRSSLink = rssUrlObj[0]['url'];
         // the found rss link may be relative or absolute; handle both cases here
-        if (foundRSSLink.substring(0, 4) != "http") {
-            if (url.substring(url.length - 1) != "/")
-                foundRSSLink = url + "/" + foundRSSLink;
+        if (foundRSSLink.substring(0, 4) != 'http') {
+            if (url.substring(url.length - 1) != '/') foundRSSLink = url + '/' + foundRSSLink;
             else foundRSSLink = url + foundRSSLink;
         }
         return foundRSSLink;
@@ -64,12 +58,8 @@ export async function getRSSLinkFromUrl(url: string) {
 }
 
 export async function getFeedIdByRSSUrl(c: Context, rssUrl: string) {
-    const { results } = await c.env.DB.prepare(
-        "SELECT feed_id FROM feeds where rss_url = ?",
-    )
-        .bind(rssUrl)
-        .all();
-    return results[0]["feed_id"];
+    const { results } = await c.env.DB.prepare('SELECT feed_id FROM feeds where rss_url = ?').bind(rssUrl).all();
+    return results[0]['feed_id'];
 }
 
 /**
@@ -80,17 +70,15 @@ export async function getFeedIdByRSSUrl(c: Context, rssUrl: string) {
  * @returns The text value of the input.
  */
 export const getText = (val: any) => {
-    const txt = isObject(val)
-        ? val._text || val["#text"] || val._cdata || val.$t
-        : val;
-    return txt ? decode(String(txt).trim()) : "";
+    const txt = isObject(val) ? val._text || val['#text'] || val._cdata || val.$t : val;
+    return txt ? decode(String(txt).trim()) : '';
 };
 const ob2Str = (val: any) => {
     return {}.toString.call(val);
 };
 
 export const isObject = (val: any) => {
-    return ob2Str(val) === "[object Object]" && !Array.isArray(val);
+    return ob2Str(val) === '[object Object]' && !Array.isArray(val);
 };
 
 export const absolutifyImageUrls = async (html: string, rootUrl: string): Promise<string> => {
@@ -101,7 +89,7 @@ export const absolutifyImageUrls = async (html: string, rootUrl: string): Promis
                 const absoluteUrl = new URL(src, rootUrl).toString();
                 element.setAttribute('src', absoluteUrl);
             }
-        }
+        },
     });
 
     const response = new Response(html);
@@ -127,7 +115,7 @@ export function getRootUrl(url: string) {
  * @returns The string with ASCII formatting characters replaced by spaces.
  */
 export function stripASCIIFormatting(str: string) {
-    return str.replace(/[|│┤┼├┌┬┐└┴┘—─\-–▬░▒▓┫]/g, " ");
+    return str.replace(/[|│┤┼├┌┬┐└┴┘—─\-–▬░▒▓┫]/g, ' ');
 }
 
 /**
@@ -137,7 +125,7 @@ export function stripASCIIFormatting(str: string) {
  * @returns The input string with collapsed whitespace.
  */
 export function collapseWhitespace(str: string) {
-    return str.replace(/\s+/g, " ").trim();
+    return str.replace(/\s+/g, ' ').trim();
 }
 
 /**
@@ -147,12 +135,12 @@ export function collapseWhitespace(str: string) {
  */
 export async function gatherResponse(response: Response) {
     const { headers } = response;
-    const contentType = headers.get("content-type") || "";
-    if (contentType.includes("application/json")) {
+    const contentType = headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
         return JSON.stringify(await response.json());
-    } else if (contentType.includes("application/text")) {
+    } else if (contentType.includes('application/text')) {
         return response.text();
-    } else if (contentType.includes("text/html")) {
+    } else if (contentType.includes('text/html')) {
         return response.text();
     } else {
         return response.text();
@@ -165,29 +153,29 @@ export const truncate = (s: string, len = 140) => {
     if (txt_length <= len) return txt;
 
     const sub_text = txt.substring(0, len).trim();
-    const sub_text_array = sub_text.split(" ");
+    const sub_text_array = sub_text.split(' ');
     const sub_text_length = sub_text_array.length;
     if (sub_text_length > 1) {
         sub_text_array.pop();
-        return sub_text_array.map((word: string) => word.trim()).join(" ") + "...";
+        return sub_text_array.map((word: string) => word.trim()).join(' ') + '...';
     }
-    return sub_text.substring(0, len - 3) + "...";
+    return sub_text.substring(0, len - 3) + '...';
 };
 
 export const stripTags = (s: string) => {
     const stripped_text = new HTMLRewriter()
-    .on('*', {
-      text(textChunk) {
-        // Keep the text content as-is, effectively stripping tags
-        textChunk.after(textChunk.text, {html: false})
-      },
-      element(element) {
-        // Remove all HTML elements
-        element.removeAndKeepContent()
-      }
-    })
-    .transform(new Response(s))
-    .text();
+        .on('*', {
+            text(textChunk) {
+                // Keep the text content as-is, effectively stripping tags
+                textChunk.after(textChunk.text, { html: false });
+            },
+            element(element) {
+                // Remove all HTML elements
+                element.removeAndKeepContent();
+            },
+        })
+        .transform(new Response(s))
+        .text();
 
     return stripped_text;
 };
@@ -195,17 +183,16 @@ export const stripTags = (s: string) => {
 export const stripTagsSynchronously = (s: string) => {
     return s
         .toString()
-        .replace(/(<([^>]+)>)/gi, "")
+        .replace(/(<([^>]+)>)/gi, '')
         .trim();
-}
+};
 
 export const extractItemUrl = (item: any, feedRSSUrl: string) => {
-    if (!item.link && !item.id)
-        throw new Error("Cannot extract item URL: missing link, guid, or id");
+    if (!item.link && !item.id) throw new Error('Cannot extract item URL: missing link, guid, or id');
 
     let link = item.link || item.id;
     // if link does not start with http, it's probably a relative link, so we need to absolutify it by prepending the RSS URL origin
-    if (!link.startsWith("http")) {
+    if (!link.startsWith('http')) {
         const feedRSSUrlBase = new URL(feedRSSUrl).origin;
         link = new URL(link, feedRSSUrlBase).toString();
     }
@@ -213,22 +200,38 @@ export const extractItemUrl = (item: any, feedRSSUrl: string) => {
     return link;
 };
 
-// This is used e.g. for preparing plaintext description and for vectorization 
+// This is used e.g. for preparing plaintext description and for vectorization
 export const stripNonLinguisticElements = async (s: string) => {
-    const badList = ['img', 'video', 'audio', 'form', 'button', 'code', 'canvas', 'iframe', 'script', 'style', 'input', 'textarea', 'frameset', 'footer', 'header'];
+    const badList = [
+        'img',
+        'video',
+        'audio',
+        'form',
+        'button',
+        'code',
+        'canvas',
+        'iframe',
+        'script',
+        'style',
+        'input',
+        'textarea',
+        'frameset',
+        'footer',
+        'header',
+    ];
     const stripped = new HTMLRewriter()
         .on('*', {
             element(element) {
                 if (badList.includes(element.tagName)) {
                     element.remove();
                 }
-            }
+            },
         })
         .transform(new Response(s))
         .text();
 
     return stripped;
-}
+};
 
 export const sanitizeHTML = async (contentBlock: string): Promise<string> => {
     const sanitizedContentBlock = new HTMLRewriter()
@@ -236,23 +239,99 @@ export const sanitizeHTML = async (contentBlock: string): Promise<string> => {
             element(element) {
                 // Remove potentially dangerous attributes
                 const dangerousAttributes = [
-                    'onabort', 'onanimationcancel', 'onanimationend', 'onanimationiteration', 'onanimationstart',
-                    'onauxclick', 'onblur', 'oncancel', 'oncanplay', 'oncanplaythrough', 'onchange', 'onclick',
-                    'onclose', 'oncontextmenu', 'oncopy', 'oncuechange', 'oncut', 'ondblclick', 'ondrag',
-                    'ondragend', 'ondragenter', 'ondragleave', 'ondragover', 'ondragstart', 'ondrop',
-                    'ondurationchange', 'onemptied', 'onended', 'onerror', 'onfocus', 'onformdata', 'onfullscreenchange',
-                    'onfullscreenerror', 'ongotpointercapture', 'oninput', 'oninvalid', 'onkeydown', 'onkeypress',
-                    'onkeyup', 'onload', 'onloadeddata', 'onloadedmetadata', 'onloadstart', 'onlostpointercapture',
-                    'onmousedown', 'onmouseenter', 'onmouseleave', 'onmousemove', 'onmouseout', 'onmouseover',
-                    'onmouseup', 'onpaste', 'onpause', 'onplay', 'onplaying', 'onpointercancel', 'onpointerdown',
-                    'onpointerenter', 'onpointerleave', 'onpointermove', 'onpointerout', 'onpointerover', 'onpointerup',
-                    'onprogress', 'onratechange', 'onreset', 'onresize', 'onscroll', 'onsecuritypolicyviolation',
-                    'onseeked', 'onseeking', 'onselect', 'onselectionchange', 'onselectstart', 'onslotchange',
-                    'onstalled', 'onsubmit', 'onsuspend', 'ontimeupdate', 'ontoggle', 'ontouchcancel', 'ontouchend',
-                    'ontouchmove', 'ontouchstart', 'ontransitioncancel', 'ontransitionend', 'ontransitionrun',
-                    'ontransitionstart', 'onvolumechange', 'onwaiting', 'onwheel'
+                    'onabort',
+                    'onanimationcancel',
+                    'onanimationend',
+                    'onanimationiteration',
+                    'onanimationstart',
+                    'onauxclick',
+                    'onblur',
+                    'oncancel',
+                    'oncanplay',
+                    'oncanplaythrough',
+                    'onchange',
+                    'onclick',
+                    'onclose',
+                    'oncontextmenu',
+                    'oncopy',
+                    'oncuechange',
+                    'oncut',
+                    'ondblclick',
+                    'ondrag',
+                    'ondragend',
+                    'ondragenter',
+                    'ondragleave',
+                    'ondragover',
+                    'ondragstart',
+                    'ondrop',
+                    'ondurationchange',
+                    'onemptied',
+                    'onended',
+                    'onerror',
+                    'onfocus',
+                    'onformdata',
+                    'onfullscreenchange',
+                    'onfullscreenerror',
+                    'ongotpointercapture',
+                    'oninput',
+                    'oninvalid',
+                    'onkeydown',
+                    'onkeypress',
+                    'onkeyup',
+                    'onload',
+                    'onloadeddata',
+                    'onloadedmetadata',
+                    'onloadstart',
+                    'onlostpointercapture',
+                    'onmousedown',
+                    'onmouseenter',
+                    'onmouseleave',
+                    'onmousemove',
+                    'onmouseout',
+                    'onmouseover',
+                    'onmouseup',
+                    'onpaste',
+                    'onpause',
+                    'onplay',
+                    'onplaying',
+                    'onpointercancel',
+                    'onpointerdown',
+                    'onpointerenter',
+                    'onpointerleave',
+                    'onpointermove',
+                    'onpointerout',
+                    'onpointerover',
+                    'onpointerup',
+                    'onprogress',
+                    'onratechange',
+                    'onreset',
+                    'onresize',
+                    'onscroll',
+                    'onsecuritypolicyviolation',
+                    'onseeked',
+                    'onseeking',
+                    'onselect',
+                    'onselectionchange',
+                    'onselectstart',
+                    'onslotchange',
+                    'onstalled',
+                    'onsubmit',
+                    'onsuspend',
+                    'ontimeupdate',
+                    'ontoggle',
+                    'ontouchcancel',
+                    'ontouchend',
+                    'ontouchmove',
+                    'ontouchstart',
+                    'ontransitioncancel',
+                    'ontransitionend',
+                    'ontransitionrun',
+                    'ontransitionstart',
+                    'onvolumechange',
+                    'onwaiting',
+                    'onwheel',
                 ];
-                dangerousAttributes.forEach(attr => element.removeAttribute(attr));
+                dangerousAttributes.forEach((attr) => element.removeAttribute(attr));
 
                 // Sanitize href attributes
                 if (element.tagName === 'a' && element.getAttribute('href')) {
@@ -274,7 +353,7 @@ export const sanitizeHTML = async (contentBlock: string): Promise<string> => {
                         element.remove();
                     }
                 }
-            }
+            },
         })
         .transform(new Response(contentBlock))
         .text();
