@@ -395,7 +395,7 @@ export const handle_items_single = async (c: Context) => {
 
     if (!batch[1].results.length) return c.notFound();
 
-    const user_is_subscribed = batch[0].results.length ? true : false;
+    const user_is_subscribed = batch[0].results.length;
 
     const item = batch[1].results[0];
     const date_format_opts: Intl.DateTimeFormatOptions = {
@@ -405,7 +405,7 @@ export const handle_items_single = async (c: Context) => {
     };
     const post_date = new Date(item.pub_date).toLocaleDateString('en-UK', date_format_opts);
 
-    let contentBlock;
+    let contentBlock = '';
 
     if (!item.description && !item.content_html && !item.content_html_scraped) {
         contentBlock = `<div class="flash" style="margin-top:1em;">This post cannot be viewed on Minifeed. <a href="${item.item_url}" target="_blank">↗ Open original</a></div>`;
@@ -416,7 +416,7 @@ export const handle_items_single = async (c: Context) => {
                 // We have full content from feed
                 if (item.content_html_scraped) {
                     // We have scraped content
-                    if (item.content_html.length > item.content_html_scraped.length * 0.65) {
+                    if (item.content_html.length > item.content_html_scraped.length * 0.5) {
                         // Full content is longer than 0.65 of scraped content
                         contentBlock = raw(item.content_html);
                     } else {
@@ -513,8 +513,8 @@ export const handle_items_single = async (c: Context) => {
 
     let otherItemsBlock = '';
     if (batch[2].results.length) {
-        otherItemsBlock += `<div class="related-items"><h4>More from ${item.type} <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a>:</h4>`;
-        batch[2].results.forEach((related_item: any) => {
+        otherItemsBlock += `<div class="related-items"><h4>More from <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a>:</h4><div class="items">`;
+        for (const related_item of batch[2].results) {
             const itemTitle = related_item.favorite_id ? `★ ${related_item.item_title}` : related_item.item_title;
             otherItemsBlock += renderItemShort(
                 related_item.item_sqid,
@@ -525,27 +525,22 @@ export const handle_items_single = async (c: Context) => {
                 related_item.pub_date,
                 related_item.description,
             );
-        });
-        otherItemsBlock += `</div>`;
+        }
+        otherItemsBlock += '</div></div>';
     }
 
     let related_block = '';
-    if (c.get('USER_IS_ADMIN')) {
-        if (item.related_content) {
-            const related_content = JSON.parse(item.related_content);
-            const related_from_other_blogs = related_content['relatedFromOtherBlogs'];
+    if (item.related_content) {
+        const related_content = JSON.parse(item.related_content);
+        const related_from_other_blogs = related_content.relatedFromOtherBlogs;
 
-            related_block += `<div class="related-items">`;
-            if (related_from_other_blogs && related_from_other_blogs.length)
-                related_block += `<h4>Related (from other blogs):</h4>`;
-            related_from_other_blogs.forEach((i: RelatedItemCached) => {
-                related_block += `<p><a class="no-color no-underline" href="/items/${i.item_sqid}">${i.title}</a><br>
-                <span class="muted"> <small>from <a href="/blogs/${i.feed_sqid}">${i.feed_title}</a> | <a target="_blank" class="no-underline no-color" href="${i.url}">original </a></small>
-                </span>
-                </p>`;
-            });
-            related_block += `</div>`;
+        related_block += `<div class="related-items">`;
+        if (related_from_other_blogs?.length)
+            related_block += '<h4>Related (from other blogs):</h4><div class="items">';
+        for (const i of related_from_other_blogs) {
+            related_block += renderItemShort(i.item_sqid, i.title, i.url, i.feed_title, i.feed_sqid);
         }
+        related_block += '</div></div>';
     }
 
     let list = `
@@ -570,17 +565,17 @@ export const handle_items_single = async (c: Context) => {
     `;
 
     let debug_info = '';
-    if (c.get('USER_ID') == 1) {
+    if (c.get('USER_IS_ADMIN')) {
         debug_info = `${batch[0].meta.duration}+${batch[1].meta.duration}+${batch[2].meta.duration} ms.;
             ${batch[0].meta.rows_read}+${batch[1].meta.rows_read}+${batch[2].meta.rows_read} rows read`;
         const show_content_html_over_scraped =
             item.content_html &&
             item.content_html_scraped &&
-            item.content_html.length > item.content_html_scraped.length * 0.65;
+            item.content_html.length > item.content_html_scraped.length * 0.5;
         let show_content_html_over_scraped_block = 'not applicable';
-        if (item.content_html_scraped && show_content_html_over_scraped) show_content_html_over_scraped_block = `yes`;
+        if (item.content_html_scraped && show_content_html_over_scraped) show_content_html_over_scraped_block = 'yes';
         else if (item.content_html_scraped && !show_content_html_over_scraped)
-            show_content_html_over_scraped_block = `no`;
+            show_content_html_over_scraped_block = 'no';
         list += `
         <p style="text-align:center;"><a class="no-underline" href="#hidden">🦎</a></p>
         <div class="admin-control" id="hidden">
