@@ -1,24 +1,22 @@
-import { html } from "hono/html";
+import { html } from 'hono/html';
 
 export const renderHTML = (
     title: string,
     inner: string,
     user_logged_in: boolean = false,
-    active: string = "all",
-    searchQuery: string = "",
-    canonicalUrl: string = "",
+    active: string = 'all',
+    searchQuery: string = '',
+    canonicalUrl: string = '',
     prefix_root_url: boolean = false,
-    debug_info: string = ""
+    debug_info: string = '',
 ) => {
-    const root_url = prefix_root_url ? "https://minifeed.net" : "";
-    const canonicalUrlBlock = canonicalUrl ? html`<link rel="canonical" href="${canonicalUrl}" />` : "";
+    const root_url = prefix_root_url ? 'https://minifeed.net' : '';
+    const canonicalUrlBlock = canonicalUrl ? html`<link rel="canonical" href="${canonicalUrl}" />` : '';
 
     let userBlock = html``;
-    if (user_logged_in)
-        userBlock = html`<a href="${root_url}/my/account">account</a>`;
+    if (user_logged_in) userBlock = html`<a href="${root_url}/my/account">account</a>`;
     else
         userBlock = html`<span><a href="${root_url}/login" class="bold">Log in</a> or <a class="bold" href="${root_url}/signup">sign up</a></span>`;
-
 
     return html`
     <!DOCTYPE html>
@@ -44,7 +42,7 @@ export const renderHTML = (
 
             --color-gray: #555;
             --color-bg: hsla(50, 25%, 96%);
-            --color-highlight: #ebebeb;
+            --color-highlight: #ebebe8;
 
             --padding: 1.25em;
         }
@@ -313,7 +311,7 @@ export const renderHTML = (
             width: 100%;
             font-size: inherit !important;
             min-height: 0 !important;
-            background-color: #ebebe8;
+            background-color: var(--color-highlight);
             transition: background-color 0.75s ease;
         }
 
@@ -370,13 +368,22 @@ export const renderHTML = (
 
 
         .related-items {
-            border: 1px solid black;
-            padding: 1.25em;
+            border: 1px solid black;    
             margin: 2em 0;
         }
 
+        .related-items h4, h3 {
+            border-bottom: 1px solid black;
+            padding: 1em 1.25em;
+            background-color: #ebebe8;
+        }
+
+        .related-items div.items {
+            padding: 1.5em 1.25em 0.5em;
+        }
+
         .related-items h4 {
-            margin-top: 0;
+            margin: 0;
         }
 
         .related-items .item-short:last-child {
@@ -443,11 +450,11 @@ export const renderHTML = (
             <nav aria-label="Site navigation">
                 <div>
                     <a href="${root_url}/" class="logo"><span>⬤</span> <span class="bold" style="margin-left: 0.2em;margin-right:1.5em;">minifeed</span></a>
-                    <a href="${root_url}/my" class="${active === "my" ? "bold" : ""}">My feed</a>
-                    <a href="${root_url}/global" class="${active === "global" ? "bold" : ""}" style="margin-left: 0.5em">Global</a>
-                    <a href="${root_url}/blogs" class="${active === "blogs" ? "bold" : ""}" style="margin-left: 0.5em">Blogs</a>
-                    <a href="${root_url}/lists" class="${active === "lists" ? "bold" : ""}" style="margin-left: 0.5em">Lists</a>
-                    <a href="${root_url}/users" class="${active === "users" ? "bold" : ""}" style="margin-left: 0.5em">Users</a>
+                    <a href="${root_url}/my" class="${active === 'my' ? 'bold' : ''}">My feed</a>
+                    <a href="${root_url}/global" class="${active === 'global' ? 'bold' : ''}" style="margin-left: 0.5em">Global</a>
+                    <a href="${root_url}/blogs" class="${active === 'blogs' ? 'bold' : ''}" style="margin-left: 0.5em">Blogs</a>
+                    <a href="${root_url}/lists" class="${active === 'lists' ? 'bold' : ''}" style="margin-left: 0.5em">Lists</a>
+                    <a href="${root_url}/users" class="${active === 'users' ? 'bold' : ''}" style="margin-left: 0.5em">Users</a>
                 </div>
                     ${userBlock}
             </nav>
@@ -474,9 +481,9 @@ export const renderHTML = (
 };
 
 const dateFormatOptions: Intl.DateTimeFormatOptions = {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
 };
 
 export const renderItemShort = (
@@ -490,13 +497,10 @@ export const renderItemShort = (
 ) => {
     const divClass = summary ? 'item-short' : 'item-tiny';
 
-    const postDate = pub_date ? new Date(pub_date).toLocaleDateString(
-        "en-UK",
-        dateFormatOptions,
-    ) + ' | ' :  ""
+    const postDate = pub_date ? `${new Date(pub_date).toLocaleDateString('en-UK', dateFormatOptions)} | ` : '';
 
-    const feedLink = feed_title ? `<a href="/blogs/${feed_sqid}">${feed_title}</a> | ` : "";
-    const summaryContent = summary ? `<p class="item-summary">${summary}</p>` : "";
+    const feedLink = feed_title ? `<a href="/blogs/${feed_sqid}">${feed_title}</a> | ` : '';
+    const summaryContent = summary ? `<p class="item-summary">${summary}</p>` : '';
 
     return `
     <div class="${divClass}">
@@ -513,39 +517,29 @@ export const renderItemShort = (
     `;
 };
 
-
 export const renderItemSearchResult = (searchResult: any) => {
-    const item = searchResult["document"];
-    const postDate = new Date(item["pub_date"]).toLocaleDateString(
-        "en-UK",
-        dateFormatOptions,
-    );
-    const feedSqid = item["feed_sqid"];
-    const itemSqid = item["item_sqid"];
-    const uri_root_from_type = item["type"] === "blog" ? "blogs" : "";
+    const item = searchResult['document'];
+    const postDate = new Date(item['pub_date']).toLocaleDateString('en-UK', dateFormatOptions);
+    const feedSqid = item['feed_sqid'];
+    const itemSqid = item['item_sqid'];
+    const uri_root_from_type = item['type'] === 'blog' ? 'blogs' : '';
 
-    let title = item["title"];
-    if (
-        searchResult["highlight"]["title"] &&
-        searchResult["highlight"]["title"]["snippet"]
-    ) {
-        title = searchResult["highlight"]["title"]["snippet"];
+    let title = item['title'];
+    if (searchResult['highlight']['title'] && searchResult['highlight']['title']['snippet']) {
+        title = searchResult['highlight']['title']['snippet'];
     }
-    let content = "";
-    if (
-        searchResult["highlight"]["content"] &&
-        searchResult["highlight"]["content"]["snippet"]
-    ) {
-        content = searchResult["highlight"]["content"]["snippet"];
+    let content = '';
+    if (searchResult['highlight']['content'] && searchResult['highlight']['content']['snippet']) {
+        content = searchResult['highlight']['content']['snippet'];
     }
 
     return `
     <div class="item-short search-result">
         <a href="/items/${itemSqid}" class="no-underline bold">${title}</a> <br>
         <div class="muted"><small>
-            from ${item["type"]} <a href="/${uri_root_from_type}/${feedSqid}">${item["feed_title"]}</a> |
+            from ${item['type']} <a href="/${uri_root_from_type}/${feedSqid}">${item['feed_title']}</a> |
             <time>${postDate}</time> |
-            <a class="no-underline no-color" href="${item["url"]}">original</a>
+            <a class="no-underline no-color" href="${item['url']}">original</a>
         </small></div>
         <p class="item-summary">
         ${content}...
@@ -554,22 +548,16 @@ export const renderItemSearchResult = (searchResult: any) => {
     `;
 };
 
-export const renderAddFeedForm = (url: string = "", flash: string = "") => {
-    let flash_test = "";
-    if (flash.includes("Cannot find RSS link"))
-        flash_test +=
-            "Cannot find RSS link on that page. Try entering direct RSS URL.";
-    else if (flash.includes("UNIQUE constraint failed: feeds.rss_url"))
-        flash_test += "Blog already exists.";
-    else if (flash.includes("Cannot fetch url"))
-        flash_test += "That page does not exist.";
-    else if (flash.includes("error code 530"))
-        flash_test += "That page does not exist.";
+export const renderAddFeedForm = (url: string = '', flash: string = '') => {
+    let flash_test = '';
+    if (flash.includes('Cannot find RSS link'))
+        flash_test += 'Cannot find RSS link on that page. Try entering direct RSS URL.';
+    else if (flash.includes('UNIQUE constraint failed: feeds.rss_url')) flash_test += 'Blog already exists.';
+    else if (flash.includes('Cannot fetch url')) flash_test += 'That page does not exist.';
+    else if (flash.includes('error code 530')) flash_test += 'That page does not exist.';
     else flash_test += flash;
 
-    const flashBlock = flash
-        ? html`<div class="flash flash-red">${flash_test}</div>`
-        : "";
+    const flashBlock = flash ? html`<div class="flash flash-red">${flash_test}</div>` : '';
     return html`
     <h1>Add new blog</h1>
     ${flashBlock}
@@ -590,19 +578,16 @@ export const renderAddFeedForm = (url: string = "", flash: string = "") => {
 };
 
 export const renderAddItemByURLForm = (
-    url: string = "",
-    urls: string = "",
-    flash: string = "",
-    blogTitle: string = "",
+    url: string = '',
+    urls: string = '',
+    flash: string = '',
+    blogTitle: string = '',
 ) => {
-    let flash_test = "";
-    if (flash.includes("Cannot fetch url"))
-        flash_test += "That page does not exist.";
+    let flash_test = '';
+    if (flash.includes('Cannot fetch url')) flash_test += 'That page does not exist.';
     else flash_test += flash;
 
-    const flashBlock = flash
-        ? html`<div class="flash flash-red">${flash_test}</div>`
-        : "";
+    const flashBlock = flash ? html`<div class="flash flash-red">${flash_test}</div>` : '';
     return html`
     <h1>Add new item by URL to ${blogTitle}</h1>
     ${flashBlock}
@@ -636,18 +621,18 @@ export const renderAddItemByURLForm = (
   `;
 };
 
-export const render_my_subsections = (active: string = "all") => {
+export const render_my_subsections = (active: string = 'all') => {
     return html`
     <nav class="subsections">
-        <a href="/my" class="no-color no-underline ${active === "my" ? "active bold" : ""}">all</a>
-        <a href="/my/subscriptions" class="no-color no-underline ${active === "subscriptions" ? "active bold" : ""}">subscriptions</a>
-        <a href="/my/favorites" class="no-color no-underline ${active === "favorites" ? "active bold" : ""}">favorites</a>
-        <a href="/my/friendfeed" class="no-color no-underline ${active === "friendfeed" ? "active bold" : ""}">friendfeed</a>
+        <a href="/my" class="no-color no-underline ${active === 'my' ? 'active bold' : ''}">all</a>
+        <a href="/my/subscriptions" class="no-color no-underline ${active === 'subscriptions' ? 'active bold' : ''}">subscriptions</a>
+        <a href="/my/favorites" class="no-color no-underline ${active === 'favorites' ? 'active bold' : ''}">favorites</a>
+        <a href="/my/friendfeed" class="no-color no-underline ${active === 'friendfeed' ? 'active bold' : ''}">friendfeed</a>
     </nav>
     `;
-}
+};
 
-export const render_mblog_editor = (title: string, content: string = "") => {
+export const render_mblog_editor = (title: string, content: string = '') => {
     return `
     <script src="https://unpkg.com/tiny-markdown-editor/dist/tiny-mde.min.js"></script>
 
@@ -889,5 +874,5 @@ export const render_mblog_editor = (title: string, content: string = "") => {
     }
     }
     </style>
-    `
-}
+    `;
+};
