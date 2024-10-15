@@ -1,25 +1,23 @@
-import { Bindings } from "./bindings";
-import { enqueueItemIndex } from "./queue";
-import { stripTags, truncate } from "./utils";
+import type { Bindings } from './bindings';
+import { enqueueItemIndex } from './queue';
+import { stripTags, truncate } from './utils';
 
 export async function scrapeItem(env: Bindings, item_id: number) {
-    const { results: items } = await env.DB.prepare(
-        "SELECT url, description FROM items WHERE item_id = ?",
-    ).bind(item_id).all();
-    
-    const item_url = String(items[0]["url"]);
-    let item_description = String(items[0]["description"]);
+    const { results: items } = await env.DB.prepare('SELECT url, description FROM items WHERE item_id = ?')
+        .bind(item_id)
+        .all();
+
+    const item_url = String(items[0].url);
+    let item_description = String(items[0].description);
 
     console.log(`Scraping item ${item_id} (${item_url})`);
 
     try {
-        const articleInfoParsed = await scrapeURLIntoObject(env, item_url)
+        const articleInfoParsed = await scrapeURLIntoObject(env, item_url);
         const content = articleInfoParsed.data.content;
         if (!item_description || item_description.length < 5)
             item_description = await stripTags(truncate(content, 500));
-        await env.DB.prepare(
-            "UPDATE items SET content_html_scraped = ?, description = ? WHERE item_id = ?",
-        )
+        await env.DB.prepare('UPDATE items SET content_html_scraped = ?, description = ? WHERE item_id = ?')
             .bind(content, item_description, item_id)
             .run();
     } catch (err: unknown) {
