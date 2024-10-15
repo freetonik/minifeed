@@ -97,3 +97,5 @@
     //     .bind(item_id, JSON.stringify(cache_content))
     //     .run();
     // TEMPORARY
+
+    ❯ npx wrangler d1 execute minifeed --command="SELECT items.item_id, items.item_sqid FROM items LEFT JOIN items_vector_relation on items.item_id = items_vector_relation.item_id where items_vector_relation.vectorized is null and items.item_id <= 2000" --remote
