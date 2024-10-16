@@ -180,7 +180,7 @@ export const handle_admin_unvectorized_items = async (c: Context) => {
     for (const item of unvectorized_items.results) {
         list += `<li>
             <a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a> 
-            <a href="/admin/vectorize?start=${item.item_sqid}&stop=${item.item_sqid}">[vectorize]</a>
+            <a href="/admin/vectorize?start=${item.item_id}&stop=${item.item_id}">[vectorize]</a>
             <br> 
             <code>${item.item_id}</code> | <code>${item.item_sqid}</code>
             <br>
