@@ -914,7 +914,7 @@ export const itemsAddItemByUrlPostHandler = async (c: any) => {
 
     for (const url_value of urls_array) {
         // check if item url already exists in the db
-        const existingItem = await c.env.DB.prepare(`SELECT items.item_id FROM items WHERE url = ?`)
+        const existingItem = await c.env.DB.prepare('SELECT items.item_id FROM items WHERE url = ?')
             .bind(url_value)
             .run();
         if (existingItem.results.length > 0) {
@@ -932,7 +932,11 @@ export const itemsAddItemByUrlPostHandler = async (c: any) => {
 
         const insert_results = await addItemsToFeed(c.env, [item], feedId, false); // don't scrape after adding
         const addedItemId = insert_results[0].meta.last_row_id;
-        await enqueueItemIndex(c.env, addedItemId);
+
+        await enqueueItemIndex(c.env, addedItemId); // addItemsToFeed(..scrapeAfterAdding=false), so scrape it...
+        await enqueueVectorizeStoreItem(c.env, addedItemId); // ... and vectorize it...
+        await enqueueRegenerateItemRelatedCache(c.env, addedItemId); //... and generate related items cache
+
         const addedItemSqid = itemIdToSqid(addedItemId);
         added_items_sqids.push(addedItemSqid);
     }
