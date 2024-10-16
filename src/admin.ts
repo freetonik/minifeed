@@ -171,11 +171,10 @@ export const handle_admin_unvectorized_items = async (c: Context) => {
     const unvectorized_items = await c.env.DB.prepare(
         `SELECT items.item_id, items.feed_id, items.title, items.item_sqid, feeds.title as feed_title, feeds.feed_sqid
         FROM items 
-        JOIN feeds on items.feed_id = feeds.feed_id
+        LEFT JOIN feeds on items.feed_id = feeds.feed_id
         LEFT JOIN items_vector_relation on items.item_id = items_vector_relation.item_id 
-        
         WHERE items_vector_relation.vectorized is null
-        GROUP BY items.feed_id`,
+        `,
     ).all();
 
     for (const item of unvectorized_items.results) {
