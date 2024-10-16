@@ -1,4 +1,4 @@
-import { Bindings } from './bindings';
+import type { Bindings } from './bindings';
 
 ///////////////////////////////
 // FEED UPDATES ///////////////
@@ -19,7 +19,7 @@ export async function enqueueUpdateAllFeeds(env: Bindings) {
         "SELECT feed_id, rss_url FROM feeds WHERE type = 'blog'",
     ).all<FeedsRowPartial>();
     for (const feed of feeds) {
-        await enqueueFeedUpdate(env, feed['feed_id']);
+        await enqueueFeedUpdate(env, feed.feed_id);
     }
 }
 
@@ -41,7 +41,7 @@ export async function enqueueScrapeAllItemsOfFeed(env: Bindings, feed_id: number
         .bind(feed_id)
         .all<ItemsRowPartial>();
     for (const item of items) {
-        await enqueueItemScrape(env, item['item_id']);
+        await enqueueItemScrape(env, item.item_id);
     }
 }
 
@@ -90,14 +90,3 @@ export async function enqueueRegenerateItemSummary(env: Bindings, item_id: numbe
         item_id: item_id,
     });
 }
-
-// export async function enqueueVectorizeStoreItemsInRange(
-//     env: Bindings,
-//     start_id: number,
-//     end_id: number,
-// ) {
-//     // iterate over all items in range
-//     for (let i = start_id; i <= end_id; i++) {
-//         await enqueueVectorizeStoreItem(env, i);
-//     }
-// }
