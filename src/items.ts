@@ -4,7 +4,12 @@ import { Bindings } from './bindings';
 import { addItemsToFeed } from './feeds';
 import { renderAddItemByURLForm, renderHTML, renderItemShort, render_my_subsections } from './htmltools';
 import { RelatedItemCached } from './interface';
-import { enqueueItemIndex, enqueueItemScrape } from './queue';
+import {
+    enqueueItemIndex,
+    enqueueItemScrape,
+    enqueueRegenerateItemRelatedCache,
+    enqueueVectorizeStoreItem,
+} from './queue';
 import { scrapeURLIntoObject } from './scrape';
 import { absolutifyImageUrls, feedSqidToId, getRootUrl, itemIdToSqid, itemSqidToId, sanitizeHTML } from './utils';
 
@@ -535,8 +540,7 @@ export const handle_items_single = async (c: Context) => {
         const related_from_other_blogs = related_content.relatedFromOtherBlogs;
 
         related_block += `<div class="related-items">`;
-        if (related_from_other_blogs?.length)
-            related_block += '<h4>Related (from other blogs):</h4><div class="items">';
+        if (related_from_other_blogs?.length) related_block += '<h4>Related:</h4><div class="items">';
         for (const i of related_from_other_blogs) {
             related_block += renderItemShort(i.item_sqid, i.title, i.url, i.feed_title, i.feed_sqid);
         }
