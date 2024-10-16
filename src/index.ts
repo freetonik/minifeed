@@ -1,4 +1,5 @@
-import { Context, Env, Hono } from 'hono';
+import type { Context, Env } from 'hono';
+import { Hono } from 'hono';
 import { raw } from 'hono/html';
 import { about } from './about';
 import {
@@ -38,6 +39,7 @@ import {
     updateFeed,
 } from './feeds';
 import { renderHTML } from './htmltools';
+import type { MFQueueMessage } from './interface';
 import {
     handle_global,
     handle_items_lists,
@@ -244,99 +246,127 @@ const appMain = new Hono<{ Bindings: Bindings }>({
     strict: false,
 });
 
-appMain.all('*', async (c: Context<any, any, {}>, next: () => any) => {
+appMain.all('*', async (c: Context, next) => {
     const host = c.req.raw.headers.get('host'); // Cloudflare Workers use lowercase 'host'
     if (host) {
         if (host.split('.').length === 3) {
             // if subdomain is in the form of sub.example.com
-            return await subdomainApp.fetch(c.req, c.env, c.ctx);
+            return await subdomainApp.fetch(c.req.raw, c.env);
         }
         // Default to root app for the main domain (example.com)
         return await app.fetch(c.req, c.env, c.ctx);
     }
-    return await app.fetch(c.req, c.env, c.ctx);
+    return await app.fetch(c.req.raw, c.env, c.ctx);
 });
 
 // MAIN EXPORT
 export default {
     fetch: (req: Request, env: Env, ctx: ExecutionContext) => appMain.fetch(req, env, ctx), // normal processing of requests
 
-    async queue(batch: MessageBatch<any>, env: Bindings) {
+    async queue(batch: MessageBatch<MFQueueMessage>, env: Bindings) {
         // consumer of queue FEED_UPDATE_QUEUE
         for (const message of batch.messages) {
-            switch (message.body['type']) {
+            switch (message.body.type) {
                 case 'feed_update':
-                    try {
-                        await updateFeed(env, message.body.feed_id);
-                    } catch (e: any) {
-                        console.log(`Error updating feed ${message.body.feed_id}: ${e.toString()}`);
+                    if (message.body.feed_id) {
+                        try {
+                            await updateFeed(env, message.body.feed_id);
+                        } catch (e: unknown) {
+                            console.log(
+                                `Error updating feed ${message.body.feed_id}: ${e instanceof Error ? e.message : String(e)}`,
+                            );
+                        }
                     }
                     break;
 
                 case 'feed_scrape':
-                    try {
-                        await enqueueScrapeAllItemsOfFeed(env, message.body.feed_id);
-                    } catch (e: any) {
-                        console.log(`Error scraping feed ${message.body.feed_id}: ${e.toString()}`);
+                    if (message.body.feed_id) {
+                        try {
+                            await enqueueScrapeAllItemsOfFeed(env, message.body.feed_id);
+                        } catch (e: unknown) {
+                            console.log(
+                                `Error scraping feed ${message.body.feed_id}: ${e instanceof Error ? e.message : String(e)}`,
+                            );
+                        }
                     }
                     break;
 
                 case 'item_scrape':
-                    try {
-                        await scrapeItem(env, message.body.item_id);
-                    } catch (e: any) {
-                        console.log(`Error scraping item ${message.body.item_id}: ${e.toString()}`);
+                    if (message.body.item_id) {
+                        try {
+                            await scrapeItem(env, message.body.item_id);
+                        } catch (e: unknown) {
+                            console.log(
+                                `Error scraping item ${message.body.item_id}: ${e instanceof Error ? e.message : String(e)}`,
+                            );
+                        }
                     }
                     break;
 
                 case 'item_index':
-                    try {
-                        await updateItemIndex(env, message.body.item_id);
-                    } catch (e: any) {
-                        console.log(`Error indexing item ${message.body.item_id}: ${e.toString()}`);
+                    if (message.body.item_id) {
+                        try {
+                            await updateItemIndex(env, message.body.item_id);
+                        } catch (e: unknown) {
+                            console.log(
+                                `Error indexing item ${message.body.item_id}: ${e instanceof Error ? e.message : String(e)}`,
+                            );
+                        }
                     }
                     break;
 
                 case 'feed_index':
-                    try {
-                        await updateFeedIndex(env, message.body.feed_id);
-                    } catch (e: any) {
-                        console.log(`Error indexing feed ${message.body.feed_id}: ${e.toString()}`);
+                    if (message.body.feed_id) {
+                        try {
+                            await updateFeedIndex(env, message.body.feed_id);
+                        } catch (e: unknown) {
+                            console.log(
+                                `Error indexing feed ${message.body.feed_id}: ${e instanceof Error ? e.message : String(e)}`,
+                            );
+                        }
                     }
                     break;
 
                 case 'feed_update_top_items_cache':
-                    try {
-                        await regenerateTopItemsCacheForFeed(env, message.body.feed_id);
-                    } catch (e: any) {
-                        console.log(
-                            `Error regenerating top items cache for feed ${message.body.feed_id}: ${e.toString()}`,
-                        );
+                    if (message.body.feed_id) {
+                        try {
+                            await regenerateTopItemsCacheForFeed(env, message.body.feed_id);
+                        } catch (e: unknown) {
+                            console.log(
+                                `Error regenerating top items cache for feed ${message.body.feed_id}: ${e instanceof Error ? e.message : String(e)}`,
+                            );
+                        }
                     }
                     break;
 
                 case 'item_update_related_cache':
-                    try {
-                        await regenerateRelatedCacheForItem(env, message.body.item_id);
-                    } catch (e: any) {
-                        console.log(
-                            `Error regenerating related items cache for item ${message.body.item_id}: ${e.toString()}`,
-                        );
+                    if (message.body.item_id) {
+                        try {
+                            await regenerateRelatedCacheForItem(env, message.body.item_id);
+                        } catch (e: unknown) {
+                            console.log(
+                                `Error regenerating related items cache for item ${message.body.item_id}: ${e instanceof Error ? e.message : String(e)}`,
+                            );
+                        }
                     }
                     break;
 
                 case 'item_vectorize_store':
-                    try {
-                        await vectorize_and_store_item(env, message.body.item_id);
-                    } catch (e: any) {
-                        console.log(`Error vectorizing and storing item ${message.body.item_id}: ${e.toString()}`);
+                    if (message.body.item_id) {
+                        try {
+                            await vectorize_and_store_item(env, message.body.item_id);
+                        } catch (e: unknown) {
+                            console.log(
+                                `Error vectorizing and storing item ${message.body.item_id}: ${e instanceof Error ? e.message : String(e)}`,
+                            );
+                        }
                     }
                     break;
             }
         }
     },
 
-    async scheduled(event: any, env: Bindings, ctx: any) {
+    async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
         // cron
         await enqueueUpdateAllFeeds(env);
     },
