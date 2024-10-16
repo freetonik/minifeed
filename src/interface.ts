@@ -1,4 +1,4 @@
-import { FeedEntry } from "@extractus/feed-extractor";
+import type { FeedEntry } from '@extractus/feed-extractor';
 
 export interface MFFeedEntry extends FeedEntry {
     content_html: string;
@@ -18,7 +18,7 @@ export type RelatedItemCached = {
     feed_id: number;
     feed_sqid: string;
     url: string;
-}
+};
 
 export type ItemRow = {
     item_id: number;
@@ -31,4 +31,10 @@ export type ItemRow = {
     url: string;
     pub_date: string;
     item_sqid: string;
+};
+
+export type MFQueueMessage = {
+    type: string;
+    feed_id?: number;
+    item_id?: number;
 };
