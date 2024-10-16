@@ -3,12 +3,12 @@ import { html } from 'hono/html';
 export const renderHTML = (
     title: string,
     inner: string,
-    user_logged_in: boolean = false,
-    active: string = 'all',
-    searchQuery: string = '',
-    canonicalUrl: string = '',
-    prefix_root_url: boolean = false,
-    debug_info: string = '',
+    user_logged_in = false,
+    active = 'all',
+    searchQuery = '',
+    canonicalUrl = '',
+    prefix_root_url = false,
+    debug_info = '',
 ) => {
     const root_url = prefix_root_url ? 'https://minifeed.net' : '';
     const canonicalUrlBlock = canonicalUrl ? html`<link rel="canonical" href="${canonicalUrl}" />` : '';
@@ -372,7 +372,7 @@ export const renderHTML = (
             margin: 2em 0;
         }
 
-        .related-items h4, h3 {
+        .related-items h4 {
             border-bottom: 1px solid black;
             padding: 1em 1.25em;
             background-color: #ebebe8;
