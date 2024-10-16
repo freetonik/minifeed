@@ -151,6 +151,10 @@ export const renderHTML = (
             background-color: var(--color-highlight);
         }
 
+        p.code {
+            padding: .2em .4em;
+        }
+
         iframe,
         embed {
             max-width: 100%;
