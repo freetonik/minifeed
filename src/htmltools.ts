@@ -140,11 +140,15 @@ export const renderHTML = (
             height: auto;
         }
 
+        pre {
+            padding: 0.75em;
+        }
+
         code,
         pre {
             overflow: auto;
             text-wrap: scroll;
-            background-color: #f3f3f3;
+            background-color: var(--color-highlight);
         }
 
         iframe,
