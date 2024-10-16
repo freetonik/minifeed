@@ -1,7 +1,6 @@
 import type { Context } from 'hono';
-import { html, raw } from 'hono/html';
+import { raw } from 'hono/html';
 import type { Bindings } from './bindings';
-import { renderHTML } from './htmltools';
 import type { ItemRow } from './interface';
 import { enqueueRegenerateItemRelatedCache, enqueueVectorizeStoreItem } from './queue';
 import { stripNonLinguisticElements } from './utils';
@@ -13,6 +12,14 @@ export interface EmbeddingResponse {
 
 export const vectorize_text = async (env: Bindings, text: string): Promise<EmbeddingResponse> => {
     return await env.AI.run('@cf/baai/bge-base-en-v1.5', { text: [text] });
+};
+
+export const summarizeText = async (env: Bindings, text: string) => {
+    const response = await env.AI.run('@cf/facebook/bart-large-cnn', {
+        input_text: text,
+        max_length: 1024,
+    });
+    return response;
 };
 
 export const add_vector_to_db = async (
@@ -36,6 +43,7 @@ export const add_vector_to_db = async (
         await env.DB.prepare('REPLACE INTO items_vector_relation (item_id, vectorized) VALUES (?,?)').bind(id, 1).run();
     }
 };
+
 export const vectorize_and_store_item = async (env: Bindings, item_id: number) => {
     // if item is already in vector store, skip
     const vectors = await env.VECTORIZE.getByIds([`${item_id}`]);
@@ -65,7 +73,7 @@ export const vectorize_and_store_item = async (env: Bindings, item_id: number) =
             // We have full content from feed
             if (item.content_html_scraped) {
                 // We have scraped content
-                if (item.content_html.length > item.content_html_scraped.length * 0.65) {
+                if (item.content_html.length > item.content_html_scraped.length * 0.5) {
                     contentBlock = raw(item.content_html);
                 } else {
                     contentBlock = raw(item.content_html_scraped);
@@ -104,6 +112,28 @@ export const vectorize_and_store_item = async (env: Bindings, item_id: number) =
     await enqueueRegenerateItemRelatedCache(env, item.item_id);
 };
 
+// export const summarize_and_store_item = async (env: Bindings, itemId: number) => {
+//     const item = await env.DB.prepare(
+//         'SELECT title, description, content_html, content_html_scraped FROM items WHERE item_id = ?',
+//     )
+//         .bind(itemId)
+//         .first<ItemRow>();
+//     if (!item) return;
+
+//     const parts: { title: string; description: string; fullContent: string } = {
+//         title: item.title,
+//         description: item.description || '',
+//         fullContent: item.content_html || item.content_html_scraped || '',
+//     };
+
+//     parts.fullContent = await stripNonLinguisticElements(parts.fullContent);
+//     parts.fullContent = await stripTags(parts.fullContent);
+
+//     const result = await summarizeText(env, parts.fullContent);
+//     await env.DB.prepare('UPDATE items SET summary = ? WHERE item_id = ?').bind(result.summary, itemId).run();
+//     return;
+// };
+
 export const handle_vectorize = async (c: Context) => {
     const env = c.env as Bindings;
     const start = c.req.query('start');
@@ -126,6 +156,28 @@ export const handle_vectorize = async (c: Context) => {
     return c.html(response);
 };
 
+// export const handle_summarize = async (c: Context) => {
+//     const env = c.env as Bindings;
+//     const start = c.req.query('start');
+//     const stop = c.req.query('stop');
+
+//     if (!start || !stop) return c.html('start and stop required');
+
+//     const items = await env.DB.prepare(
+//         'SELECT item_id, title, item_sqid FROM items WHERE item_id >= ? AND item_id <= ?',
+//     )
+//         .bind(start, stop)
+//         .all<ItemRow>();
+
+//     let response = '<ol>';
+//     for (const item of items.results) {
+//         response += `<li>Summarizing <a href="/items/${item.item_sqid}">${item.item_id} / ${item.item_sqid}: ${item.title}</a>`;
+//         await summarize_and_store_item(c.env, item.item_id);
+//     }
+//     response += '</ol>';
+//     return c.html(response);
+// };
+
 export const handle_generate_related = async (c: Context) => {
     const env = c.env as Bindings;
     const start = c.req.query('start');
@@ -133,7 +185,7 @@ export const handle_generate_related = async (c: Context) => {
     if (!start || !stop) return c.text('No start or stop provided', 400);
 
     const items = await env.DB.prepare(
-        `SELECT item_id, title, item_sqid FROM items WHERE item_id >= ? AND item_id <= ?`,
+        'SELECT item_id, title, item_sqid FROM items WHERE item_id >= ? AND item_id <= ?',
     )
         .bind(start, stop)
         .all<ItemRow>();
