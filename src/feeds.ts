@@ -1,17 +1,17 @@
-import { FeedData } from "@extractus/feed-extractor";
-import { html, raw } from "hono/html";
-import { Bindings } from "./bindings";
-import { extractRSS, validateFeedData } from "./feed_extractor";
-import { renderAddFeedForm, renderHTML, renderItemShort } from "./htmltools";
-import { MFFeedEntry } from "./interface";
+import { FeedData } from '@extractus/feed-extractor';
+import { html, raw } from 'hono/html';
+import { Bindings } from './bindings';
+import { extractRSS, validateFeedData } from './feed_extractor';
+import { renderAddFeedForm, renderHTML, renderItemShort } from './htmltools';
+import { MFFeedEntry } from './interface';
 import {
     enqueueFeedUpdate,
     enqueueIndexAllItemsOfFeed,
     enqueueItemScrape,
     enqueueRebuildFeedTopItemsCache,
     enqueueScrapeAllItemsOfFeed,
-} from "./queue";
-import { deleteFeedFromIndex } from "./search";
+} from './queue';
+import { deleteFeedFromIndex } from './search';
 import {
     extractItemUrl,
     feedIdToSqid,
@@ -22,13 +22,13 @@ import {
     getText,
     itemIdToSqid,
     stripTagsSynchronously,
-    truncate
-} from "./utils";
+    truncate,
+} from './utils';
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ROUTE HANDLERS //////////////////////////////////////////////////////////////////////////////////////////////////////
 export const handle_blogs = async (c: any) => {
-    const user_id = c.get("USER_ID") || -1;
+    const user_id = c.get('USER_ID') || -1;
     const userLoggedIn = user_id != -1;
     const { results, meta } = await c.env.DB.prepare(
         `
@@ -50,15 +50,9 @@ export const handle_blogs = async (c: any) => {
     }
 
     results.forEach((feed: any) => {
-        const subscriptionAction = feed.subscription_id
-            ? "unsubscribe"
-            : "subscribe";
-        const subscriptionButtonText = feed.subscription_id
-            ? "subscribed"
-            : "subscribe";
-        const feedDescriptionBlock = feed.description
-            ? `<p>${feed.description}</p>`
-            : "";
+        const subscriptionAction = feed.subscription_id ? 'unsubscribe' : 'subscribe';
+        const subscriptionButtonText = feed.subscription_id ? 'subscribed' : 'subscribe';
+        const feedDescriptionBlock = feed.description ? `<p>${feed.description}</p>` : '';
 
         const subscriptionBlock = userLoggedIn
             ? `<div><span id="subscription-${feed.feed_sqid}">
@@ -78,13 +72,13 @@ export const handle_blogs = async (c: any) => {
         </span></div>`;
 
         const cache_content = JSON.parse(feed.content);
-        const top_items = cache_content["top_items"]
+        const top_items = cache_content['top_items'];
         let items_count = 0;
-        let top_items_list = "";
+        let top_items_list = '';
 
         if (top_items) {
-            items_count = cache_content["items_count"] - top_items.length;
-            top_items_list += "<ul>";
+            items_count = cache_content['items_count'] - top_items.length;
+            top_items_list += '<ul>';
             top_items.forEach((item: any) => {
                 top_items_list += `<li><a href="/items/${item.item_sqid}">${item.title}</a></li>`;
             });
@@ -108,14 +102,14 @@ export const handle_blogs = async (c: any) => {
     list += `<div style="margin-top:2em;text-align:center;"><a class="button" href="/suggest">+ suggest a blog</a></div>`;
     return c.html(
         renderHTML(
-            "Blogs | minifeed",
+            'Blogs | minifeed',
             html`${raw(list)}`,
-            c.get("USERNAME"),
-            "blogs",
-            "",
-            "",
+            c.get('USERNAME'),
+            'blogs',
+            '',
+            '',
             false,
-            user_id == 1 ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``
+            user_id == 1 ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``,
         ),
     );
 };
@@ -123,10 +117,10 @@ export const handle_blogs = async (c: any) => {
 export const handle_blogs_single = async (c: any) => {
     // TODO: we're assuming that feed always has items; if feed has 0 items, this will return 404, but maybe we want to
     // show the feed still as "processing"; use https://developers.cloudflare.com/d1/platform/client-api/#batch-statements
-    const feedSqid = c.req.param("feed_sqid");
+    const feedSqid = c.req.param('feed_sqid');
     const feedId = feedSqidToId(feedSqid);
-    const userId = c.get("USER_ID") || -1;
-    const userLoggedIn = c.get("USER_ID") ? true : false;
+    const userId = c.get('USER_ID') || -1;
+    const userLoggedIn = c.get('USER_ID') ? true : false;
 
     const batch = await c.env.DB.batch([
         c.env.DB.prepare(
@@ -152,16 +146,12 @@ export const handle_blogs_single = async (c: any) => {
 
     // batch[0] is feed joined with subscription status; 0 means no feed found in DB
     if (!batch[0].results.length) return c.notFound();
-    const feedTitle = batch[0].results[0]["title"];
+    const feedTitle = batch[0].results[0]['title'];
 
-    const feedUrl = batch[0].results[0]["url"];
-    const rssUrl = batch[0].results[0]["rss_url"];
-    const subscriptionAction = batch[0].results[0]["subscription_id"]
-        ? "unsubscribe"
-        : "subscribe";
-    const subscriptionButtonText = batch[0].results[0]["subscription_id"]
-        ? "subscribed"
-        : "subscribe";
+    const feedUrl = batch[0].results[0]['url'];
+    const rssUrl = batch[0].results[0]['rss_url'];
+    const subscriptionAction = batch[0].results[0]['subscription_id'] ? 'unsubscribe' : 'subscribe';
+    const subscriptionButtonText = batch[0].results[0]['subscription_id'] ? 'subscribed' : 'subscribe';
     const subscriptionBlock = userLoggedIn
         ? `
       <span id="subscription">
@@ -181,16 +171,14 @@ export const handle_blogs_single = async (c: any) => {
         </button>
       </span>
       `;
-    const feedDescription = batch[0].results[0]["description"]
-        ? `${batch[0].results[0]["description"]}<br>`
-        : "";
+    const feedDescription = batch[0].results[0]['description'] ? `${batch[0].results[0]['description']}<br>` : '';
 
     const feedDescriptionBlock = `
     <div style="margin-bottom:1em;">
     ${feedDescription}
     <a href="${feedUrl}">${feedUrl}</a> (<a href="${rssUrl}">RSS</a>)
     </div>
-    `
+    `;
 
     let list = `
     <div style="margin-bottom:3em;">
@@ -206,19 +194,16 @@ export const handle_blogs_single = async (c: any) => {
     `;
 
     // batch[1] is items
-    if (!batch[1].results.length)
-        list += `<p>Feed is being updated, come back later...</p>`;
+    if (!batch[1].results.length) list += `<p>Feed is being updated, come back later...</p>`;
     else {
         batch[1].results.forEach((item: any) => {
-            const itemTitle = item.favorite_id
-                ? `★ ${item.item_title}`
-                : item.item_title;
+            const itemTitle = item.favorite_id ? `★ ${item.item_title}` : item.item_title;
             list += renderItemShort(
                 item.item_sqid,
                 itemTitle,
                 item.item_url,
-                "", // don't show feed title
-                "", // don't show feed link
+                '', // don't show feed title
+                '', // don't show feed link
                 item.pub_date,
                 item.description,
             );
@@ -234,10 +219,10 @@ export const handle_blogs_single = async (c: any) => {
         renderHTML(
             `${feedTitle} | minifeed`,
             html`${raw(list)}`,
-            c.get("USERNAME"),
-            "blogs",
-            "",
-            "",
+            c.get('USERNAME'),
+            'blogs',
+            '',
+            '',
             false,
             debug_info,
         ),
@@ -245,21 +230,19 @@ export const handle_blogs_single = async (c: any) => {
 };
 
 export const feedsSubscribeHandler = async (c: any) => {
-    if (!c.get("USER_ID")) return c.redirect("/login");
-    const userId = c.get("USER_ID");
-    const feedSqid = c.req.param("feed_sqid");
+    if (!c.get('USER_ID')) return c.redirect('/login');
+    const userId = c.get('USER_ID');
+    const feedSqid = c.req.param('feed_sqid');
     const feedId = feedSqidToId(feedSqid);
     let result;
 
     try {
-        result = await c.env.DB.prepare(
-            "INSERT INTO subscriptions (user_id, feed_id) values (?, ?)",
-        )
+        result = await c.env.DB.prepare('INSERT INTO subscriptions (user_id, feed_id) values (?, ?)')
             .bind(userId, feedId)
             .run();
     } catch (err) {
         c.status(400);
-        return c.body("bad request");
+        return c.body('bad request');
     }
     if (result.success) {
         c.status(201);
@@ -284,15 +267,13 @@ export const feedsSubscribeHandler = async (c: any) => {
 };
 
 export const feedsUnsubscribeHandler = async (c: any) => {
-    if (!c.get("USER_ID")) return c.redirect("/login");
-    const userId = c.get("USER_ID");
-    const feedSqid = c.req.param("feed_sqid");
+    if (!c.get('USER_ID')) return c.redirect('/login');
+    const userId = c.get('USER_ID');
+    const feedSqid = c.req.param('feed_sqid');
     const feedId = feedSqidToId(feedSqid);
 
     try {
-        await c.env.DB.prepare(
-            "DELETE FROM subscriptions WHERE user_id = ? AND feed_id = ?",
-        )
+        await c.env.DB.prepare('DELETE FROM subscriptions WHERE user_id = ? AND feed_id = ?')
             .bind(userId, feedId)
             .all();
     } catch (err) {
@@ -320,16 +301,10 @@ export const feedsUnsubscribeHandler = async (c: any) => {
 export const feedsDeleteHandler = async (c: any) => {
     const feedId: number = feedSqidToId(c.req.param('feed_sqid'));
 
-    const ids_of_feed_items = await c.env.DB.prepare(
-        'SELECT item_id FROM items WHERE feed_id = ?'
-    )
-        .bind(feedId)
-        .all();
+    const ids_of_feed_items = await c.env.DB.prepare('SELECT item_id FROM items WHERE feed_id = ?').bind(feedId).all();
 
     if (ids_of_feed_items.results.length > 0) {
-        const item_ids_to_delete_from_vectorize = ids_of_feed_items.results.map(
-            (item: any) => item.item_id.toString()
-        );
+        const item_ids_to_delete_from_vectorize = ids_of_feed_items.results.map((item: any) => item.item_id.toString());
         // split array into chunks of 100
         const chunks = [];
         for (let i = 0; i < item_ids_to_delete_from_vectorize.length; i += 100) {
@@ -340,9 +315,7 @@ export const feedsDeleteHandler = async (c: any) => {
         }
     }
 
-    await c.env.DB.prepare(`DELETE from feeds where feed_id = ?`)
-        .bind(feedId)
-        .run();
+    await c.env.DB.prepare(`DELETE from feeds where feed_id = ?`).bind(feedId).run();
 
     await deleteFeedFromIndex(c.env, feedId);
 
@@ -350,32 +323,20 @@ export const feedsDeleteHandler = async (c: any) => {
 };
 
 export const blogsNewHandler = async (c: any) => {
-    if (!c.get("USER_ID")) return c.redirect("/login");
-    return c.html(
-        renderHTML(
-            "Add new blog",
-            html`${renderAddFeedForm()}`,
-            c.get("USERNAME"),
-            "blogs",
-        ),
-    );
+    if (!c.get('USER_ID')) return c.redirect('/login');
+    return c.html(renderHTML('Add new blog', html`${renderAddFeedForm()}`, c.get('USERNAME'), 'blogs'));
 };
 
 export const blogsNewPostHandler = async (c: any) => {
     const body = await c.req.parseBody();
-    const url = body["url"].toString();
+    const url = body['url'].toString();
     let rssUrl;
     try {
-        const verified = c.get("USER_ID") == 1 ? true : false;
+        const verified = c.get('USER_ID') == 1 ? true : false;
         rssUrl = await addFeed(c.env, url, verified); // MAIN MEAT!
     } catch (e: any) {
         return c.html(
-            renderHTML(
-                "Add new blog",
-                html`${renderAddFeedForm(url, e.toString())}`,
-                c.get("USERNAME"),
-                "blogs",
-            ),
+            renderHTML('Add new blog', html`${renderAddFeedForm(url, e.toString())}`, c.get('USERNAME'), 'blogs'),
         );
     }
 
@@ -385,54 +346,54 @@ export const blogsNewPostHandler = async (c: any) => {
         const sqid = feedIdToSqid(feedId);
         return c.redirect(`/blogs/${sqid}`, 301);
     }
-    return c.text("Something went wrong");
+    return c.text('Something went wrong');
 };
 
 export async function feedsUpdateHandler(c: any) {
-    const feed_id: number = feedSqidToId(c.req.param("feed_sqid"));
+    const feed_id: number = feedSqidToId(c.req.param('feed_sqid'));
     await enqueueFeedUpdate(c.env, feed_id);
-    return c.text("Feed update enqueued...");
+    return c.text('Feed update enqueued...');
 }
 
 export async function feedsScrapeHandler(c: any) {
-    const feed_id: number = feedSqidToId(c.req.param("feed_sqid"));
+    const feed_id: number = feedSqidToId(c.req.param('feed_sqid'));
     await enqueueScrapeAllItemsOfFeed(c.env, feed_id);
-    return c.html("Feed scrape enqueued...");
+    return c.html('Feed scrape enqueued...');
 }
 
 export async function feedsIndexHandler(c: any) {
-    const feed_id: number = feedSqidToId(c.req.param("feed_sqid"));
+    const feed_id: number = feedSqidToId(c.req.param('feed_sqid'));
     await enqueueIndexAllItemsOfFeed(c.env, feed_id);
-    return c.html("Feed index enqueued...");
+    return c.html('Feed index enqueued...');
 }
 
 export async function feedsGlobalIndexHandler(c: any) {
-    const feeds = await c.env.DB.prepare("SELECT feed_id FROM feeds").all();
+    const feeds = await c.env.DB.prepare('SELECT feed_id FROM feeds').all();
     for (const feed of feeds.results) {
         await enqueueIndexAllItemsOfFeed(c.env, feed.feed_id);
     }
-    return c.html("Feed index enqueued FOR ALL FEEDS...");
+    return c.html('Feed index enqueued FOR ALL FEEDS...');
 }
 
 export async function feedsCacheRebuildHandler(c: any) {
-    const feed_id: number = feedSqidToId(c.req.param("feed_sqid"));
+    const feed_id: number = feedSqidToId(c.req.param('feed_sqid'));
     await enqueueRebuildFeedTopItemsCache(c.env, feed_id);
-    return c.html("Feed cache rebuild enqueued...");
+    return c.html('Feed cache rebuild enqueued...');
 }
 
 export async function feedsGlobalCacheRebuildHandler(c: any) {
-    const feeds = await c.env.DB.prepare("SELECT feed_id FROM feeds").all();
+    const feeds = await c.env.DB.prepare('SELECT feed_id FROM feeds').all();
     for (const feed of feeds.results) {
         await enqueueRebuildFeedTopItemsCache(c.env, feed.feed_id);
     }
-    return c.html("Feed cache rebuild enqueued FOR ALL FEEDS...");
+    return c.html('Feed cache rebuild enqueued FOR ALL FEEDS...');
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // FEED FUNCTIONS (NOT ROUTE HANDLERS)
 
 async function addFeed(env: Bindings, url: string, verified: boolean = false) {
-    let r: FeedData
+    let r: FeedData;
     let RSSUrl: string = url;
     // first, try to use RSS extractor right away
     try {
@@ -445,40 +406,34 @@ async function addFeed(env: Bindings, url: string, verified: boolean = false) {
 
     const feedValidationResult = validateFeedData(r);
     if (!feedValidationResult.validated) {
-        throw new Error(
-            "Feed data verification failed: " +
-            feedValidationResult.messages.join("; "),
-        );
+        throw new Error('Feed data verification failed: ' + feedValidationResult.messages.join('; '));
     }
 
     // if url === rssUrl that means the submitted URL was RSS URL, so retrieve site URL from RSS; otherwise use submitted URL as site URL
-    const attemptedSiteUrl =
-        r.link && r.link.length > 0 ? r.link : getRootUrl(url);
+    const attemptedSiteUrl = r.link && r.link.length > 0 ? r.link : getRootUrl(url);
     const siteUrl = url === RSSUrl ? attemptedSiteUrl : url;
     const verified_as_int = verified ? 1 : 0;
 
     try {
         const dbQueryResult = await env.DB.prepare(
-            "INSERT INTO feeds (title, type, url, rss_url, verified) values (?, ?, ?, ?, ?)",
+            'INSERT INTO feeds (title, type, url, rss_url, verified) values (?, ?, ?, ?, ?)',
         )
-            .bind(r.title, "blog", siteUrl, RSSUrl, verified_as_int)
+            .bind(r.title, 'blog', siteUrl, RSSUrl, verified_as_int)
             .all();
-        if (dbQueryResult["success"] === true) {
+        if (dbQueryResult['success'] === true) {
             if (r.entries) {
-                const feed_id: number = dbQueryResult["meta"]["last_row_id"];
+                const feed_id: number = dbQueryResult['meta']['last_row_id'];
 
                 // update feed_sqid
                 const feed_sqid = feedIdToSqid(feed_id);
-                await env.DB.prepare("UPDATE feeds SET feed_sqid = ? WHERE feed_id = ?")
-                    .bind(feed_sqid, feed_id)
-                    .run();
+                await env.DB.prepare('UPDATE feeds SET feed_sqid = ? WHERE feed_id = ?').bind(feed_sqid, feed_id).run();
 
                 await enqueueFeedUpdate(env, feed_id);
             }
             return RSSUrl;
         }
     } catch (e: any) {
-        if (e.toString().includes("UNIQUE constraint failed")) {
+        if (e.toString().includes('UNIQUE constraint failed')) {
             return RSSUrl;
         } else {
             throw e;
@@ -486,49 +441,31 @@ async function addFeed(env: Bindings, url: string, verified: boolean = false) {
     }
 }
 
-/**
- * Updates the feed with the specified feedId by fetching the RSS content and adding new items to the database.
- *
- * @param env - The environment bindings.
- * @param feedId - The ID of the feed to update.
- * @returns A Promise that resolves once the feed is updated.
- */
 export async function updateFeed(env: Bindings, feedId: number) {
     // get RSS url of feed
-    const { results: feeds } = await env.DB.prepare(
-        "SELECT rss_url, description FROM feeds WHERE feed_id = ?",
-    )
+    const { results: feeds } = await env.DB.prepare('SELECT rss_url, description FROM feeds WHERE feed_id = ?')
         .bind(feedId)
         .all();
-    const RSSUrl = String(feeds[0]["rss_url"]);
-    const description = String(feeds[0]["description"]);
+
+    const RSSUrl = String(feeds[0].rss_url);
+    const description = String(feeds[0].description);
     console.log(`Updating feed ${feedId} (${RSSUrl})`);
 
     const r: FeedData = await extractRSS(RSSUrl); // fetch RSS content
 
-    if (
-        r.description &&
-        r.description.length > 7 &&
-        description != r.description
-    ) {
-        await env.DB.prepare("UPDATE feeds SET description = ? WHERE feed_id = ?")
-            .bind(r.description, feedId)
-            .run();
+    if (r.description && r.description.length > 7 && description !== r.description) {
+        await env.DB.prepare('UPDATE feeds SET description = ? WHERE feed_id = ?').bind(r.description, feedId).run();
     }
 
     // get URLs of existing items from DB
-    const { results: existingItems } = await env.DB.prepare(
-        "SELECT url FROM items WHERE feed_id = ?",
-    )
+    const { results: existingItems } = await env.DB.prepare('SELECT url FROM items WHERE feed_id = ?')
         .bind(feedId)
         .all();
     const existingUrls = existingItems.map((obj) => obj.url);
 
     // if remote RSS entries exist
     if (r.entries) {
-        const newItemsToBeAdded = r.entries.filter(
-            (entry) => !existingUrls.includes(extractItemUrl(entry, RSSUrl)),
-        ); // filter out existing ones and add them to Db
+        const newItemsToBeAdded = r.entries.filter((entry) => !existingUrls.includes(extractItemUrl(entry, RSSUrl))); // filter out existing ones and add them to Db
         if (newItemsToBeAdded.length) {
             await addItemsToFeed(env, newItemsToBeAdded, feedId);
             await regenerateTopItemsCacheForFeed(env, feedId);
@@ -541,44 +478,41 @@ export async function updateFeed(env: Bindings, feedId: number) {
     console.log(`Updated feed ${feedId} (${RSSUrl}), no items fetched`);
 }
 
-
-
 export async function addItemsToFeed(
     env: Bindings,
     items: Array<MFFeedEntry>,
     feedId: number,
-    scrapeAfterAdding: boolean = true,
+    scrapeAfterAdding = true,
 ) {
     if (!items.length) return;
 
-    const { results: feeds } = await env.DB.prepare(
-        "SELECT title, rss_url FROM feeds WHERE feed_id = ?",
-    ).bind(feedId).all();
-    const feedRSSUrl = String(feeds[0]["rss_url"]);
+    const { results: feeds } = await env.DB.prepare('SELECT title, rss_url FROM feeds WHERE feed_id = ?')
+        .bind(feedId)
+        .all();
+    const feedRSSUrl = String(feeds[0].rss_url);
 
     const stmt = env.DB.prepare(
-        "INSERT INTO items (feed_id, title, url, pub_date, description, content_html) values (?, ?, ?, ?, ?, ?)",
+        'INSERT INTO items (feed_id, title, url, pub_date, description, content_html) values (?, ?, ?, ?, ?, ?)',
     );
     const binds: D1PreparedStatement[] = [];
 
-    items.forEach((item) => {
+    for (const item of items) {
         const link = extractItemUrl(item, feedRSSUrl);
         if (!item.published) {
             // if date was not properly parsed, try to parse it (expects 'pubdate' to be retrieved by feed_extractor's extractRSS function)
             if (item.pubdate) {
                 item.published = new Date(item.pubdate).toISOString();
             } else {
-                // if date is still not available, use current date
-                item.published = new Date().toISOString();
+                item.published = new Date().toISOString(); // if date is still not available, use current date
             }
         }
 
         let content_html =
-            item["content_from_content"] ||
-            item["content_from_content_encoded"] ||
-            item["content_from_description"] ||
-            item["content_from_content_html"] ||
-            "";
+            item.content_from_content ||
+            item.content_from_content_encoded ||
+            item.content_from_description ||
+            item.content_from_content_html ||
+            '';
 
         content_html = getText(content_html);
 
@@ -592,7 +526,7 @@ export async function addItemsToFeed(
                 content_html,
             ),
         );
-    });
+    }
 
     const results_of_insert = await env.DB.batch(binds);
     for (const result of results_of_insert) {
@@ -602,9 +536,7 @@ export async function addItemsToFeed(
 
             console.log(`Item: ${item_id} added to feed ${feedId}`);
 
-            await env.DB.prepare("UPDATE items SET item_sqid = ? WHERE item_id = ?")
-                .bind(item_sqid, item_id)
-                .run();
+            await env.DB.prepare('UPDATE items SET item_sqid = ? WHERE item_id = ?').bind(item_sqid, item_id).run();
             console.log(`Item: ${item_id} set sqid ${item_sqid}`);
 
             if (scrapeAfterAdding) {
@@ -617,12 +549,9 @@ export async function addItemsToFeed(
     return results_of_insert;
 }
 
-export async function regenerateTopItemsCacheForFeed(
-    env: Bindings,
-    feedId: number,
-) {
+export async function regenerateTopItemsCacheForFeed(env: Bindings, feedId: number) {
     const { results: top_items } = await env.DB.prepare(
-        "SELECT item_id, title FROM items WHERE feed_id = ? ORDER BY items.pub_date DESC LIMIT 5",
+        'SELECT item_id, title FROM items WHERE feed_id = ? ORDER BY items.pub_date DESC LIMIT 5',
     )
         .bind(feedId)
         .all();
@@ -631,21 +560,14 @@ export async function regenerateTopItemsCacheForFeed(
         delete item.item_id;
     });
 
-    const items_count = await env.DB.prepare(
-        "SELECT COUNT(item_id) FROM Items where feed_id = ?",
-    )
-        .bind(feedId)
-        .all();
+    const items_count = await env.DB.prepare('SELECT COUNT(item_id) FROM Items where feed_id = ?').bind(feedId).all();
 
     const cache_content = {
         top_items: top_items,
-        items_count: items_count.results[0]["COUNT(item_id)"],
-    }
+        items_count: items_count.results[0]['COUNT(item_id)'],
+    };
 
-
-    await env.DB.prepare(
-        "REPLACE INTO items_top_cache (feed_id, content) values (?, ?)",
-    )
+    await env.DB.prepare('REPLACE INTO items_top_cache (feed_id, content) values (?, ?)')
         .bind(feedId, JSON.stringify(cache_content))
         .run();
 }
