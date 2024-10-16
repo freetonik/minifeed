@@ -99,16 +99,17 @@ export const vectorize_and_store_item = async (env: Bindings, item_id: number) =
             feed_id: item.feed_id, // metadata
         },
     );
+
+    // after item is vectorized, generate related items cache
+    await enqueueRegenerateItemRelatedCache(env, item.item_id);
 };
+
 export const handle_vectorize = async (c: Context) => {
     const env = c.env as Bindings;
     const start = c.req.query('start');
     const stop = c.req.query('stop');
 
-    if (!start || !stop) {
-        const list = 'Here we will find unvectorized items maybe?';
-        return c.html(renderHTML(`admin | minifeed`, html(list), c.get('USERNAME'), ''));
-    }
+    if (!start || !stop) return c.html('start and stop required');
 
     const items = await env.DB.prepare(
         'SELECT item_id, title, item_sqid FROM items WHERE item_id >= ? AND item_id <= ?',
