@@ -180,7 +180,8 @@ export const stripTags = (s: string) => {
     return stripped_text;
 };
 
-export const stripTagsSynchronously = (s: string) => {
+export const stripTagsSynchronously = (s: string | undefined) => {
+    if (!s) return '';
     return s
         .toString()
         .replace(/(<([^>]+)>)/gi, '')
