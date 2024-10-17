@@ -6,6 +6,9 @@ workers_dev = false
 route = { pattern = "*minifeed.net/*", zone_name = "minifeed.net" }
 main = "src/index.ts"
 
+[placement]
+mode = "smart"
+
 [vars]
 TYPESENSE_API_KEY_SEARCH = "GCuPvjR4vz3gvACRo2N5hpRjZnEaijKE"
 TYPESENSE_BLOG_FEEDS_COLLECTION = "blog_feeds"
