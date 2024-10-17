@@ -1,4 +1,4 @@
-import { Context } from 'hono';
+import type { Context } from 'hono';
 import { decode } from 'html-entities';
 import { getRssUrlsFromHtmlBody } from 'rss-url-finder';
 import Sqids from 'sqids';
@@ -12,7 +12,7 @@ const idToSqid = (id: number, length: number): string => {
         id
             .toString()
             .split('')
-            .map((char) => parseInt(char, 10)),
+            .map((char) => Number.parseInt(char, 10)),
     );
 };
 
@@ -21,7 +21,7 @@ const sqidToId = (sqid: string, length: number): number => {
         minLength: length,
         alphabet: 'UV8E4hOJwLiXMpYBsWyQ7rNoeDgm9TGxbFI5aknAztjC2K3uZ6cldSqRv1PfH0',
     });
-    return parseInt(sqids.decode(sqid).join(''), 10);
+    return Number.parseInt(sqids.decode(sqid).join(''), 10);
 };
 
 export const feedIdToSqid = (feedId: number): string => idToSqid(feedId, 5);
@@ -43,11 +43,11 @@ export async function getRSSLinkFromUrl(url: string) {
     // the content of the page is HTML, try to find RSS link
     if (pageContent.includes('<html') || pageContent.includes('<!DOCTYPE html>')) {
         const rssUrlObj = getRssUrlsFromHtmlBody(pageContent);
-        if (!rssUrlObj.length || !rssUrlObj[0]['url']) throw new Error(`Cannot find RSS link in HTML of URL: ${url}`);
-        let foundRSSLink = rssUrlObj[0]['url'];
+        if (!rssUrlObj.length || !rssUrlObj[0].url) throw new Error(`Cannot find RSS link in HTML of URL: ${url}`);
+        let foundRSSLink = rssUrlObj[0].url;
         // the found rss link may be relative or absolute; handle both cases here
-        if (foundRSSLink.substring(0, 4) != 'http') {
-            if (url.substring(url.length - 1) != '/') foundRSSLink = url + '/' + foundRSSLink;
+        if (foundRSSLink.substring(0, 4) !== 'http') {
+            if (url.substring(url.length - 1) !== '/') foundRSSLink = `${url}/${foundRSSLink}`;
             else foundRSSLink = url + foundRSSLink;
         }
         return foundRSSLink;
@@ -59,7 +59,7 @@ export async function getRSSLinkFromUrl(url: string) {
 
 export async function getFeedIdByRSSUrl(c: Context, rssUrl: string) {
     const { results } = await c.env.DB.prepare('SELECT feed_id FROM feeds where rss_url = ?').bind(rssUrl).all();
-    return results[0]['feed_id'];
+    return results[0].feed_id;
 }
 
 /**
@@ -69,7 +69,7 @@ export async function getFeedIdByRSSUrl(c: Context, rssUrl: string) {
  * @param val - The input value.
  * @returns The text value of the input.
  */
-export const getText = (val: any) => {
+export const getText = (val) => {
     const txt = isObject(val) ? val._text || val['#text'] || val._cdata || val.$t : val;
     return txt ? decode(String(txt).trim()) : '';
 };
@@ -138,13 +138,14 @@ export async function gatherResponse(response: Response) {
     const contentType = headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
         return JSON.stringify(await response.json());
-    } else if (contentType.includes('application/text')) {
-        return response.text();
-    } else if (contentType.includes('text/html')) {
-        return response.text();
-    } else {
+    }
+    if (contentType.includes('application/text')) {
         return response.text();
     }
+    if (contentType.includes('text/html')) {
+        return response.text();
+    }
+    return response.text();
 }
 
 export const truncate = (s: string, len = 140) => {
@@ -157,9 +158,9 @@ export const truncate = (s: string, len = 140) => {
     const sub_text_length = sub_text_array.length;
     if (sub_text_length > 1) {
         sub_text_array.pop();
-        return sub_text_array.map((word: string) => word.trim()).join(' ') + '...';
+        return `${sub_text_array.map((word: string) => word.trim()).join(' ')}...`;
     }
-    return sub_text.substring(0, len - 3) + '...';
+    return `${sub_text.substring(0, len - 3)}...`;
 };
 
 export const stripTags = (s: string) => {
@@ -337,7 +338,7 @@ export const sanitizeHTML = async (contentBlock: string): Promise<string> => {
                 // Sanitize href attributes
                 if (element.tagName === 'a' && element.getAttribute('href')) {
                     const href = element.getAttribute('href');
-                    if (href && href.toLowerCase().startsWith('javascript:')) {
+                    if (href?.toLowerCase().startsWith('javascript:')) {
                         element.removeAttribute('href');
                     }
                 }
