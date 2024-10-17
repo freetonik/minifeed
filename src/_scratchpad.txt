@@ -99,3 +99,25 @@
     // TEMPORARY
 
     ❯ npx wrangler d1 execute minifeed --command="SELECT items.item_id, items.item_sqid FROM items LEFT JOIN items_vector_relation on items.item_id = items_vector_relation.item_id where items_vector_relation.vectorized is null and items.item_id <= 2000" --remote
+
+// export const handle_summarize = async (c: Context) => {
+//     const env = c.env as Bindings;
+//     const start = c.req.query('start');
+//     const stop = c.req.query('stop');
+
+//     if (!start || !stop) return c.html('start and stop required');
+
+//     const items = await env.DB.prepare(
+//         'SELECT item_id, title, item_sqid FROM items WHERE item_id >= ? AND item_id <= ?',
+//     )
+//         .bind(start, stop)
+//         .all<ItemRow>();
+
+//     let response = '<ol>';
+//     for (const item of items.results) {
+//         response += `<li>Summarizing <a href="/items/${item.item_sqid}">${item.item_id} / ${item.item_sqid}: ${item.title}</a>`;
+//         await summarize_and_store_item(c.env, item.item_id);
+//     }
+//     response += '</ol>';
+//     return c.html(response);
+// };

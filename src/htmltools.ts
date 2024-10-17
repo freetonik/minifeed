@@ -1,4 +1,4 @@
-import { html } from 'hono/html';
+import { html, raw } from 'hono/html';
 
 export const renderHTML = (
     title: string,
@@ -555,7 +555,7 @@ export const renderItemSearchResult = (searchResult: any) => {
     `;
 };
 
-export const renderAddFeedForm = (url: string = '', flash: string = '') => {
+export const renderAddFeedForm = (url = '', flash = '') => {
     let flash_test = '';
     if (flash.includes('Cannot find RSS link'))
         flash_test += 'Cannot find RSS link on that page. Try entering direct RSS URL.';
@@ -565,7 +565,7 @@ export const renderAddFeedForm = (url: string = '', flash: string = '') => {
     else flash_test += flash;
 
     const flashBlock = flash ? html`<div class="flash flash-red">${flash_test}</div>` : '';
-    return html`
+    return raw(`
     <h1>Add new blog</h1>
     ${flashBlock}
       <form action="/blogs/new" method="POST">
@@ -581,21 +581,16 @@ export const renderAddFeedForm = (url: string = '', flash: string = '') => {
         </div>
         <input type="submit" value="Add blog" />
       </form>
-  `;
+  `);
 };
 
-export const renderAddItemByURLForm = (
-    url: string = '',
-    urls: string = '',
-    flash: string = '',
-    blogTitle: string = '',
-) => {
+export const renderAddItemByURLForm = (url = '', urls = '', flash = '', blogTitle = '') => {
     let flash_test = '';
     if (flash.includes('Cannot fetch url')) flash_test += 'That page does not exist.';
     else flash_test += flash;
 
     const flashBlock = flash ? html`<div class="flash flash-red">${flash_test}</div>` : '';
-    return html`
+    return raw(`
     <h1>Add new item by URL to ${blogTitle}</h1>
     ${flashBlock}
     <div class="formbg">
@@ -625,10 +620,10 @@ export const renderAddItemByURLForm = (
         <input type="submit" value="Add item(s)" />
       </form>
     </div>
-  `;
+  `);
 };
 
-export const render_my_subsections = (active: string = 'all') => {
+export const render_my_subsections = (active = 'all') => {
     return html`
     <nav class="subsections">
         <a href="/my" class="no-color no-underline ${active === 'my' ? 'active bold' : ''}">all</a>
@@ -639,7 +634,7 @@ export const render_my_subsections = (active: string = 'all') => {
     `;
 };
 
-export const render_mblog_editor = (title: string, content: string = '') => {
+export const render_mblog_editor = (title = '', content = '') => {
     return `
     <script src="https://unpkg.com/tiny-markdown-editor/dist/tiny-mde.min.js"></script>
 

@@ -1,9 +1,10 @@
-import { FeedData } from '@extractus/feed-extractor';
-import { html, raw } from 'hono/html';
-import { Bindings } from './bindings';
+import type { FeedData } from '@extractus/feed-extractor';
+import type { Context } from 'hono';
+import { raw } from 'hono/html';
+import type { Bindings } from './bindings';
 import { extractRSS, validateFeedData } from './feed_extractor';
 import { renderAddFeedForm, renderHTML, renderItemShort } from './htmltools';
-import { MFFeedEntry } from './interface';
+import type { ItemRow, MFFeedEntry } from './interface';
 import {
     enqueueFeedUpdate,
     enqueueIndexAllItemsOfFeed,
@@ -27,9 +28,9 @@ import {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ROUTE HANDLERS //////////////////////////////////////////////////////////////////////////////////////////////////////
-export const handle_blogs = async (c: any) => {
+export const handleBlogs = async (c: Context) => {
     const user_id = c.get('USER_ID') || -1;
-    const userLoggedIn = user_id != -1;
+    const userLoggedIn = c.get('USER_LOGGED_IN');
     const { results, meta } = await c.env.DB.prepare(
         `
     SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, subscriptions.subscription_id, items_top_cache.content from feeds
@@ -43,13 +44,13 @@ export const handle_blogs = async (c: any) => {
 
     let list = ``;
 
-    if (user_id == -1) {
+    if (!userLoggedIn) {
         list += `<div class="flash">
     <strong>Minifeed</strong> is a curated blog reader and blog search engine. We collect humans-written blogs to make them discoverable and searchable. Sign up to subscribe to blogs, follow people, save favorites, or start your own blog.
     </div>`;
     }
 
-    results.forEach((feed: any) => {
+    for (const feed of results) {
         const subscriptionAction = feed.subscription_id ? 'unsubscribe' : 'subscribe';
         const subscriptionButtonText = feed.subscription_id ? 'subscribed' : 'subscribe';
         const feedDescriptionBlock = feed.description ? `<p>${feed.description}</p>` : '';
@@ -72,16 +73,16 @@ export const handle_blogs = async (c: any) => {
         </span></div>`;
 
         const cache_content = JSON.parse(feed.content);
-        const top_items = cache_content['top_items'];
+        const top_items = cache_content.top_items;
         let items_count = 0;
         let top_items_list = '';
 
         if (top_items) {
-            items_count = cache_content['items_count'] - top_items.length;
+            items_count = cache_content.items_count - top_items.length;
             top_items_list += '<ul>';
-            top_items.forEach((item: any) => {
+            for (const item of top_items) {
                 top_items_list += `<li><a href="/items/${item.item_sqid}">${item.title}</a></li>`;
-            });
+            }
             if (items_count > 0) {
                 top_items_list += `<li><i>and <a href="/blogs/${feed.feed_sqid}">${items_count} more...</a></i></li></ul>`;
             }
@@ -97,30 +98,29 @@ export const handle_blogs = async (c: any) => {
           ${subscriptionBlock}
           ${top_items_list}
         </div>`;
-    });
-
+    }
     list += `<div style="margin-top:2em;text-align:center;"><a class="button" href="/suggest">+ suggest a blog</a></div>`;
     return c.html(
         renderHTML(
             'Blogs | minifeed',
-            html`${raw(list)}`,
+            raw(list),
             c.get('USERNAME'),
             'blogs',
             '',
             '',
             false,
-            user_id == 1 ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``,
+            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
         ),
     );
 };
 
-export const handle_blogs_single = async (c: any) => {
+export const handle_blogs_single = async (c: Context) => {
     // TODO: we're assuming that feed always has items; if feed has 0 items, this will return 404, but maybe we want to
     // show the feed still as "processing"; use https://developers.cloudflare.com/d1/platform/client-api/#batch-statements
     const feedSqid = c.req.param('feed_sqid');
     const feedId = feedSqidToId(feedSqid);
     const userId = c.get('USER_ID') || -1;
-    const userLoggedIn = c.get('USER_ID') ? true : false;
+    const userLoggedIn = !!c.get('USER_ID');
 
     const batch = await c.env.DB.batch([
         c.env.DB.prepare(
@@ -146,12 +146,12 @@ export const handle_blogs_single = async (c: any) => {
 
     // batch[0] is feed joined with subscription status; 0 means no feed found in DB
     if (!batch[0].results.length) return c.notFound();
-    const feedTitle = batch[0].results[0]['title'];
+    const feedTitle = batch[0].results[0].title;
 
-    const feedUrl = batch[0].results[0]['url'];
-    const rssUrl = batch[0].results[0]['rss_url'];
-    const subscriptionAction = batch[0].results[0]['subscription_id'] ? 'unsubscribe' : 'subscribe';
-    const subscriptionButtonText = batch[0].results[0]['subscription_id'] ? 'subscribed' : 'subscribe';
+    const feedUrl = batch[0].results[0].url;
+    const rssUrl = batch[0].results[0].rss_url;
+    const subscriptionAction = batch[0].results[0].subscription_id ? 'unsubscribe' : 'subscribe';
+    const subscriptionButtonText = batch[0].results[0].subscription_id ? 'subscribed' : 'subscribe';
     const subscriptionBlock = userLoggedIn
         ? `
       <span id="subscription">
@@ -171,7 +171,7 @@ export const handle_blogs_single = async (c: any) => {
         </button>
       </span>
       `;
-    const feedDescription = batch[0].results[0]['description'] ? `${batch[0].results[0]['description']}<br>` : '';
+    const feedDescription = batch[0].results[0].description ? `${batch[0].results[0].description}<br>` : '';
 
     const feedDescriptionBlock = `
     <div style="margin-bottom:1em;">
@@ -194,9 +194,9 @@ export const handle_blogs_single = async (c: any) => {
     `;
 
     // batch[1] is items
-    if (!batch[1].results.length) list += `<p>Feed is being updated, come back later...</p>`;
+    if (!batch[1].results.length) list += '<p>Feed is being updated, come back later...</p>';
     else {
-        batch[1].results.forEach((item: any) => {
+        for (const item of batch[1].results) {
             const itemTitle = item.favorite_id ? `★ ${item.item_title}` : item.item_title;
             list += renderItemShort(
                 item.item_sqid,
@@ -207,66 +207,52 @@ export const handle_blogs_single = async (c: any) => {
                 item.pub_date,
                 item.description,
             );
-        });
+        }
     }
 
-    let debug_info = ``;
-    if (userId == 1) {
+    let debug_info = '';
+    if (c.get('USER_IS_ADMIN')) {
         debug_info = `${batch[0].meta.duration}+${batch[1].meta.duration} ms;,
             ${batch[0].meta.rows_read}+${batch[1].meta.rows_read} rows read`;
     }
     return c.html(
-        renderHTML(
-            `${feedTitle} | minifeed`,
-            html`${raw(list)}`,
-            c.get('USERNAME'),
-            'blogs',
-            '',
-            '',
-            false,
-            debug_info,
-        ),
+        renderHTML(`${feedTitle} | minifeed`, raw(list), c.get('USERNAME'), 'blogs', '', '', false, debug_info),
     );
 };
 
-export const feedsSubscribeHandler = async (c: any) => {
+export const feedsSubscribeHandler = async (c: Context) => {
     if (!c.get('USER_ID')) return c.redirect('/login');
     const userId = c.get('USER_ID');
     const feedSqid = c.req.param('feed_sqid');
     const feedId = feedSqidToId(feedSqid);
-    let result;
 
     try {
-        result = await c.env.DB.prepare('INSERT INTO subscriptions (user_id, feed_id) values (?, ?)')
+        const result = await c.env.DB.prepare('INSERT INTO subscriptions (user_id, feed_id) values (?, ?)')
             .bind(userId, feedId)
             .run();
+        if (result.success) {
+            c.status(201);
+            return c.html(`
+              <span id="subscription-${feedSqid}">
+                    <button hx-post="/feeds/${feedSqid}/unsubscribe"
+                    class="button subscribed"
+                    hx-trigger="click"
+                    hx-target="#subscription-${feedSqid}"
+                    hx-swap="outerHTML">
+                    <span class="subscribed-text">subscribed</span>
+                    <span class="unsubscribe-text">unsubscribe</span>
+                    </button>
+                </span>
+            `);
+        }
+        return c.html(`<span id="subscription"> "Error" </span>`);
     } catch (err) {
         c.status(400);
         return c.body('bad request');
     }
-    if (result.success) {
-        c.status(201);
-        return c.html(`
-      <span id="subscription-${feedSqid}">
-            <button hx-post="/feeds/${feedSqid}/unsubscribe"
-            class="button subscribed"
-            hx-trigger="click"
-            hx-target="#subscription-${feedSqid}"
-            hx-swap="outerHTML">
-            <span class="subscribed-text">subscribed</span>
-            <span class="unsubscribe-text">unsubscribe</span>
-            </button>
-        </span>
-    `);
-    }
-    return c.html(`
-      <span id="subscription">
-        "Error"
-      </span>
-    `);
 };
 
-export const feedsUnsubscribeHandler = async (c: any) => {
+export const feedsUnsubscribeHandler = async (c: Context) => {
     if (!c.get('USER_ID')) return c.redirect('/login');
     const userId = c.get('USER_ID');
     const feedSqid = c.req.param('feed_sqid');
@@ -298,13 +284,15 @@ export const feedsUnsubscribeHandler = async (c: any) => {
     `);
 };
 
-export const feedsDeleteHandler = async (c: any) => {
+export const feedsDeleteHandler = async (c: Context) => {
     const feedId: number = feedSqidToId(c.req.param('feed_sqid'));
 
     const ids_of_feed_items = await c.env.DB.prepare('SELECT item_id FROM items WHERE feed_id = ?').bind(feedId).all();
 
     if (ids_of_feed_items.results.length > 0) {
-        const item_ids_to_delete_from_vectorize = ids_of_feed_items.results.map((item: any) => item.item_id.toString());
+        const item_ids_to_delete_from_vectorize = ids_of_feed_items.results.map((item: ItemRow) =>
+            item.item_id.toString(),
+        );
         // split array into chunks of 100
         const chunks = [];
         for (let i = 0; i < item_ids_to_delete_from_vectorize.length; i += 100) {
@@ -315,29 +303,26 @@ export const feedsDeleteHandler = async (c: any) => {
         }
     }
 
-    await c.env.DB.prepare(`DELETE from feeds where feed_id = ?`).bind(feedId).run();
-
+    await c.env.DB.prepare('DELETE from feeds where feed_id = ?').bind(feedId).run();
     await deleteFeedFromIndex(c.env, feedId);
 
     return c.html(`Feed ${feedId} deleted`);
 };
 
-export const blogsNewHandler = async (c: any) => {
+export const blogsNewHandler = async (c: Context) => {
     if (!c.get('USER_ID')) return c.redirect('/login');
-    return c.html(renderHTML('Add new blog', html`${renderAddFeedForm()}`, c.get('USERNAME'), 'blogs'));
+    return c.html(renderHTML('Add new blog', renderAddFeedForm(), c.get('USERNAME'), 'blogs'));
 };
 
-export const blogsNewPostHandler = async (c: any) => {
+export const blogsNewPostHandler = async (c: Context) => {
     const body = await c.req.parseBody();
-    const url = body['url'].toString();
-    let rssUrl;
+    const url = body.url.toString();
+    let rssUrl: string;
     try {
-        const verified = c.get('USER_ID') == 1 ? true : false;
+        const verified = !!c.get('USER_IS_ADMIN');
         rssUrl = await addFeed(c.env, url, verified); // MAIN MEAT!
     } catch (e: any) {
-        return c.html(
-            renderHTML('Add new blog', html`${renderAddFeedForm(url, e.toString())}`, c.get('USERNAME'), 'blogs'),
-        );
+        return c.html(renderHTML('Add new blog', renderAddFeedForm(url, e.toString()), c.get('USERNAME'), 'blogs'));
     }
 
     // Redirect
@@ -349,25 +334,25 @@ export const blogsNewPostHandler = async (c: any) => {
     return c.text('Something went wrong');
 };
 
-export async function feedsUpdateHandler(c: any) {
+export async function feedsUpdateHandler(c: Context) {
     const feed_id: number = feedSqidToId(c.req.param('feed_sqid'));
     await enqueueFeedUpdate(c.env, feed_id);
     return c.text('Feed update enqueued...');
 }
 
-export async function feedsScrapeHandler(c: any) {
+export async function feedsScrapeHandler(c: Context) {
     const feed_id: number = feedSqidToId(c.req.param('feed_sqid'));
     await enqueueScrapeAllItemsOfFeed(c.env, feed_id);
     return c.html('Feed scrape enqueued...');
 }
 
-export async function feedsIndexHandler(c: any) {
+export async function feedsIndexHandler(c: Context) {
     const feed_id: number = feedSqidToId(c.req.param('feed_sqid'));
     await enqueueIndexAllItemsOfFeed(c.env, feed_id);
     return c.html('Feed index enqueued...');
 }
 
-export async function feedsGlobalIndexHandler(c: any) {
+export async function feedsGlobalIndexHandler(c: Context) {
     const feeds = await c.env.DB.prepare('SELECT feed_id FROM feeds').all();
     for (const feed of feeds.results) {
         await enqueueIndexAllItemsOfFeed(c.env, feed.feed_id);
@@ -375,13 +360,13 @@ export async function feedsGlobalIndexHandler(c: any) {
     return c.html('Feed index enqueued FOR ALL FEEDS...');
 }
 
-export async function feedsCacheRebuildHandler(c: any) {
+export async function feedsCacheRebuildHandler(c: Context) {
     const feed_id: number = feedSqidToId(c.req.param('feed_sqid'));
     await enqueueRebuildFeedTopItemsCache(c.env, feed_id);
     return c.html('Feed cache rebuild enqueued...');
 }
 
-export async function feedsGlobalCacheRebuildHandler(c: any) {
+export async function feedsGlobalCacheRebuildHandler(c: Context) {
     const feeds = await c.env.DB.prepare('SELECT feed_id FROM feeds').all();
     for (const feed of feeds.results) {
         await enqueueRebuildFeedTopItemsCache(c.env, feed.feed_id);
@@ -392,7 +377,7 @@ export async function feedsGlobalCacheRebuildHandler(c: any) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // FEED FUNCTIONS (NOT ROUTE HANDLERS)
 
-async function addFeed(env: Bindings, url: string, verified: boolean = false) {
+async function addFeed(env: Bindings, url: string, verified = false) {
     let r: FeedData;
     let RSSUrl: string = url;
     // first, try to use RSS extractor right away
@@ -406,7 +391,7 @@ async function addFeed(env: Bindings, url: string, verified: boolean = false) {
 
     const feedValidationResult = validateFeedData(r);
     if (!feedValidationResult.validated) {
-        throw new Error('Feed data verification failed: ' + feedValidationResult.messages.join('; '));
+        throw new Error(`Feed data verification failed: ${feedValidationResult.messages.join('; ')}`);
     }
 
     // if url === rssUrl that means the submitted URL was RSS URL, so retrieve site URL from RSS; otherwise use submitted URL as site URL
@@ -420,9 +405,9 @@ async function addFeed(env: Bindings, url: string, verified: boolean = false) {
         )
             .bind(r.title, 'blog', siteUrl, RSSUrl, verified_as_int)
             .all();
-        if (dbQueryResult['success'] === true) {
+        if (dbQueryResult.success === true) {
             if (r.entries) {
-                const feed_id: number = dbQueryResult['meta']['last_row_id'];
+                const feed_id: number = dbQueryResult.meta.last_row_id;
 
                 // update feed_sqid
                 const feed_sqid = feedIdToSqid(feed_id);
@@ -435,8 +420,6 @@ async function addFeed(env: Bindings, url: string, verified: boolean = false) {
     } catch (e: any) {
         if (e.toString().includes('UNIQUE constraint failed')) {
             return RSSUrl;
-        } else {
-            throw e;
         }
     }
 }

@@ -1,5 +1,5 @@
 import type { Context } from 'hono';
-import { html } from 'hono/html';
+import { raw } from 'hono/html';
 import { renderHTML } from './htmltools';
 import { getCollection } from './search';
 
@@ -166,7 +166,7 @@ export const handle_admin = async (c: Context) => {
     </div>
     `;
 
-    return c.html(renderHTML('admin | minifeed', html(list), c.get('USERNAME'), ''));
+    return c.html(renderHTML('admin | minifeed', raw(list), c.get('USERNAME'), ''));
 };
 
 export const handle_admin_unvectorized_items = async (c: Context) => {
@@ -194,7 +194,7 @@ export const handle_admin_unvectorized_items = async (c: Context) => {
     }
     list += '</ol>';
 
-    return c.html(renderHTML('admin | minifeed', html(list), c.get('USERNAME'), ''));
+    return c.html(renderHTML('admin | minifeed', raw(list), c.get('USERNAME'), ''));
 };
 
 export const handle_admin_items_without_sqid = async (c: Context) => {
@@ -217,5 +217,5 @@ export const handle_admin_items_without_sqid = async (c: Context) => {
     }
     list += '</ol>';
 
-    return c.html(renderHTML('admin | minifeed', html(list), c.get('USERNAME'), ''));
+    return c.html(renderHTML('admin | minifeed', raw(list), c.get('USERNAME'), ''));
 };

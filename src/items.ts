@@ -1,5 +1,5 @@
 import type { Context } from 'hono';
-import { html, raw } from 'hono/html';
+import { raw } from 'hono/html';
 import type { Bindings } from './bindings';
 import { addItemsToFeed } from './feeds';
 import { renderAddItemByURLForm, renderHTML, renderItemShort, render_my_subsections } from './htmltools';
@@ -67,13 +67,13 @@ export const handle_global = async (c: Context) => {
             '',
             '',
             false,
-            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``,
+            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
         ),
     );
 };
 
 // // MY HOME FEED: subs + favorites + friendfeed
-export const handle_my = async (c: any) => {
+export const handle_my = async (c: Context) => {
     const user_id = c.get('USER_ID');
     const items_per_page = 30;
     const page = Number(c.req.query('p')) || 1;
@@ -116,7 +116,7 @@ export const handle_my = async (c: any) => {
 
     let list = ` ${render_my_subsections('my')} `;
     if (results.length) {
-        results.forEach((item: any) => {
+        for (const item of results) {
             const title = item.favorite_id ? `★ ${item.title}` : item.title;
             list += renderItemShort(
                 item.item_sqid,
@@ -127,10 +127,10 @@ export const handle_my = async (c: any) => {
                 item.pub_date,
                 item.description,
             );
-        });
+        }
         list += `<p><a href="?p=${page + 1}">More</a></p>`;
     } else {
-        if (page == 1) {
+        if (page === 1) {
             list += `Your home is empty :-( <br>Subscribe to some <strong><a href="/blogs">blogs</a></strong> or follow some <strong><a href="/users">users</a></strong>.`;
         }
     }
@@ -138,18 +138,18 @@ export const handle_my = async (c: any) => {
     return c.html(
         renderHTML(
             'My feed | minifeed',
-            html`${raw(list)}`,
+            raw(list),
             c.get('USER_LOGGED_IN'),
             'my',
             '',
             '',
             false,
-            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``,
+            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
         ),
     );
 };
 
-export const handle_my_subscriptions = async (c: any) => {
+export const handle_my_subscriptions = async (c: Context) => {
     const user_id = c.get('USER_ID');
     const items_per_page = 30;
     const page = Number(c.req.query('p')) || 1;
@@ -174,7 +174,7 @@ export const handle_my_subscriptions = async (c: any) => {
     <div class="main">
     `;
     if (results.length) {
-        results.forEach((item: any) => {
+        for (const item of results) {
             const title = item.favorite_id ? `★ ${item.title}` : item.title;
             list += renderItemShort(
                 item.item_sqid,
@@ -185,29 +185,29 @@ export const handle_my_subscriptions = async (c: any) => {
                 item.pub_date,
                 item.description,
             );
-        });
+        }
         list += `<p><a href="?p=${page + 1}">More</a></p></div>`;
     } else {
-        if (page == 1) {
+        if (page === 1) {
             list += `Your have no subscriptions :-( <br>Subscribe to some <strong><a href="/blogs">blogs</a></strong>.`;
         }
-        list += `</div>`;
+        list += '</div>';
     }
     return c.html(
         renderHTML(
             'My subscriptions',
-            html`${raw(list)}`,
+            raw(list),
             c.get('USER_LOGGED_IN'),
             'my',
             '',
             '',
             false,
-            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``,
+            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
         ),
     );
 };
 
-export const handle_my_friendfeed = async (c: any) => {
+export const handle_my_friendfeed = async (c: Context) => {
     const userId = c.get('USER_ID');
     const itemsPerPage = 30;
     const page = Number(c.req.query('p')) || 1;
@@ -234,7 +234,7 @@ export const handle_my_friendfeed = async (c: any) => {
     <div class="main">
     `;
     if (results.length) {
-        results.forEach((item: any) => {
+        for (const item of results) {
             const title = item.favorite_id ? `★ ${item.title}` : item.title;
             list += renderItemShort(
                 item.item_sqid,
@@ -245,10 +245,10 @@ export const handle_my_friendfeed = async (c: any) => {
                 item.pub_date,
                 item.description,
             );
-        });
+        }
         list += `<p><a href="?p=${page + 1}">More</a></p></div>`;
     } else {
-        if (page == 1) {
+        if (page === 1) {
             list += `You don't follow anyone, or you do, but they aren't subscribed to anything :-( <br> <strong><a href="/users">View all users</a></strong>.`;
         }
     }
@@ -256,18 +256,17 @@ export const handle_my_friendfeed = async (c: any) => {
     return c.html(
         renderHTML(
             'My friendfeed',
-            html`${raw(list)}`,
+            raw(list),
             c.get('USERNAME'),
             'my',
             '',
             '',
             false,
-            userId == 1 ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``,
+            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
         ),
     );
 };
-
-export const handle_my_favorites = async (c: any) => {
+export const handle_my_favorites = async (c: Context) => {
     const itemsPerPage = 30;
     const page = Number(c.req.query('p')) || 1;
     const offset = page * itemsPerPage - itemsPerPage;
@@ -292,7 +291,7 @@ export const handle_my_favorites = async (c: any) => {
     <div class="main">
     `;
     if (results.length) {
-        results.forEach((item: any) => {
+        for (const item of results) {
             const title = item.favorite_id ? `★ ${item.title}` : item.title;
             list += renderItemShort(
                 item.item_sqid,
@@ -303,29 +302,28 @@ export const handle_my_favorites = async (c: any) => {
                 item.pub_date,
                 item.description,
             );
-        });
+        }
         list += `<p><a href="?p=${page + 1}">More</a></p>`;
     } else {
-        if (page == 1) {
+        if (page === 1) {
             list += `You haven't added anything to favorites yet :-(`;
         }
     }
-    list += `</div>`;
+    list += '</div>';
 
     return c.html(
         renderHTML(
             'My favorites',
-            html`${raw(list)}`,
+            raw(list),
             c.get('USERNAME'),
             'my',
             '',
             '',
             false,
-            userId == 1 ? `${meta.duration} ms., ${meta.rows_read} rows read` : ``,
+            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
         ),
     );
 };
-
 export const handle_items_single = async (c: Context) => {
     const item_sqid = c.req.param('item_sqid');
     const item_id: number = itemSqidToId(item_sqid);
@@ -648,7 +646,7 @@ export const handle_items_single = async (c: Context) => {
     return c.html(
         renderHTML(
             `${item.item_title} | ${item.feed_title} | minifeed`,
-            html`${raw(list)}`,
+            raw(list),
             c.get('USERNAME'),
             'blogs',
             '',
@@ -660,7 +658,7 @@ export const handle_items_single = async (c: Context) => {
 };
 
 // Renders lists for item
-export const handle_items_lists = async (c: any) => {
+export const handle_items_lists = async (c: Context) => {
     const itemSqid = c.req.param('item_sqid');
     const itemId: number = itemSqidToId(itemSqid);
     const userId = c.get('USER_ID');
@@ -675,7 +673,7 @@ export const handle_items_lists = async (c: any) => {
         .all();
 
     // lists.results contains instances of lists with items
-    const lists_with_current_item = lists.results.filter((list: any) => list.item_id == itemId);
+    const lists_with_current_item = lists.results.filter((list) => list.item_id === itemId);
     const lists_without_current_item = lists.results
         // remove list instances that already have the item
         // .filter((list: any) => list.item_id != itemId)
@@ -718,18 +716,18 @@ export const handle_items_lists = async (c: any) => {
     return c.html(content);
 };
 
-export const handle_items_lists_new_form = async (c: any) => {
+export const handle_items_lists_new_form = async (c: Context) => {
     const itemSqid = c.req.param('item_sqid');
     return c.html(`<form hx-post="/items/${itemSqid}/lists" hx-target="this" hx-swap="outerHTML" style="margin-top:0.5em;">
     <input type="text" name="list_title" placeholder="Type list title and press Enter" style="font-size: inherit !important;padding: 0.25em 0.5em !important;">
     </form>`);
 };
 
-export const handle_items_lists_new_POST = async (c: any) => {
+export const handle_items_lists_new_POST = async (c: Context) => {
     const body = await c.req.parseBody();
-    const list_title = body['list_title'].toString();
+    const list_title = body.list_title.toString();
 
-    const result = await c.env.DB.prepare(`INSERT INTO item_lists (user_id, title) VALUES (?, ?)`)
+    const result = await c.env.DB.prepare('INSERT INTO item_lists (user_id, title) VALUES (?, ?)')
         .bind(c.get('USER_ID'), list_title)
         .run();
 
@@ -737,65 +735,59 @@ export const handle_items_lists_new_POST = async (c: any) => {
     const list_sqid = itemIdToSqid(list_id);
 
     // set sqid of list
-    await c.env.DB.prepare(`UPDATE item_lists SET list_sqid = ? WHERE list_id = ?`).bind(list_sqid, list_id).run();
+    await c.env.DB.prepare('UPDATE item_lists SET list_sqid = ? WHERE list_id = ?').bind(list_sqid, list_id).run();
 
     const itemSqid = c.req.param('item_sqid');
     const itemId: number = itemSqidToId(itemSqid);
     // add item to list
-    await c.env.DB.prepare(`INSERT INTO item_list_items (list_id, item_id) VALUES (?, ?)`).bind(list_id, itemId).run();
+    await c.env.DB.prepare('INSERT INTO item_list_items (list_id, item_id) VALUES (?, ?)').bind(list_id, itemId).run();
 
     return c.html(
         `<a class="no-underline no-color" href="/lists/${list_sqid}">${list_title}</a> <a hx-post="/items/${itemSqid}/lists/${list_sqid}/remove" hx-swap="outerHTML transition:true">[- remove from list]</a><br>`,
     );
 };
 
-export const handle_items_lists_POST = async (c: any) => {};
+export const handle_items_lists_POST = async (c: Context) => {};
 
 // add item to list
-export const handle_items_lists_add_POST = async (c: any) => {
+export const handle_items_lists_add_POST = async (c: Context) => {
     const item_sqid = c.req.param('item_sqid');
     const list_sqid = c.req.param('list_sqid');
     const item_id = itemSqidToId(item_sqid);
     const list_id = itemSqidToId(list_sqid);
 
-    const result = await c.env.DB.prepare(`INSERT INTO item_list_items (list_id, item_id) VALUES (?, ?)`)
+    const result = await c.env.DB.prepare('INSERT INTO item_list_items (list_id, item_id) VALUES (?, ?)')
         .bind(list_id, item_id)
         .run();
 
     return c.html('[added]');
 };
 
-export const handle_items_lists_remove_POST = async (c: any) => {
+export const handle_items_lists_remove_POST = async (c: Context) => {
     const item_sqid = c.req.param('item_sqid');
     const list_sqid = c.req.param('list_sqid');
     const item_id = itemSqidToId(item_sqid);
     const list_id = itemSqidToId(list_sqid);
 
-    const result = await c.env.DB.prepare(`DELETE FROM item_list_items WHERE list_id = ? AND item_id = ?`)
+    const result = await c.env.DB.prepare('DELETE FROM item_list_items WHERE list_id = ? AND item_id = ?')
         .bind(list_id, item_id)
         .run();
 
     return c.html('[removed]');
 };
 
-export const itemsAddToFavoritesHandler = async (c: any) => {
+export const itemsAddToFavoritesHandler = async (c: Context) => {
     const itemSqid = c.req.param('item_sqid');
     const itemId: number = itemSqidToId(itemSqid);
     const userId = c.get('USER_ID');
 
-    let result;
     try {
-        result = await c.env.DB.prepare(`INSERT INTO favorites (user_id, item_id) VALUES (?, ?)`)
+        const result = await c.env.DB.prepare('INSERT INTO favorites (user_id, item_id) VALUES (?, ?)')
             .bind(userId, itemId)
             .run();
-    } catch (e) {
-        c.status(400);
-        return c.body(e);
-    }
-
-    if (result.success) {
-        c.status(201);
-        return c.html(`
+        if (result.success) {
+            c.status(201);
+            return c.html(`
         <span id="favorite">
         <button hx-post="/items/${itemSqid}/unfavorite"
         class="button"
@@ -806,6 +798,10 @@ export const itemsAddToFavoritesHandler = async (c: any) => {
         </button>
         </span>
         `);
+        }
+    } catch (e) {
+        c.status(400);
+        return c.json({ error: 'An error occurred' });
     }
 
     return c.html(`
@@ -814,77 +810,69 @@ export const itemsAddToFavoritesHandler = async (c: any) => {
     </span>
     `);
 };
-
-export const itemsRemoveFromFavoritesHandler = async (c: any) => {
+export const itemsRemoveFromFavoritesHandler = async (c: Context) => {
     const itemSqid = c.req.param('item_sqid');
     const itemId: number = itemSqidToId(itemSqid);
     const userId = c.get('USER_ID');
 
-    let result;
     try {
-        result = await c.env.DB.prepare(`DELETE FROM favorites WHERE user_id = ? AND item_id = ?`)
+        const result = await c.env.DB.prepare('DELETE FROM favorites WHERE user_id = ? AND item_id = ?')
             .bind(userId, itemId)
             .run();
+        if (result.success) {
+            c.status(201);
+            return c.html(`
+                <span id="favorite">
+                <button hx-post="/items/${itemSqid}/favorite"
+                class="button"
+                hx-trigger="click"
+                hx-target="#favorite"
+                hx-swap="outerHTML">
+                ☆ favorite
+                </button>
+                </span>
+                `);
+        }
     } catch (e) {
         c.status(400);
-        return c.body(e);
+        return c.json({ error: 'An error occurred' });
     }
 
-    if (result.success) {
-        c.status(201);
-        return c.html(`
-        <span id="favorite">
-        <button hx-post="/items/${itemSqid}/favorite"
-        class="button"
-        hx-trigger="click"
-        hx-target="#favorite"
-        hx-swap="outerHTML">
-        ☆ favorite
-        </button>
-        </span>
-        `);
-    }
-
-    return c.html(`
-    <span id="favorite">
-    "Error"
-    </span>
-    `);
+    return c.html(` <span id="favorite"> "Error" </span> `);
 };
 
-export const itemsAddItembyUrlHandler = async (c: any) => {
+export const itemsAddItembyUrlHandler = async (c: Context) => {
     const feedSqid = c.req.param('feed_sqid');
     const feedId = feedSqidToId(feedSqid);
 
-    const blog = await c.env.DB.prepare(`SELECT * FROM feeds WHERE feed_id = ?`).bind(feedId).all();
+    const blog = await c.env.DB.prepare('SELECT * FROM feeds WHERE feed_id = ?').bind(feedId).all();
 
     const blogTitle = blog.results[0].title;
 
     return c.html(
-        renderHTML('Add new item', html`${renderAddItemByURLForm('', '', '', blogTitle)}`, c.get('USERNAME'), 'blogs'),
+        renderHTML('Add new item', renderAddItemByURLForm('', '', '', blogTitle), c.get('USERNAME'), 'blogs'),
     );
 };
 
-export const itemDeleteHandler = async (c: any) => {
+export const itemDeleteHandler = async (c: Context) => {
     const itemSqid = c.req.param('item_sqid');
     const itemId = itemSqidToId(itemSqid);
 
-    const dbDeleteResults = await c.env.DB.prepare(`DELETE FROM items WHERE item_id = ?`).bind(itemId).run();
+    const dbDeleteResults = await c.env.DB.prepare('DELETE FROM items WHERE item_id = ?').bind(itemId).run();
     await c.env.VECTORIZE.deleteByIds([`${itemId}`]);
     if (dbDeleteResults.success) {
         return c.html('Item deleted. Delete it from the index yourself dude');
-    } else {
-        return c.html('ERROR while deleting item from DB');
     }
+    return c.html('ERROR while deleting item from DB');
 };
 
-export const itemsAddItemByUrlPostHandler = async (c: any) => {
+export const itemsAddItemByUrlPostHandler = async (c: Context) => {
     const feedSqid = c.req.param('feed_sqid');
     const feedId = feedSqidToId(feedSqid);
 
     const body = await c.req.parseBody();
-    const url = body['url'].toString();
-    const urls = body['urls'].toString();
+    const url = body.url.toString();
+    const urls = body.urls.toString();
     if (!url && !urls) {
         return c.html('Both URL and URLs are empty');
     }
@@ -892,13 +880,14 @@ export const itemsAddItemByUrlPostHandler = async (c: any) => {
         return c.html('Both URL and URLs are filled in, please only fill in one');
     }
 
-    let urls_array;
+    let urls_array: Array<string>;
     if (url) {
         urls_array = [url];
-    }
-    if (urls) {
+    } else if (urls) {
         urls_array = urls.split('\r\n');
-    }
+    } else urls_array = [];
+
+    if (!urls_array.length) return c.html('No URLs provided');
 
     // remove empty strings from urls_array
     urls_array = urls_array.filter((url: string) => url !== '');
@@ -993,18 +982,17 @@ export const regenerateRelatedCacheForItem = async (env: Bindings, itemId: numbe
         .bind(...relatedIDsOtherBlog)
         .all();
 
-    relatedItemsOtherBlog.results.forEach((i: any) => {
+    for (const i of relatedItemsOtherBlog.results) {
         cache_content.relatedFromOtherBlogs.push({
-            title: i.title,
-            item_id: i.item_id,
-            item_sqid: i.item_sqid,
-            feed_title: i.feed_title,
-            feed_id: i.feed_id,
-            feed_sqid: i.feed_sqid,
-            url: i.url,
+            title: i.title as string,
+            item_id: i.item_id as number,
+            item_sqid: i.item_sqid as string,
+            feed_title: i.feed_title as string,
+            feed_id: i.feed_id as number,
+            feed_sqid: i.feed_sqid as string,
+            url: i.url as string,
         });
-    });
-
+    }
     await env.DB.prepare('REPLACE INTO items_related_cache (item_id, content) values (?, ?)')
         .bind(itemId, JSON.stringify(cache_content))
         .run();

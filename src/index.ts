@@ -33,7 +33,7 @@ import {
     feedsSubscribeHandler,
     feedsUnsubscribeHandler,
     feedsUpdateHandler,
-    handle_blogs,
+    handleBlogs,
     handle_blogs_single,
     regenerateTopItemsCacheForFeed,
     updateFeed,
@@ -171,7 +171,7 @@ app.get('/verify_email', handle_verify_email);
 
 app.post('/items/:item_sqid/delete', itemDeleteHandler);
 
-app.get('/blogs', handle_blogs);
+app.get('/blogs', handleBlogs);
 app.get('/blogs/new', blogsNewHandler);
 app.post('/blogs/new', blogsNewPostHandler);
 app.get('/blogs/:feed_sqid/new', itemsAddItembyUrlHandler);
@@ -254,9 +254,9 @@ appMain.all('*', async (c: Context, next) => {
             return await subdomainApp.fetch(c.req.raw, c.env);
         }
         // Default to root app for the main domain (example.com)
-        return await app.fetch(c.req, c.env, c.ctx);
+        return await app.fetch(c.req.raw, c.env);
     }
-    return await app.fetch(c.req.raw, c.env, c.ctx);
+    return await app.fetch(c.req.raw, c.env);
 });
 
 // MAIN EXPORT

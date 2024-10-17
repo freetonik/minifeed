@@ -148,28 +148,6 @@ export const handle_vectorize = async (c: Context) => {
     return c.html(response);
 };
 
-// export const handle_summarize = async (c: Context) => {
-//     const env = c.env as Bindings;
-//     const start = c.req.query('start');
-//     const stop = c.req.query('stop');
-
-//     if (!start || !stop) return c.html('start and stop required');
-
-//     const items = await env.DB.prepare(
-//         'SELECT item_id, title, item_sqid FROM items WHERE item_id >= ? AND item_id <= ?',
-//     )
-//         .bind(start, stop)
-//         .all<ItemRow>();
-
-//     let response = '<ol>';
-//     for (const item of items.results) {
-//         response += `<li>Summarizing <a href="/items/${item.item_sqid}">${item.item_id} / ${item.item_sqid}: ${item.title}</a>`;
-//         await summarize_and_store_item(c.env, item.item_id);
-//     }
-//     response += '</ol>';
-//     return c.html(response);
-// };
-
 export const handle_generate_related = async (c: Context) => {
     const env = c.env as Bindings;
     const start = c.req.query('start');
