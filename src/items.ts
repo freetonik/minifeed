@@ -1,9 +1,9 @@
-import { Context } from 'hono';
+import type { Context } from 'hono';
 import { html, raw } from 'hono/html';
-import { Bindings } from './bindings';
+import type { Bindings } from './bindings';
 import { addItemsToFeed } from './feeds';
 import { renderAddItemByURLForm, renderHTML, renderItemShort, render_my_subsections } from './htmltools';
-import { RelatedItemCached } from './interface';
+import type { RelatedItemCached } from './interface';
 import {
     enqueueItemIndex,
     enqueueItemScrape,
@@ -28,10 +28,10 @@ export const handle_global = async (c: Context) => {
         ORDER BY items.pub_date DESC
         LIMIT ? OFFSET ?`,
     )
-        .bind(user_id, items_per_page, offset)
+        .bind(user_id, items_per_page + 1, offset)
         .run();
 
-    let list = ``;
+    let list = '';
     if (!c.get('USER_LOGGED_IN')) {
         list += `<div class="flash">
     <strong>Minifeed</strong> is a curated blog reader and blog search engine.
@@ -46,11 +46,10 @@ export const handle_global = async (c: Context) => {
     </div>`;
     }
 
-    list += ``;
+    if (!results.length) list += '<p><i>Nothing exists on minifeed yet...</i></p>';
 
-    if (!results.length) list += `<p><i>Nothing exists on minifeed yet...</i></p>`;
-
-    results.forEach((item: any) => {
+    for (let i = 0; i < results.length - 1; i++) {
+        const item = results[i];
         const itemTitle = item.favorite_id ? `★ ${item.item_title}` : item.item_title;
 
         list += renderItemShort(
@@ -62,13 +61,12 @@ export const handle_global = async (c: Context) => {
             item.pub_date,
             item.description,
         );
-    });
-
-    if (results.length) list += `<a href="?p=${page + 1}">More</a></p>`;
+    }
+    if (results.length > items_per_page) list += `<a href="?p=${page + 1}">More...</a></p>`;
     return c.html(
         renderHTML(
             'Global feed | minifeed',
-            html`${raw(list)}`,
+            raw(list),
             c.get('USER_LOGGED_IN'),
             'global',
             '',
