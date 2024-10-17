@@ -84,9 +84,16 @@ export async function enqueueRegenerateItemRelatedCache(env: Bindings, item_id: 
     });
 }
 
-export async function enqueueRegenerateItemSummary(env: Bindings, item_id: number) {
-    await env.FEED_UPDATE_QUEUE.send({
-        type: 'item_update_summary',
-        item_id: item_id,
-    });
+export async function enqueueRegenerateAllItemsRelatedCache(env: Bindings) {
+    const { results: items } = await env.DB.prepare(
+        'SELECT items.item_id FROM items LEFT JOIN items_related_cache on items.item_id=items_related_cache.item_id WHERE items_related_cache.content is null',
+    ).all();
+
+    for (const item of items) {
+        console.log(`Regenerating related cache for item ${item.item_id}`);
+        await env.FEED_UPDATE_QUEUE.send({
+            type: 'item_update_related_cache',
+            item_id: item.item_id,
+        });
+    }
 }

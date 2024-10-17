@@ -72,7 +72,7 @@ import {
     mblogRSSHandler,
 } from './mblogs';
 import { adminRequiredMiddleware, authMiddleware, authRequiredMiddleware, subdomainMiddleware } from './middlewares';
-import { enqueueScrapeAllItemsOfFeed, enqueueUpdateAllFeeds } from './queue';
+import { enqueueRegenerateAllItemsRelatedCache, enqueueScrapeAllItemsOfFeed, enqueueUpdateAllFeeds } from './queue';
 import { scrapeItem } from './scrape';
 import { handle_search, updateFeedIndex, updateItemIndex } from './search';
 import { handle_users_single, usersFollowPostHandler, usersHandler, usersUnfollowPostHandler } from './users';
@@ -367,7 +367,9 @@ export default {
     },
 
     async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
-        // cron
+        // update feeds
         await enqueueUpdateAllFeeds(env);
+        // generate related items cache
+        await enqueueRegenerateAllItemsRelatedCache(env);
     },
 };

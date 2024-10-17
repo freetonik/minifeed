@@ -102,9 +102,6 @@ export const vectorize_and_store_item = async (env: Bindings, item_id: number) =
             feed_id: item.feed_id, // metadata
         },
     );
-
-    // after item is vectorized, generate related items cache
-    await enqueueRegenerateItemRelatedCache(env, item.item_id);
 };
 
 // export const summarize_and_store_item = async (env: Bindings, itemId: number) => {

@@ -69,6 +69,10 @@ export const handle_admin = async (c: Context) => {
             <td>${items_related_cache_count.results[0]['COUNT(item_id)']}</td>
         </tr>
         <tr>
+            <td>Related missing</td>
+            <td>${items_vector_relation_count.results[0]['COUNT(item_id)'] - items_related_cache_count.results[0]['COUNT(item_id)']}</td>
+        </tr>
+        <tr>
             <td>Items without SQID</td>
             <td>${items_without_sqid.results[0]['count(item_id)']}
             <a href="/admin/items_without_sqid">[list]</a>
