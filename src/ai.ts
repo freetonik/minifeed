@@ -47,19 +47,14 @@ export const add_vector_to_db = async (
 export const vectorize_and_store_item = async (env: Bindings, item_id: number) => {
     // if item is already in vector store, skip
     const vectors = await env.VECTORIZE.getByIds([`${item_id}`]);
-    if (vectors.length) {
-        // add to item_vector_relation table
-        await env.DB.prepare('REPLACE INTO items_vector_relation (item_id, vectorized) VALUES (?, ?)')
-            .bind(item_id, 1)
-            .run();
-        return;
-    }
+    if (vectors.length) return;
 
     const item = await env.DB.prepare(
         'SELECT item_id, feed_id, title, description, content_html, content_html_scraped FROM items WHERE item_id = ?',
     )
         .bind(item_id)
         .first<ItemRow>();
+
     if (!item) return;
 
     let contentBlock = '';
@@ -149,7 +144,7 @@ export const handle_vectorize = async (c: Context) => {
 
     let response = '<ol>';
     for (const item of items.results) {
-        // response += `<li>Vectorizing item <a href="/items/${item.item_sqid}">${item.item_id} / ${item.item_sqid}: ${item.title}</a>`;
+        response += `<li>Vectorizing item <a href="/items/${item.item_sqid}">${item.item_id} / ${item.item_sqid}: ${item.title}</a>`;
         await enqueueVectorizeStoreItem(c.env, item.item_id);
     }
     response += '</ol>';
