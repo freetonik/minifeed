@@ -1,5 +1,5 @@
 import type { Bindings } from './bindings';
-import { enqueueItemIndex } from './queue';
+import { enqueueItemIndex, enqueueVectorizeStoreItem } from './queue';
 import { stripTags, truncate } from './utils';
 
 export async function scrapeItem(env: Bindings, item_id: number) {
@@ -26,7 +26,9 @@ export async function scrapeItem(env: Bindings, item_id: number) {
         );
     }
 
+    // TODO: probably should not bind indexing and vectorizing to scraping
     await enqueueItemIndex(env, item_id);
+    await enqueueVectorizeStoreItem(env, item_id);
 }
 
 export async function scrapeURLIntoObject(env: Bindings, url: string) {
