@@ -4,12 +4,7 @@ import type { Bindings } from './bindings';
 import { addItemsToFeed } from './feeds';
 import { renderAddItemByURLForm, renderHTML, renderItemShort, render_my_subsections } from './htmltools';
 import type { RelatedItemCached } from './interface';
-import {
-    enqueueItemIndex,
-    enqueueItemScrape,
-    enqueueRegenerateItemRelatedCache,
-    enqueueVectorizeStoreItem,
-} from './queue';
+import { enqueueItemIndex, enqueueItemScrape, enqueueVectorizeStoreItem } from './queue';
 import { scrapeURLIntoObject } from './scrape';
 import { absolutifyImageUrls, feedSqidToId, getRootUrl, itemIdToSqid, itemSqidToId, sanitizeHTML } from './utils';
 
@@ -933,7 +928,6 @@ export const itemsAddItemByUrlPostHandler = async (c: any) => {
 
         await enqueueItemIndex(c.env, addedItemId); // addItemsToFeed(..scrapeAfterAdding=false), so scrape it...
         await enqueueVectorizeStoreItem(c.env, addedItemId); // ... and vectorize it...
-        await enqueueRegenerateItemRelatedCache(c.env, addedItemId); //... and generate related items cache
 
         const addedItemSqid = itemIdToSqid(addedItemId);
         added_items_sqids.push(addedItemSqid);
