@@ -525,28 +525,28 @@ export const renderItemShort = (
 };
 
 export const renderItemSearchResult = (searchResult: any) => {
-    const item = searchResult['document'];
-    const postDate = new Date(item['pub_date']).toLocaleDateString('en-UK', dateFormatOptions);
-    const feedSqid = item['feed_sqid'];
-    const itemSqid = item['item_sqid'];
-    const uri_root_from_type = item['type'] === 'blog' ? 'blogs' : '';
+    const item = searchResult.document;
+    const postDate = new Date(item.pub_date).toLocaleDateString('en-UK', dateFormatOptions);
+    const feedSqid = item.feed_sqid;
+    const itemSqid = item.item_sqid;
+    const uri_root_from_type = item.type === 'blog' ? 'blogs' : '';
 
-    let title = item['title'];
-    if (searchResult['highlight']['title'] && searchResult['highlight']['title']['snippet']) {
-        title = searchResult['highlight']['title']['snippet'];
+    let title = item.title;
+    if (searchResult.highlight.title?.snippet) {
+        title = searchResult.highlight.title.snippet;
     }
     let content = '';
-    if (searchResult['highlight']['content'] && searchResult['highlight']['content']['snippet']) {
-        content = searchResult['highlight']['content']['snippet'];
+    if (searchResult.highlight.content?.snippet) {
+        content = searchResult.highlight.content.snippet;
     }
 
     return `
     <div class="item-short search-result">
         <a href="/items/${itemSqid}" class="no-underline bold">${title}</a> <br>
         <div class="muted"><small>
-            from ${item['type']} <a href="/${uri_root_from_type}/${feedSqid}">${item['feed_title']}</a> |
+            from ${item.type} <a href="/${uri_root_from_type}/${feedSqid}">${item.feed_title}</a> |
             <time>${postDate}</time> |
-            <a class="no-underline no-color" href="${item['url']}">original</a>
+            <a class="no-underline no-color" href="${item.url}">original</a>
         </small></div>
         <p class="item-summary">
         ${content}...

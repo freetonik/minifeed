@@ -986,7 +986,7 @@ export const regenerateRelatedCacheForItem = async (env: Bindings, itemId: numbe
 
     const relatedIDsOtherBlog: Array<string> = [];
     for (const match of matchesOtherBlogs.matches) {
-        if (match.id == `${itemId}`) continue; // skip current item itself
+        if (match.id === `${itemId}`) continue; // skip current item itself
         relatedIDsOtherBlog.push(match.id);
     }
     const queryBindPlaceholders = relatedIDsOtherBlog.map(() => '?').join(','); // Generate '?,?,...,?'
