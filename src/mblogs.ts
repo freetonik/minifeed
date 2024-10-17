@@ -4,7 +4,7 @@ import { marked } from 'marked';
 import { renderHTML, render_mblog_editor } from './htmltools';
 import { itemIdToSqid, sanitizeHTML } from './utils';
 
-export const handle_mblog = async (c: Context) => {
+export const handleMblog = async (c: Context) => {
     const subdomain = c.get('SUBDOMAIN');
 
     const userId = c.get('USER_ID') || -1;
@@ -61,7 +61,7 @@ export const handle_mblog = async (c: Context) => {
     return c.html(renderHTML(`${mblog.title}`, raw(list), userLoggedIn, '', '', '', true));
 };
 
-export const handle_mblog_POST = async (c: Context) => {
+export const handleMblogPOST = async (c: Context) => {
     const subdomain = c.get('SUBDOMAIN');
     const userId = c.get('USER_ID') || -1;
 
@@ -147,7 +147,7 @@ const generate_slug = (title: string) => {
         .toLowerCase();
 };
 
-export const handle_mblog_post_single = async (c: Context) => {
+export const handleMblogItemSingle = async (c: Context) => {
     const subdomain = c.get('SUBDOMAIN');
     const userId = c.get('USER_ID') || -1;
     const userLoggedIn = !!c.get('USER_LOGGED_IN');
@@ -200,7 +200,7 @@ export const handle_mblog_post_single = async (c: Context) => {
     return c.html(renderHTML(`${post.title} | minifeed`, raw(list), c.get('USERNAME'), '', '', '', true));
 };
 
-export const handle_mblog_post_delete = async (c: Context) => {
+export const handleMblogDeletePOST = async (c: Context) => {
     const userId = c.get('USER_ID') || -1;
     const post_slug = c.req.param('post_slug');
 
@@ -224,7 +224,7 @@ export const handle_mblog_post_delete = async (c: Context) => {
     return c.redirect('/');
 };
 
-export const handle_mblog_post_edit = async (c: Context) => {
+export const handleMblogEditPOST = async (c: Context) => {
     const userId = c.get('USER_ID') || -1;
     const post_slug = c.req.param('post_slug');
 
@@ -246,7 +246,7 @@ export const handle_mblog_post_edit = async (c: Context) => {
     return c.html(renderHTML(`${post.title} | ${post.feed_title}`, raw(list), c.get('USERNAME'), 'blogs', ''));
 };
 
-export const handle_mblog_post_edit_POST = async (c: Context) => {
+export const handleBlogItemEditPOST = async (c: Context) => {
     const userId = c.get('USER_ID') || -1;
     const post_slug = c.req.param('post_slug');
 
@@ -289,6 +289,6 @@ export const handle_mblog_post_edit_POST = async (c: Context) => {
     return c.redirect(`/${post_slug}`);
 };
 
-export const mblogRSSHandler = async (c: Context) => {
+export const handleMblogRss = async (c: Context) => {
     return c.html('RSS SOON');
 };

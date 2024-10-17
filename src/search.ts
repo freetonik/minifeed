@@ -4,7 +4,7 @@ import type { Bindings } from './bindings';
 import { renderHTML, renderItemSearchResult } from './htmltools';
 import { collapseWhitespace, gatherResponse, stripASCIIFormatting, stripTags } from './utils';
 
-export const handle_search = async (c: Context) => {
+export const handleSearch = async (c: Context) => {
     const q = c.req.query('q');
 
     // if query only contains spaces, return error

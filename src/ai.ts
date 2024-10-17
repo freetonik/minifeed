@@ -44,7 +44,7 @@ export const add_vector_to_db = async (
     }
 };
 
-export const vectorize_and_store_item = async (env: Bindings, item_id: number) => {
+export const vectorizeAndStoreItem = async (env: Bindings, item_id: number) => {
     // if item is already in vector store, skip
     const vectors = await env.VECTORIZE.getByIds([`${item_id}`]);
     if (vectors.length) return;
@@ -126,7 +126,7 @@ export const vectorize_and_store_item = async (env: Bindings, item_id: number) =
 //     return;
 // };
 
-export const handle_vectorize = async (c: Context) => {
+export const handleVectorize = async (c: Context) => {
     const env = c.env as Bindings;
     const start = c.req.query('start');
     const stop = c.req.query('stop');
@@ -148,7 +148,7 @@ export const handle_vectorize = async (c: Context) => {
     return c.html(response);
 };
 
-export const handle_generate_related = async (c: Context) => {
+export const handleGenerateRelated = async (c: Context) => {
     const env = c.env as Bindings;
     const start = c.req.query('start');
     const stop = c.req.query('stop');

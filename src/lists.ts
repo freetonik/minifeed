@@ -3,7 +3,7 @@ import { html, raw } from 'hono/html';
 import { renderHTML } from './htmltools';
 import { itemSqidToId } from './utils';
 
-export const handle_lists = async (c: Context) => {
+export const handleLists = async (c: Context) => {
     const lists = await c.env.DB.prepare(
         `SELECT DISTINCT item_lists.*, users.username
         FROM item_lists 
@@ -21,7 +21,7 @@ export const handle_lists = async (c: Context) => {
     return c.html(renderHTML('Lists | minifeed', raw(inner), c.get('USERNAME'), 'lists', '', '', false));
 };
 
-export const handle_lists_single = async (c: Context) => {
+export const handleListsSingle = async (c: Context) => {
     const list_sqid = c.req.param('list_sqid');
     const list_id = itemSqidToId(list_sqid);
     const user_id = c.get('USER_ID');
@@ -57,7 +57,7 @@ export const handle_lists_single = async (c: Context) => {
     return c.html(renderHTML(`List ${list.title} | minifeed`, raw(inner), c.get('USERNAME'), 'lists', '', '', false));
 };
 
-export const handle_lists_single_delete_POST = async (c: Context) => {
+export const handleListsSingleDeletePOST = async (c: Context) => {
     const list_id = itemSqidToId(c.req.param('list_sqid'));
     const user_id = c.get('USER_ID');
 

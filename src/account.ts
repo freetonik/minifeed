@@ -6,7 +6,7 @@ import { sendEmail } from './email';
 import { renderHTML } from './htmltools';
 import { feedIdToSqid } from './utils';
 
-export const handle_my_account = async (c: Context) => {
+export const handleMyAccount = async (c: Context) => {
     const user_id = c.get('USER_ID');
     const batch = await c.env.DB.batch([
         c.env.DB.prepare(`
@@ -111,7 +111,7 @@ export const handle_my_account = async (c: Context) => {
     return c.html(renderHTML('My account | minifeed', raw(list), username, ''));
 };
 
-export const handle_verify_email = async (c: Context) => {
+export const handleVerifyEmail = async (c: Context) => {
     const code = c.req.query('code');
     const username = c.get('USERNAME');
     const result = await c.env.DB.prepare('SELECT * from email_verifications WHERE verification_code = ?')
@@ -142,7 +142,7 @@ export const handle_verify_email = async (c: Context) => {
     return c.html(renderHTML('Email verification | minifeed', raw(message_flash), username, ''));
 };
 
-export const handle_resend_verification_link_POST = async (c: Context) => {
+export const handleResentVerificationEmailPOST = async (c: Context) => {
     const result = await c.env.DB.prepare(
         `SELECT verification_code, email, username
         FROM email_verifications 
@@ -166,7 +166,7 @@ export const handle_resend_verification_link_POST = async (c: Context) => {
     );
 };
 
-export const handle_logout = async (c: Context) => {
+export const handleLogout = async (c: Context) => {
     const sessionKey = getCookie(c, 'minifeed_session');
     if (!sessionKey) {
         return c.redirect('/');
@@ -176,7 +176,7 @@ export const handle_logout = async (c: Context) => {
     return c.redirect('/');
 };
 
-export const handle_login = async (c: Context) => {
+export const handleLogin = async (c: Context) => {
     if (c.get('USER_ID')) return c.redirect('/my');
 
     const list = `
@@ -207,7 +207,7 @@ export const handle_login = async (c: Context) => {
     return c.html(renderHTML('Login or create account | minifeed', raw(list), false, '', ''));
 };
 
-export const handle_reset_password = async (c: Context) => {
+export const handleResetPassword = async (c: Context) => {
     if (c.get('USER_LOGGED_IN')) return c.redirect('/my');
     const code = c.req.query('code');
     let inner = '';
@@ -251,7 +251,7 @@ export const handle_reset_password = async (c: Context) => {
     return c.html(renderHTML('Reset password | minifeed', raw(inner), false, '', ''));
 };
 
-export const handle_reset_password_POST = async (c: Context) => {
+export const handleResetPasswordPOST = async (c: Context) => {
     const body = await c.req.parseBody();
     const email = body.email.toString().toLowerCase();
 
@@ -283,7 +283,7 @@ export const handle_reset_password_POST = async (c: Context) => {
     );
 };
 
-export const handle_set_password_POST = async (c: Context) => {
+export const handleSetPasswordPOST = async (c: Context) => {
     const body = await c.req.parseBody();
     const password = body.password.toString();
     const reset_code = body.reset_code.toString();
@@ -320,7 +320,7 @@ export const handle_set_password_POST = async (c: Context) => {
     return c.html(renderHTML('Reset password | minifeed', inner, false, '', ''));
 };
 
-export const handle_signup = async (c: Context) => {
+export const handleSignup = async (c: Context) => {
     if (c.get('USER_LOGGED_IN')) return c.redirect('/my');
 
     const inner = `
@@ -356,7 +356,7 @@ export const handle_signup = async (c: Context) => {
     return c.html(renderHTML('Login or create account | minifeed', raw(inner), false, '', ''));
 };
 
-export const handle_login_POST = async (c: Context) => {
+export const handleLoginPOST = async (c: Context) => {
     const body = await c.req.parseBody();
     const username = body.username.toString();
     const attempted_password = body.password.toString();
@@ -382,7 +382,7 @@ export const handle_login_POST = async (c: Context) => {
     throw new Error('Wrong username or password');
 };
 
-export const handle_signup_POST = async (c: Context) => {
+export const handleSignupPOST = async (c: Context) => {
     const body = await c.req.parseBody();
     const username = body.username.toString();
     const password = body.password.toString();
@@ -542,7 +542,7 @@ function checkEmail(email: string) {
     return /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email);
 }
 
-export const handle_create_mblog_POST = async (c: Context) => {
+export const handleNewMblogPost = async (c: Context) => {
     const body = await c.req.parseBody();
     const slug = body.address.toString();
     if (!slug) throw new Error('Address is required');

@@ -3,7 +3,7 @@ import { raw } from 'hono/html';
 import { renderHTML } from './htmltools';
 import { getCollection } from './search';
 
-export const handle_admin = async (c: Context) => {
+export const handleAdmin = async (c: Context) => {
     let list = '';
     const feeds = await c.env.DB.prepare(
         'SELECT * FROM feeds LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id ORDER BY feed_id ASC ',
@@ -169,7 +169,7 @@ export const handle_admin = async (c: Context) => {
     return c.html(renderHTML('admin | minifeed', raw(list), c.get('USERNAME'), ''));
 };
 
-export const handle_admin_unvectorized_items = async (c: Context) => {
+export const handleAdminUnvectorizedItems = async (c: Context) => {
     let list = '<ol>';
 
     const unvectorized_items = await c.env.DB.prepare(
@@ -197,7 +197,7 @@ export const handle_admin_unvectorized_items = async (c: Context) => {
     return c.html(renderHTML('admin | minifeed', raw(list), c.get('USERNAME'), ''));
 };
 
-export const handle_admin_items_without_sqid = async (c: Context) => {
+export const handleAdminItemsWithoutSqid = async (c: Context) => {
     let list = '<ol>';
 
     const items_without_sqid = await c.env.DB.prepare(`

@@ -3,79 +3,84 @@ import { Hono } from 'hono';
 import { raw } from 'hono/html';
 import { about } from './about';
 import {
-    handle_create_mblog_POST,
-    handle_login,
-    handle_login_POST,
-    handle_logout,
-    handle_my_account,
-    handle_resend_verification_link_POST,
-    handle_reset_password,
-    handle_reset_password_POST,
-    handle_set_password_POST,
-    handle_signup,
-    handle_signup_POST,
-    handle_verify_email,
+    handleLogin,
+    handleLoginPOST,
+    handleLogout,
+    handleMyAccount,
+    handleNewMblogPost,
+    handleResentVerificationEmailPOST,
+    handleResetPassword,
+    handleResetPasswordPOST,
+    handleSetPasswordPOST,
+    handleSignup,
+    handleSignupPOST,
+    handleVerifyEmail,
 } from './account';
-import { handle_admin, handle_admin_items_without_sqid, handle_admin_unvectorized_items } from './admin';
-import { handle_generate_related, handle_vectorize, vectorize_and_store_item } from './ai';
+import { handleAdmin, handleAdminItemsWithoutSqid, handleAdminUnvectorizedItems } from './admin';
+import { handleGenerateRelated, handleVectorize, vectorizeAndStoreItem } from './ai';
 import type { Bindings } from './bindings';
 import { changelog } from './changelog';
-import { handle_feedback, handle_suggest_blog } from './feedback';
+import { handleFeedback, handleSuggestBlog } from './feedback';
 import {
-    blogsNewHandler,
-    blogsNewPostHandler,
-    feedsCacheRebuildHandler,
-    feedsDeleteHandler,
-    feedsGlobalCacheRebuildHandler,
-    feedsGlobalIndexHandler,
-    feedsIndexHandler,
-    feedsScrapeHandler,
-    feedsSubscribeHandler,
-    feedsUnsubscribeHandler,
-    feedsUpdateHandler,
     handleBlogs,
-    handle_blogs_single,
+    handleBlogsNew,
+    handleBlogsNewPOST,
+    handleBlogsSingle,
+    handleFeedsCacheRebuild,
+    handleFeedsDelete,
+    handleFeedsGlobalCacheRebuild,
+    handleFeedsGlobalIndex,
+    handleFeedsIndexing,
+    handleFeedsScrape,
+    handleFeedsSubscribe,
+    handleFeedsUnsubscribe,
+    handleFeedsUpdate,
     regenerateTopItemsCacheForFeed,
     updateFeed,
 } from './feeds';
 import { renderHTML } from './htmltools';
 import type { MFQueueMessage } from './interface';
 import {
-    handle_global,
-    handle_items_lists,
-    handle_items_lists_add_POST,
-    handle_items_lists_new_POST,
-    handle_items_lists_new_form,
-    handle_items_lists_remove_POST,
-    handle_items_single,
-    handle_my,
-    handle_my_favorites,
-    handle_my_friendfeed,
-    handle_my_subscriptions,
-    itemDeleteHandler,
-    itemsAddItemByUrlPostHandler,
-    itemsAddItembyUrlHandler,
-    itemsAddToFavoritesHandler,
-    itemsIndexHandler,
-    itemsRemoveFromFavoritesHandler,
-    itemsScrapeHandler,
+    handleGlobal,
+    handleItemsAddItemByUrlPOST,
+    handleItemsAddItembyUrl,
+    handleItemsAddToFavorites,
+    handleItemsDelete,
+    handleItemsIndexing,
+    handleItemsLists,
+    handleItemsListsAddPOST,
+    handleItemsListsNewForm,
+    handleItemsListsNewPOST,
+    handleItemsListsRemovePOST,
+    handleItemsRemoveFromFavorites,
+    handleItemsScraping,
+    handleItemsSingle,
+    handleMy,
+    handleMyFavorites,
+    handleMyFriendfeed,
+    handleMySubscriptions,
     regenerateRelatedCacheForItem,
 } from './items';
-import { handle_lists, handle_lists_single, handle_lists_single_delete_POST } from './lists';
+import { handleLists, handleListsSingle, handleListsSingleDeletePOST } from './lists';
 import {
-    handle_mblog,
-    handle_mblog_POST,
-    handle_mblog_post_delete,
-    handle_mblog_post_edit,
-    handle_mblog_post_edit_POST,
-    handle_mblog_post_single,
-    mblogRSSHandler,
+    handleBlogItemEditPOST,
+    handleMblog,
+    handleMblogDeletePOST,
+    handleMblogEditPOST,
+    handleMblogItemSingle,
+    handleMblogPOST,
+    handleMblogRss,
 } from './mblogs';
-import { adminRequiredMiddleware, authMiddleware, authRequiredMiddleware, subdomainMiddleware } from './middlewares';
+import {
+    adminRequiredMiddleware,
+    authCheckMiddleware,
+    authRequiredMiddleware,
+    subdomainMiddleware,
+} from './middlewares';
 import { enqueueRegenerateAllItemsRelatedCache, enqueueScrapeAllItemsOfFeed, enqueueUpdateAllFeeds } from './queue';
 import { scrapeItem } from './scrape';
-import { handle_search, updateFeedIndex, updateItemIndex } from './search';
-import { handle_users_single, usersFollowPostHandler, usersHandler, usersUnfollowPostHandler } from './users';
+import { handleSearch, updateFeedIndex, updateItemIndex } from './search';
+import { handleUsers, handleUsersFollowPOST, handleUsersSingle, handleUsersUnfollowPOST } from './users';
 
 // ///////////////////////////////////////////////////////////
 // ///////////////////////////////////////////////////////////////
@@ -92,7 +97,7 @@ const app = new Hono<{ Bindings: Bindings }>({
 
 app.get('/robots.txt', async (c) => c.text('User-agent: *\nAllow: /'));
 
-app.use('*', authMiddleware);
+app.use('*', authCheckMiddleware);
 // all routes below this line require authentication
 app.use('/my/*', authRequiredMiddleware);
 app.use('/feeds/:feed_sqid/subscribe', authRequiredMiddleware);
@@ -100,10 +105,10 @@ app.use('/feeds/:feed_sqid/unsubscribe', authRequiredMiddleware);
 app.use('/items/:feed_sqid/favorite', authRequiredMiddleware);
 app.use('/items/:feed_sqid/unfavorite', authRequiredMiddleware);
 
-app.use('/items/:item_sqid/lists', authMiddleware);
-app.use('/items/:item_sqid/lists/new', authMiddleware);
-app.use('/items/:item_sqid/lists/:list_sqid/add', authMiddleware);
-app.use('/items/:item_sqid/lists/:list_sqid/remove', authMiddleware);
+app.use('/items/:item_sqid/lists', authCheckMiddleware);
+app.use('/items/:item_sqid/lists/new', authCheckMiddleware);
+app.use('/items/:item_sqid/lists/:list_sqid/add', authCheckMiddleware);
+app.use('/items/:item_sqid/lists/:list_sqid/remove', authCheckMiddleware);
 
 // all routes below this line require admin privileges
 app.use('/my/account/create_mblog', adminRequiredMiddleware);
@@ -141,53 +146,53 @@ app.get('/', (c: Context) => {
     return c.redirect('/my');
 });
 
-app.get('/admin', handle_admin);
-app.get('/admin/unvectorized_items', handle_admin_unvectorized_items);
-app.get('/admin/items_without_sqid', handle_admin_items_without_sqid);
-app.get('/admin/vectorize', handle_vectorize);
-app.get('/admin/generate_related', handle_generate_related);
-app.get('/search', handle_search);
-app.get('/global', handle_global);
-app.get('/feedback', handle_feedback);
-app.get('/suggest', handle_suggest_blog);
+app.get('/admin', handleAdmin);
+app.get('/admin/unvectorized_items', handleAdminUnvectorizedItems);
+app.get('/admin/items_without_sqid', handleAdminItemsWithoutSqid);
+app.get('/admin/vectorize', handleVectorize);
+app.get('/admin/generate_related', handleGenerateRelated);
+app.get('/search', handleSearch);
+app.get('/global', handleGlobal);
+app.get('/feedback', handleFeedback);
+app.get('/suggest', handleSuggestBlog);
 
-app.get('/login', handle_login);
-app.get('/reset_password', handle_reset_password);
-app.post('/reset_password', handle_reset_password_POST);
-app.post('/set_password', handle_set_password_POST);
-app.get('/signup', handle_signup);
-app.post('/login', handle_login_POST);
-app.post('/signup', handle_signup_POST);
-app.get('/logout', handle_logout);
+app.get('/login', handleLogin);
+app.get('/reset_password', handleResetPassword);
+app.post('/reset_password', handleResetPasswordPOST);
+app.post('/set_password', handleSetPasswordPOST);
+app.get('/signup', handleSignup);
+app.post('/login', handleLoginPOST);
+app.post('/signup', handleSignupPOST);
+app.get('/logout', handleLogout);
 
-app.get('/my', handle_my);
-app.get('/my/subscriptions', handle_my_subscriptions);
-app.get('/my/friendfeed', handle_my_friendfeed);
-app.get('/my/favorites', handle_my_favorites);
-app.get('/my/account', handle_my_account);
-app.post('/my/account/create_mblog', handle_create_mblog_POST);
-app.post('/my/account/resend_verification_link', handle_resend_verification_link_POST);
-app.get('/verify_email', handle_verify_email);
+app.get('/my', handleMy);
+app.get('/my/subscriptions', handleMySubscriptions);
+app.get('/my/friendfeed', handleMyFriendfeed);
+app.get('/my/favorites', handleMyFavorites);
+app.get('/my/account', handleMyAccount);
+app.post('/my/account/create_mblog', handleNewMblogPost);
+app.post('/my/account/resend_verification_link', handleResentVerificationEmailPOST);
+app.get('/verify_email', handleVerifyEmail);
 
-app.post('/items/:item_sqid/delete', itemDeleteHandler);
+app.post('/items/:item_sqid/delete', handleItemsDelete);
 
 app.get('/blogs', handleBlogs);
-app.get('/blogs/new', blogsNewHandler);
-app.post('/blogs/new', blogsNewPostHandler);
-app.get('/blogs/:feed_sqid/new', itemsAddItembyUrlHandler);
-app.post('/blogs/:feed_sqid/new', itemsAddItemByUrlPostHandler);
+app.get('/blogs/new', handleBlogsNew);
+app.post('/blogs/new', handleBlogsNewPOST);
+app.get('/blogs/:feed_sqid/new', handleItemsAddItembyUrl);
+app.post('/blogs/:feed_sqid/new', handleItemsAddItemByUrlPOST);
 
-app.get('/blogs/:feed_sqid', handle_blogs_single);
-app.post('/feeds/:feed_sqid/subscribe', feedsSubscribeHandler);
-app.post('/feeds/:feed_sqid/unsubscribe', feedsUnsubscribeHandler);
+app.get('/blogs/:feed_sqid', handleBlogsSingle);
+app.post('/feeds/:feed_sqid/subscribe', handleFeedsSubscribe);
+app.post('/feeds/:feed_sqid/unsubscribe', handleFeedsUnsubscribe);
 
-app.post('/feeds/:feed_sqid/delete', feedsDeleteHandler);
-app.post('/feeds/:feed_sqid/update', feedsUpdateHandler);
-app.post('/feeds/:feed_sqid/scrape', feedsScrapeHandler);
-app.post('/feeds/:feed_sqid/index', feedsIndexHandler);
-app.post('/feeds/:feed_sqid/rebuild_cache', feedsCacheRebuildHandler);
-app.post('/feeds/index', feedsGlobalIndexHandler);
-app.post('/feeds/rebuild_cache', feedsGlobalCacheRebuildHandler);
+app.post('/feeds/:feed_sqid/delete', handleFeedsDelete);
+app.post('/feeds/:feed_sqid/update', handleFeedsUpdate);
+app.post('/feeds/:feed_sqid/scrape', handleFeedsScrape);
+app.post('/feeds/:feed_sqid/index', handleFeedsIndexing);
+app.post('/feeds/:feed_sqid/rebuild_cache', handleFeedsCacheRebuild);
+app.post('/feeds/index', handleFeedsGlobalIndex);
+app.post('/feeds/rebuild_cache', handleFeedsGlobalCacheRebuild);
 
 app.get('/podcasts', (c: Context) => {
     return c.html(renderHTML('Podcasts | minifeed', raw('Coming soon'), c.get('USERNAME'), 'podcasts'));
@@ -196,26 +201,26 @@ app.get('/channels', (c: Context) => {
     return c.html(renderHTML('Channels | minifeed', raw('Coming soon'), c.get('USERNAME'), 'channels'));
 });
 
-app.get('/items/:item_sqid', handle_items_single);
-app.get('/items/:item_sqid/lists', handle_items_lists);
-app.get('/items/:item_sqid/lists/new', handle_items_lists_new_form);
-app.post('/items/:item_sqid/lists', handle_items_lists_new_POST);
-app.post('/items/:item_sqid/lists/:list_sqid/add', handle_items_lists_add_POST);
-app.post('/items/:item_sqid/lists/:list_sqid/remove', handle_items_lists_remove_POST);
+app.get('/items/:item_sqid', handleItemsSingle);
+app.get('/items/:item_sqid/lists', handleItemsLists);
+app.get('/items/:item_sqid/lists/new', handleItemsListsNewForm);
+app.post('/items/:item_sqid/lists', handleItemsListsNewPOST);
+app.post('/items/:item_sqid/lists/:list_sqid/add', handleItemsListsAddPOST);
+app.post('/items/:item_sqid/lists/:list_sqid/remove', handleItemsListsRemovePOST);
 
-app.post('/items/:item_sqid/favorite', itemsAddToFavoritesHandler);
-app.post('/items/:item_sqid/unfavorite', itemsRemoveFromFavoritesHandler);
-app.post('/items/:item_sqid/scrape', itemsScrapeHandler);
-app.post('/items/:item_sqid/index', itemsIndexHandler);
+app.post('/items/:item_sqid/favorite', handleItemsAddToFavorites);
+app.post('/items/:item_sqid/unfavorite', handleItemsRemoveFromFavorites);
+app.post('/items/:item_sqid/scrape', handleItemsScraping);
+app.post('/items/:item_sqid/index', handleItemsIndexing);
 
-app.get('/lists', handle_lists);
-app.get('/lists/:list_sqid', handle_lists_single);
-app.post('/lists/:list_sqid/delete', handle_lists_single_delete_POST);
+app.get('/lists', handleLists);
+app.get('/lists/:list_sqid', handleListsSingle);
+app.post('/lists/:list_sqid/delete', handleListsSingleDeletePOST);
 
-app.get('/users', usersHandler);
-app.get('/users/:username', handle_users_single);
-app.post('/users/:username/follow', usersFollowPostHandler);
-app.post('/users/:username/unfollow', usersUnfollowPostHandler);
+app.get('/users', handleUsers);
+app.get('/users/:username', handleUsersSingle);
+app.post('/users/:username/follow', handleUsersFollowPOST);
+app.post('/users/:username/unfollow', handleUsersUnfollowPOST);
 
 app.get('/about', async (c: Context) => c.html(renderHTML('About | minifeed', raw(about), c.get('USERNAME'))));
 app.get('/about/changelog', async (c: Context) =>
@@ -225,17 +230,17 @@ app.get('/about/changelog', async (c: Context) =>
 const subdomainApp = new Hono<{ Bindings: Bindings }>({
     strict: false,
 });
-subdomainApp.use('*', authMiddleware);
+subdomainApp.use('*', authCheckMiddleware);
 subdomainApp.use('*', subdomainMiddleware);
 
-subdomainApp.get('/', handle_mblog);
-subdomainApp.post('/', handle_mblog_POST);
+subdomainApp.get('/', handleMblog);
+subdomainApp.post('/', handleMblogPOST);
 
-subdomainApp.get('/rss', mblogRSSHandler);
-subdomainApp.get('/:post_slug', handle_mblog_post_single);
-subdomainApp.get('/:post_slug/edit', handle_mblog_post_edit);
-subdomainApp.post('/:post_slug/edit', handle_mblog_post_edit_POST);
-subdomainApp.post('/:post_slug/delete', handle_mblog_post_delete);
+subdomainApp.get('/rss', handleMblogRss);
+subdomainApp.get('/:post_slug', handleMblogItemSingle);
+subdomainApp.get('/:post_slug/edit', handleMblogEditPOST);
+subdomainApp.post('/:post_slug/edit', handleBlogItemEditPOST);
+subdomainApp.post('/:post_slug/delete', handleMblogDeletePOST);
 
 subdomainApp.notFound(handleNotFound);
 subdomainApp.onError(handleError);
@@ -354,7 +359,7 @@ export default {
                 case 'item_vectorize_store':
                     if (message.body.item_id) {
                         try {
-                            await vectorize_and_store_item(env, message.body.item_id);
+                            await vectorizeAndStoreItem(env, message.body.item_id);
                         } catch (e: unknown) {
                             console.log(
                                 `Error vectorizing and storing item ${message.body.item_id}: ${e instanceof Error ? e.message : String(e)}`,

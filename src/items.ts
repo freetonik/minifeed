@@ -8,7 +8,7 @@ import { enqueueItemIndex, enqueueItemScrape, enqueueVectorizeStoreItem } from '
 import { scrapeURLIntoObject } from './scrape';
 import { absolutifyImageUrls, feedSqidToId, getRootUrl, itemIdToSqid, itemSqidToId, sanitizeHTML } from './utils';
 
-export const handle_global = async (c: Context) => {
+export const handleGlobal = async (c: Context) => {
     const user_id = c.get('USER_ID') || -1;
     const items_per_page = 60;
     const page = Number(c.req.query('p')) || 1;
@@ -73,7 +73,7 @@ export const handle_global = async (c: Context) => {
 };
 
 // // MY HOME FEED: subs + favorites + friendfeed
-export const handle_my = async (c: Context) => {
+export const handleMy = async (c: Context) => {
     const user_id = c.get('USER_ID');
     const items_per_page = 30;
     const page = Number(c.req.query('p')) || 1;
@@ -149,7 +149,7 @@ export const handle_my = async (c: Context) => {
     );
 };
 
-export const handle_my_subscriptions = async (c: Context) => {
+export const handleMySubscriptions = async (c: Context) => {
     const user_id = c.get('USER_ID');
     const items_per_page = 30;
     const page = Number(c.req.query('p')) || 1;
@@ -207,7 +207,7 @@ export const handle_my_subscriptions = async (c: Context) => {
     );
 };
 
-export const handle_my_friendfeed = async (c: Context) => {
+export const handleMyFriendfeed = async (c: Context) => {
     const userId = c.get('USER_ID');
     const itemsPerPage = 30;
     const page = Number(c.req.query('p')) || 1;
@@ -266,7 +266,7 @@ export const handle_my_friendfeed = async (c: Context) => {
         ),
     );
 };
-export const handle_my_favorites = async (c: Context) => {
+export const handleMyFavorites = async (c: Context) => {
     const itemsPerPage = 30;
     const page = Number(c.req.query('p')) || 1;
     const offset = page * itemsPerPage - itemsPerPage;
@@ -324,7 +324,7 @@ export const handle_my_favorites = async (c: Context) => {
         ),
     );
 };
-export const handle_items_single = async (c: Context) => {
+export const handleItemsSingle = async (c: Context) => {
     const item_sqid = c.req.param('item_sqid');
     const item_id: number = itemSqidToId(item_sqid);
     const user_id = c.get('USER_ID') || -1;
@@ -658,7 +658,7 @@ export const handle_items_single = async (c: Context) => {
 };
 
 // Renders lists for item
-export const handle_items_lists = async (c: Context) => {
+export const handleItemsLists = async (c: Context) => {
     const itemSqid = c.req.param('item_sqid');
     const itemId: number = itemSqidToId(itemSqid);
     const userId = c.get('USER_ID');
@@ -716,14 +716,14 @@ export const handle_items_lists = async (c: Context) => {
     return c.html(content);
 };
 
-export const handle_items_lists_new_form = async (c: Context) => {
+export const handleItemsListsNewForm = async (c: Context) => {
     const itemSqid = c.req.param('item_sqid');
     return c.html(`<form hx-post="/items/${itemSqid}/lists" hx-target="this" hx-swap="outerHTML" style="margin-top:0.5em;">
     <input type="text" name="list_title" placeholder="Type list title and press Enter" style="font-size: inherit !important;padding: 0.25em 0.5em !important;">
     </form>`);
 };
 
-export const handle_items_lists_new_POST = async (c: Context) => {
+export const handleItemsListsNewPOST = async (c: Context) => {
     const body = await c.req.parseBody();
     const list_title = body.list_title.toString();
 
@@ -750,7 +750,7 @@ export const handle_items_lists_new_POST = async (c: Context) => {
 export const handle_items_lists_POST = async (c: Context) => {};
 
 // add item to list
-export const handle_items_lists_add_POST = async (c: Context) => {
+export const handleItemsListsAddPOST = async (c: Context) => {
     const item_sqid = c.req.param('item_sqid');
     const list_sqid = c.req.param('list_sqid');
     const item_id = itemSqidToId(item_sqid);
@@ -763,7 +763,7 @@ export const handle_items_lists_add_POST = async (c: Context) => {
     return c.html('[added]');
 };
 
-export const handle_items_lists_remove_POST = async (c: Context) => {
+export const handleItemsListsRemovePOST = async (c: Context) => {
     const item_sqid = c.req.param('item_sqid');
     const list_sqid = c.req.param('list_sqid');
     const item_id = itemSqidToId(item_sqid);
@@ -776,7 +776,7 @@ export const handle_items_lists_remove_POST = async (c: Context) => {
     return c.html('[removed]');
 };
 
-export const itemsAddToFavoritesHandler = async (c: Context) => {
+export const handleItemsAddToFavorites = async (c: Context) => {
     const itemSqid = c.req.param('item_sqid');
     const itemId: number = itemSqidToId(itemSqid);
     const userId = c.get('USER_ID');
@@ -810,7 +810,7 @@ export const itemsAddToFavoritesHandler = async (c: Context) => {
     </span>
     `);
 };
-export const itemsRemoveFromFavoritesHandler = async (c: Context) => {
+export const handleItemsRemoveFromFavorites = async (c: Context) => {
     const itemSqid = c.req.param('item_sqid');
     const itemId: number = itemSqidToId(itemSqid);
     const userId = c.get('USER_ID');
@@ -841,7 +841,7 @@ export const itemsRemoveFromFavoritesHandler = async (c: Context) => {
     return c.html(` <span id="favorite"> "Error" </span> `);
 };
 
-export const itemsAddItembyUrlHandler = async (c: Context) => {
+export const handleItemsAddItembyUrl = async (c: Context) => {
     const feedSqid = c.req.param('feed_sqid');
     const feedId = feedSqidToId(feedSqid);
 
@@ -854,7 +854,7 @@ export const itemsAddItembyUrlHandler = async (c: Context) => {
     );
 };
 
-export const itemDeleteHandler = async (c: Context) => {
+export const handleItemsDelete = async (c: Context) => {
     const itemSqid = c.req.param('item_sqid');
     const itemId = itemSqidToId(itemSqid);
 
@@ -866,7 +866,7 @@ export const itemDeleteHandler = async (c: Context) => {
     return c.html('ERROR while deleting item from DB');
 };
 
-export const itemsAddItemByUrlPostHandler = async (c: Context) => {
+export const handleItemsAddItemByUrlPOST = async (c: Context) => {
     const feedSqid = c.req.param('feed_sqid');
     const feedId = feedSqidToId(feedSqid);
 
@@ -929,13 +929,13 @@ export const itemsAddItemByUrlPostHandler = async (c: Context) => {
     return c.redirect(`/blogs/${feedSqid}`);
 };
 
-export const itemsScrapeHandler = async (c: Context) => {
+export const handleItemsScraping = async (c: Context) => {
     const itemSqid = c.req.param('item_sqid');
     await enqueueItemScrape(c.env, itemSqidToId(itemSqid));
     return c.html('Scrape queued...');
 };
 
-export const itemsIndexHandler = async (c: Context) => {
+export const handleItemsIndexing = async (c: Context) => {
     const itemSqid = c.req.param('item_sqid');
     await enqueueItemIndex(c.env, itemSqidToId(itemSqid));
     return c.html('Indexing queued...');

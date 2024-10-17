@@ -1,32 +1,27 @@
-import { renderHTML, renderItemShort } from "./htmltools";
-import { html, raw } from "hono/html";
-import { feedIdToSqid } from "./utils";
+import { html, raw } from 'hono/html';
+import { renderHTML, renderItemShort } from './htmltools';
+import { feedIdToSqid } from './utils';
 
-export const usersHandler = async (c: any) => {
-    const username = c.get("USERNAME");
-    const { results } = await c.env.DB.prepare(
-        "SELECT * from users ORDER BY created ASC",
-    ).run();
+export const handleUsers = async (c: any) => {
+    const username = c.get('USERNAME');
+    const { results } = await c.env.DB.prepare('SELECT * from users ORDER BY created ASC').run();
 
     let list = `<div class="main">`;
     results.forEach((user: any) => {
         if (user.username == username)
             list += `<div><strong><a href="/users/${user.username}">${user.username}</a></strong> (this is me)</div>`;
-        else
-            list += `<div><a href="/users/${user.username}">${user.username}</a></div>`;
+        else list += `<div><a href="/users/${user.username}">${user.username}</a></div>`;
     });
-    list += "</div>";
-    return c.html(
-        renderHTML("Users", html`${raw(list)}`, c.get("USERNAME"), "users"),
-    );
+    list += '</div>';
+    return c.html(renderHTML('Users', html`${raw(list)}`, c.get('USERNAME'), 'users'));
 };
 
-export const handle_users_single = async (c: any) => {
-    const userId = c.get("USER_ID") || "0";
-    const currentUsername = c.get("USERNAME");
+export const handleUsersSingle = async (c: any) => {
+    const userId = c.get('USER_ID') || '0';
+    const currentUsername = c.get('USERNAME');
 
-    const userLoggedIn = c.get("USER_ID") ? true : false;
-    const username = c.req.param("username");
+    const userLoggedIn = c.get('USER_ID') ? true : false;
+    const username = c.req.param('username');
     const batch = await c.env.DB.batch([
         // who this user is and if he is followed by current user batch[0]
         c.env.DB.prepare(
@@ -88,20 +83,13 @@ export const handle_users_single = async (c: any) => {
 
     if (!batch[0].results.length) return c.notFound();
 
-    let inner = "";
+    let inner = '';
 
     // user favorited these jabronis
     inner += `<h2>Favorites:</h2>`;
     if (!batch[4].results.length) inner += `<p><i>None yet</i></p>`;
     batch[4].results.forEach((item: any) => {
-        inner += renderItemShort(
-            item.item_sqid,
-            item.title,
-            item.url,
-            item.feed_title,
-            item.feed_sqid,
-            item.pub_date,
-        );
+        inner += renderItemShort(item.item_sqid, item.title, item.url, item.feed_title, item.feed_sqid, item.pub_date);
     });
 
     // user created these lists
@@ -127,18 +115,17 @@ export const handle_users_single = async (c: any) => {
     });
 
     inner += `<h2>Followers:</h2>`;
-    let followButtonText = "follow";
+    let followButtonText = 'follow';
     if (!batch[3].results.length) inner += `<p><i>None yet</i></p>`;
     batch[3].results.forEach((user: any) => {
-        followButtonText =
-            user.follower === currentUsername ? "unfollow" : "follow";
+        followButtonText = user.follower === currentUsername ? 'unfollow' : 'follow';
         inner += `<li><a href="${user.follower}">${user.follower}</a></li>`;
     });
 
     let top_block = `<h1>@${username}</h1>`;
 
     if (userLoggedIn) {
-        if (userId != batch[0].results[0]["user_id"]) {
+        if (userId != batch[0].results[0]['user_id']) {
             top_block += `
             <span id="follow">
             <button class="button" hx-post="/users/${username}/${followButtonText}"
@@ -157,38 +144,27 @@ export const handle_users_single = async (c: any) => {
 
     inner = top_block + inner;
 
-    return c.html(
-        renderHTML(
-            `${username} | minifeed`,
-            html`${raw(inner)}`,
-            c.get("USERNAME"),
-            "users",
-        ),
-    );
+    return c.html(renderHTML(`${username} | minifeed`, html`${raw(inner)}`, c.get('USERNAME'), 'users'));
 };
 
-export const usersFollowPostHandler = async (c: any) => {
-    if (!c.get("USER_ID")) return c.html("");
-    const userId = c.get("USER_ID");
-    const username = c.req.param("username");
+export const handleUsersFollowPOST = async (c: any) => {
+    if (!c.get('USER_ID')) return c.html('');
+    const userId = c.get('USER_ID');
+    const username = c.req.param('username');
 
-    const { results } = await c.env.DB.prepare(
-        `SELECT users.user_id FROM users WHERE users.username = ?`,
-    )
+    const { results } = await c.env.DB.prepare(`SELECT users.user_id FROM users WHERE users.username = ?`)
         .bind(username)
         .all();
-    const userIdToFollow = results[0]["user_id"];
+    const userIdToFollow = results[0]['user_id'];
 
     let result;
     try {
-        result = await c.env.DB.prepare(
-            "INSERT INTO followings (follower_user_id, followed_user_id) values (?, ?)",
-        )
+        result = await c.env.DB.prepare('INSERT INTO followings (follower_user_id, followed_user_id) values (?, ?)')
             .bind(userId, userIdToFollow)
             .run();
     } catch (err) {
         c.status(400);
-        return c.body("bad request");
+        return c.body('bad request');
     }
     if (result.success) {
         c.status(201);
@@ -210,22 +186,18 @@ export const usersFollowPostHandler = async (c: any) => {
     `);
 };
 
-export const usersUnfollowPostHandler = async (c: any) => {
-    if (!c.get("USER_ID")) return c.html("");
-    const userId = c.get("USER_ID");
-    const username = c.req.param("username");
+export const handleUsersUnfollowPOST = async (c: any) => {
+    if (!c.get('USER_ID')) return c.html('');
+    const userId = c.get('USER_ID');
+    const username = c.req.param('username');
 
-    const { results } = await c.env.DB.prepare(
-        `SELECT users.user_id FROM users WHERE users.username = ?`,
-    )
+    const { results } = await c.env.DB.prepare(`SELECT users.user_id FROM users WHERE users.username = ?`)
         .bind(username)
         .all();
-    const userIdToUnfollow = results[0]["user_id"];
+    const userIdToUnfollow = results[0]['user_id'];
 
     try {
-        await c.env.DB.prepare(
-            "DELETE FROM followings WHERE follower_user_id = ? AND followed_user_id = ?",
-        )
+        await c.env.DB.prepare('DELETE FROM followings WHERE follower_user_id = ? AND followed_user_id = ?')
             .bind(userId, userIdToUnfollow)
             .run();
     } catch (err) {

@@ -114,7 +114,7 @@ export const handleBlogs = async (c: Context) => {
     );
 };
 
-export const handle_blogs_single = async (c: Context) => {
+export const handleBlogsSingle = async (c: Context) => {
     // TODO: we're assuming that feed always has items; if feed has 0 items, this will return 404, but maybe we want to
     // show the feed still as "processing"; use https://developers.cloudflare.com/d1/platform/client-api/#batch-statements
     const feedSqid = c.req.param('feed_sqid');
@@ -220,7 +220,7 @@ export const handle_blogs_single = async (c: Context) => {
     );
 };
 
-export const feedsSubscribeHandler = async (c: Context) => {
+export const handleFeedsSubscribe = async (c: Context) => {
     if (!c.get('USER_ID')) return c.redirect('/login');
     const userId = c.get('USER_ID');
     const feedSqid = c.req.param('feed_sqid');
@@ -252,7 +252,7 @@ export const feedsSubscribeHandler = async (c: Context) => {
     }
 };
 
-export const feedsUnsubscribeHandler = async (c: Context) => {
+export const handleFeedsUnsubscribe = async (c: Context) => {
     if (!c.get('USER_ID')) return c.redirect('/login');
     const userId = c.get('USER_ID');
     const feedSqid = c.req.param('feed_sqid');
@@ -284,7 +284,7 @@ export const feedsUnsubscribeHandler = async (c: Context) => {
     `);
 };
 
-export const feedsDeleteHandler = async (c: Context) => {
+export const handleFeedsDelete = async (c: Context) => {
     const feedId: number = feedSqidToId(c.req.param('feed_sqid'));
 
     const ids_of_feed_items = await c.env.DB.prepare('SELECT item_id FROM items WHERE feed_id = ?').bind(feedId).all();
@@ -309,12 +309,12 @@ export const feedsDeleteHandler = async (c: Context) => {
     return c.html(`Feed ${feedId} deleted`);
 };
 
-export const blogsNewHandler = async (c: Context) => {
+export const handleBlogsNew = async (c: Context) => {
     if (!c.get('USER_ID')) return c.redirect('/login');
     return c.html(renderHTML('Add new blog', renderAddFeedForm(), c.get('USERNAME'), 'blogs'));
 };
 
-export const blogsNewPostHandler = async (c: Context) => {
+export const handleBlogsNewPOST = async (c: Context) => {
     const body = await c.req.parseBody();
     const url = body.url.toString();
     let rssUrl: string;
@@ -334,25 +334,25 @@ export const blogsNewPostHandler = async (c: Context) => {
     return c.text('Something went wrong');
 };
 
-export async function feedsUpdateHandler(c: Context) {
+export async function handleFeedsUpdate(c: Context) {
     const feed_id: number = feedSqidToId(c.req.param('feed_sqid'));
     await enqueueFeedUpdate(c.env, feed_id);
     return c.text('Feed update enqueued...');
 }
 
-export async function feedsScrapeHandler(c: Context) {
+export async function handleFeedsScrape(c: Context) {
     const feed_id: number = feedSqidToId(c.req.param('feed_sqid'));
     await enqueueScrapeAllItemsOfFeed(c.env, feed_id);
     return c.html('Feed scrape enqueued...');
 }
 
-export async function feedsIndexHandler(c: Context) {
+export async function handleFeedsIndexing(c: Context) {
     const feed_id: number = feedSqidToId(c.req.param('feed_sqid'));
     await enqueueIndexAllItemsOfFeed(c.env, feed_id);
     return c.html('Feed index enqueued...');
 }
 
-export async function feedsGlobalIndexHandler(c: Context) {
+export async function handleFeedsGlobalIndex(c: Context) {
     const feeds = await c.env.DB.prepare('SELECT feed_id FROM feeds').all();
     for (const feed of feeds.results) {
         await enqueueIndexAllItemsOfFeed(c.env, feed.feed_id);
@@ -360,13 +360,13 @@ export async function feedsGlobalIndexHandler(c: Context) {
     return c.html('Feed index enqueued FOR ALL FEEDS...');
 }
 
-export async function feedsCacheRebuildHandler(c: Context) {
+export async function handleFeedsCacheRebuild(c: Context) {
     const feed_id: number = feedSqidToId(c.req.param('feed_sqid'));
     await enqueueRebuildFeedTopItemsCache(c.env, feed_id);
     return c.html('Feed cache rebuild enqueued...');
 }
 
-export async function feedsGlobalCacheRebuildHandler(c: Context) {
+export async function handleFeedsGlobalCacheRebuild(c: Context) {
     const feeds = await c.env.DB.prepare('SELECT feed_id FROM feeds').all();
     for (const feed of feeds.results) {
         await enqueueRebuildFeedTopItemsCache(c.env, feed.feed_id);

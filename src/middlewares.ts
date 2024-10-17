@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import { getCookie } from 'hono/cookie';
 
 // Set user_id and username in context if user is logged in
-export async function authMiddleware(c: Context, next) {
+export async function authCheckMiddleware(c: Context, next) {
     const sessionKey = getCookie(c, 'minifeed_session');
     if (sessionKey) {
         const kv_value = await c.env.SESSIONS_KV.get(sessionKey);
