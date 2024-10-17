@@ -13,8 +13,8 @@ export const renderHTML = (
     const root_url = prefix_root_url ? 'https://minifeed.net' : '';
     const canonicalUrlBlock = canonicalUrl ? html`<link rel="canonical" href="${canonicalUrl}" />` : '';
 
-    const userBlock = html`<a href="${root_url}/my/account">account</a>`
-        ? user_logged_in
+    const userBlock = user_logged_in
+        ? html`<a href="${root_url}/my/account">account</a>`
         : html`<span><a href="${root_url}/login" class="bold">Log in</a> or <a class="bold" href="${root_url}/signup">sign up</a></span>`;
 
     return html`
