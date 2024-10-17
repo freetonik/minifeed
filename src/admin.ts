@@ -184,7 +184,7 @@ export const handle_admin_unvectorized_items = async (c: Context) => {
             <br> 
             <code>${item.item_id}</code> | <code>${item.item_sqid}</code>
             <br>
-            <a href="/feeds/${item.feed_sqid}">${item.feed_title}</a>
+            <a href="/blogs/${item.feed_sqid}">${item.feed_title}</a>
             <br><br>
             </li>`;
     }
