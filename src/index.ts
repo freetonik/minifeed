@@ -77,7 +77,12 @@ import {
     authRequiredMiddleware,
     subdomainMiddleware,
 } from './middlewares';
-import { enqueueRegenerateAllItemsRelatedCache, enqueueScrapeAllItemsOfFeed, enqueueUpdateAllFeeds } from './queue';
+import {
+    enqueueRegenerateAllItemsRelatedCache,
+    enqueueScrapeAllItemsOfFeed,
+    enqueueUpdateAllFeeds,
+    enqueueVectorizeStoreAllItems,
+} from './queue';
 import { scrapeItem } from './scrape';
 import { handleSearch, updateFeedIndex, updateItemIndex } from './search';
 import { handleUsers, handleUsersFollowPOST, handleUsersSingle, handleUsersUnfollowPOST } from './users';
@@ -374,6 +379,8 @@ export default {
     async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
         // update feeds
         await enqueueUpdateAllFeeds(env);
+        // vectorize
+        await enqueueVectorizeStoreAllItems(env);
         // generate related items cache
         await enqueueRegenerateAllItemsRelatedCache(env);
     },

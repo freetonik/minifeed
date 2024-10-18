@@ -70,17 +70,35 @@ export async function enqueueIndexAllItemsOfFeed(env: Bindings, feed_id: number)
 
 ///////////////////////////////
 // VECTORIZING/////////////////
-export async function enqueueVectorizeStoreItem(env: Bindings, item_id: number) {
+export async function enqueueVectorizeStoreItem(env: Bindings, itemId: number) {
     await env.FEED_UPDATE_QUEUE.send({
         type: 'item_vectorize_store',
-        item_id: item_id,
+        item_id: itemId,
     });
 }
 
-export async function enqueueRegenerateItemRelatedCache(env: Bindings, item_id: number) {
+export async function enqueueVectorizeStoreAllItems(env: Bindings) {
+    const { results: items } = await env.DB.prepare(
+        `SELECT items.item_id FROM items 
+        LEFT JOIN items_vector_relation on items.item_id = items_vector_relation.item_id 
+        WHERE items_vector_relation.vectorized is null LIMIT 250`,
+    ).all();
+
+    for (const item of items) {
+        console.log(`Vectorizing item ${item.item_id}`);
+        await env.FEED_UPDATE_QUEUE.send({
+            type: 'item_vectorize_store',
+            item_id: item.item_id,
+        });
+    }
+}
+
+//////////////////////
+// RELATED ITEMS CACHE
+export async function enqueueRegenerateItemRelatedCache(env: Bindings, itemId: number) {
     await env.FEED_UPDATE_QUEUE.send({
         type: 'item_update_related_cache',
-        item_id: item_id,
+        item_id: itemId,
     });
 }
 
