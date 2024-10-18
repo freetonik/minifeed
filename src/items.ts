@@ -458,9 +458,12 @@ export const handleItemsSingle = async (c: Context) => {
             }
 
             // whatever content block was, sanitize it
-            contentBlock = await sanitizeHTML(contentBlock);
-            // absolutify image urls with base of item url
-            contentBlock = await absolutifyImageUrls(contentBlock, getRootUrl(item.item_url));
+            try {
+                contentBlock = await sanitizeHTML(contentBlock);
+                contentBlock = await absolutifyImageUrls(contentBlock, getRootUrl(item.item_url));
+            } catch {
+                contentBlock = item.description;
+            }
         } else {
             // User is not logged in; description has tags scraped, no need to sanitize
             contentBlock = `${item.description} <div class="flash" style="margin-top:1em;"><a href="/login">Log in</a> and subscribe to this blog to view full content</div>`;

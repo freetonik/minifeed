@@ -3,7 +3,7 @@ import { raw } from 'hono/html';
 import type { Bindings } from './bindings';
 import type { ItemRow } from './interface';
 import { enqueueRegenerateItemRelatedCache, enqueueVectorizeStoreItem } from './queue';
-import { stripNonLinguisticElements } from './utils';
+import { stripNonLinguisticElements, stripTags } from './utils';
 
 export interface EmbeddingResponse {
     shape: number[];
@@ -87,8 +87,13 @@ export const vectorizeAndStoreItem = async (env: Bindings, item_id: number) => {
         if (contentBlock.length < 10) {
             contentBlock = item.title;
         } else {
-            const stripped = await stripNonLinguisticElements(contentBlock);
-            contentBlock = `${item.title}. ${stripped}`;
+            try {
+                const stripped = await stripNonLinguisticElements(contentBlock);
+                const stripped2 = await stripTags(stripped);
+                contentBlock = `${item.title}. ${stripped2}`;
+            } catch {
+                contentBlock = `${item.title}. ${item.description}`;
+            }
         }
     }
 
