@@ -238,9 +238,9 @@ export const renderBlogsSubsections = (active = 'latest') => {
     return `
     <nav class="subsections">
         <a href="/blogs" class="no-color no-underline ${active === 'latest' ? 'active bold' : ''}">latest</a>
-        <a href="/blogs/oldest" class="no-color no-underline ${active === 'oldest' ? 'active bold' : ''}">oldest</a>
-        <a href="/blogs/alphabetical" class="no-color no-underline ${active === 'alphabetical' ? 'active bold' : ''}">alphabetical</a>
-        <a href="/blogs/random" class="no-color no-underline ${active === 'random' ? 'active bold' : ''}">random</a>
+        <a href="/blogs/by/oldest" class="no-color no-underline ${active === 'oldest' ? 'active bold' : ''}">oldest</a>
+        <a href="/blogs/by/alphabetical" class="no-color no-underline ${active === 'alphabetical' ? 'active bold' : ''}">alphabetical</a>
+        <a href="/blogs/by/random" class="no-color no-underline ${active === 'random' ? 'active bold' : ''}">random</a>
     </nav>
     `;
 };

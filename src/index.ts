@@ -187,7 +187,8 @@ app.post('/blogs/new', handleBlogsNewPOST);
 app.get('/blogs/:feed_sqid/new', handleItemsAddItembyUrl);
 app.post('/blogs/:feed_sqid/new', handleItemsAddItemByUrlPOST);
 
-app.get('/blogs/:listingType?', handleBlogs);
+app.get('/blogs', handleBlogs);
+app.get('/blogs/by/:listingType?', handleBlogs);
 app.post('/feeds/:feed_sqid/subscribe', handleFeedsSubscribe);
 app.post('/feeds/:feed_sqid/unsubscribe', handleFeedsUnsubscribe);
 
