@@ -234,6 +234,17 @@ export const renderGlobalSubsections = (active = 'latest') => {
     `;
 };
 
+export const renderBlogsSubsections = (active = 'latest') => {
+    return `
+    <nav class="subsections">
+        <a href="/blogs" class="no-color no-underline ${active === 'latest' ? 'active bold' : ''}">latest</a>
+        <a href="/blogs/oldest" class="no-color no-underline ${active === 'oldest' ? 'active bold' : ''}">oldest</a>
+        <a href="/blogs/alphabetical" class="no-color no-underline ${active === 'alphabetical' ? 'active bold' : ''}">alphabetical</a>
+        <a href="/blogs/random" class="no-color no-underline ${active === 'random' ? 'active bold' : ''}">random</a>
+    </nav>
+    `;
+};
+
 export const render_mblog_editor = (title = '', content = '') => {
     return `
     <script src="https://unpkg.com/tiny-markdown-editor/dist/tiny-mde.min.js"></script>

@@ -3,7 +3,7 @@ import type { Context } from 'hono';
 import { raw } from 'hono/html';
 import type { Bindings } from './bindings';
 import { extractRSS, validateFeedData } from './feed_extractor';
-import { renderAddFeedForm, renderHTML, renderItemShort } from './htmltools';
+import { renderAddFeedForm, renderBlogsSubsections, renderHTML, renderItemShort } from './htmltools';
 import type { ItemRow, MFFeedEntry } from './interface';
 import {
     enqueueFeedUpdate,
@@ -31,24 +31,37 @@ import {
 export const handleBlogs = async (c: Context) => {
     const user_id = c.get('USER_ID') || -1;
     const userLoggedIn = c.get('USER_LOGGED_IN');
+
+    const listingType = c.req.param('listingType') || 'latest';
+
+    let ordering = 'feeds.created DESC';
+
+    if (listingType === 'random') ordering = 'RANDOM()';
+    else if (listingType === 'latest') ordering = 'feeds.created DESC';
+    else if (listingType === 'oldest') ordering = 'feeds.created ASC';
+    else if (listingType === 'alphabetical') ordering = 'feeds.title';
+    else return c.notFound();
+
     const { results, meta } = await c.env.DB.prepare(
         `
     SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, subscriptions.subscription_id, items_top_cache.content from feeds
     LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
     LEFT JOIN subscriptions on feeds.feed_id = subscriptions.feed_id AND subscriptions.user_id = ?
     WHERE feeds.type = 'blog'
-    ORDER BY feeds.title`,
+    ORDER BY ${ordering}`,
     )
         .bind(user_id)
         .run();
 
-    let list = ``;
+    let list = '';
 
     if (!userLoggedIn) {
         list += `<div class="flash">
     <strong>Minifeed</strong> is a curated blog reader and blog search engine. We collect humans-written blogs to make them discoverable and searchable. Sign up to subscribe to blogs, follow people, save favorites, or start your own blog.
     </div>`;
     }
+
+    list += renderBlogsSubsections(listingType);
 
     for (const feed of results) {
         const subscriptionAction = feed.subscription_id ? 'unsubscribe' : 'subscribe';

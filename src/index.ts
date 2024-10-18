@@ -176,7 +176,7 @@ app.get('/verify_email', handleVerifyEmail);
 
 app.post('/items/:item_sqid/delete', handleItemsDelete);
 
-app.get('/blogs', handleBlogs);
+app.get('/blogs/:listingType?', handleBlogs);
 app.get('/blogs/new', handleBlogsNew);
 app.post('/blogs/new', handleBlogsNewPOST);
 app.get('/blogs/:feed_sqid/new', handleItemsAddItembyUrl);
