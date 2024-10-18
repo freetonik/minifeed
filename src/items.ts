@@ -708,7 +708,7 @@ export const handleItemsLists = async (c: Context) => {
     const lists_without_current_item = lists.results
         // remove list instances that already have the item
         // .filter((list: any) => list.item_id != itemId)
-        // substract lists_with_current_item
+        // subtract lists_with_current_item
         .filter(
             (list: any) => !lists_with_current_item.some((listWithItem: any) => listWithItem.list_id === list.list_id),
         )
@@ -754,12 +754,31 @@ export const handleItemsListsNewForm = async (c: Context) => {
     </form>`);
 };
 
+function checkListTitle(listTitle: string) {
+    // allow only latin chars, numbers, -, +, =, ?, _, and space
+    const goodChars = /^[a-zA-Z0-9\-=+?_ ]{3,32}$/.test(listTitle);
+    // disallow first or last char to be space; disallow consecutive spaces
+    const goodStructure = /^\S(?!.*\s{3,}).*\S$/.test(listTitle);
+    return goodChars && goodStructure;
+}
+
 export const handleItemsListsNewPOST = async (c: Context) => {
     const body = await c.req.parseBody();
-    const list_title = body.list_title.toString();
+    const itemSqid = c.req.param('item_sqid');
+    const listTitle = body.list_title.toString();
+
+    if (!checkListTitle(listTitle))
+        return c.html(`
+        <form hx-post="/items/${itemSqid}/lists" hx-target="this" hx-swap="outerHTML" style="margin-top:0.5em;">
+            <input type="text" name="list_title" placeholder="Type list title and press Enter" value="${listTitle}" style="font-size: inherit !important;padding: 0.25em 0.5em !important;">
+            <i style="margin-top: 0.5em; display: block; color: var(--color-red);">
+            Such bad title! Rules: 3 char minimum, latin letters, numbers, -, +, =, ?, _, and one space space at a time. This is good for everybody.
+            </i>
+        </form> 
+        `);
 
     const result = await c.env.DB.prepare('INSERT INTO item_lists (user_id, title) VALUES (?, ?)')
-        .bind(c.get('USER_ID'), list_title)
+        .bind(c.get('USER_ID'), listTitle)
         .run();
 
     const list_id = result.meta.last_row_id;
@@ -768,13 +787,12 @@ export const handleItemsListsNewPOST = async (c: Context) => {
     // set sqid of list
     await c.env.DB.prepare('UPDATE item_lists SET list_sqid = ? WHERE list_id = ?').bind(list_sqid, list_id).run();
 
-    const itemSqid = c.req.param('item_sqid');
     const itemId: number = itemSqidToId(itemSqid);
     // add item to list
     await c.env.DB.prepare('INSERT INTO item_list_items (list_id, item_id) VALUES (?, ?)').bind(list_id, itemId).run();
 
     return c.html(
-        `<a class="no-underline no-color" href="/lists/${list_sqid}">${list_title}</a> <a hx-post="/items/${itemSqid}/lists/${list_sqid}/remove" hx-swap="outerHTML transition:true">[- remove from list]</a><br>`,
+        `<a class="no-underline no-color" href="/lists/${list_sqid}">${listTitle}</a> <a hx-post="/items/${itemSqid}/lists/${list_sqid}/remove" hx-swap="outerHTML transition:true">[- remove from list]</a><br>`,
     );
 };
 
@@ -789,7 +807,8 @@ export const handleItemsListsAddPOST = async (c: Context) => {
         .bind(list_id, item_id)
         .run();
 
-    return c.html('[added]');
+    if (result.success) return c.html('[added]');
+    return c.html('Error while adding item to list');
 };
 
 export const handleItemsListsRemovePOST = async (c: Context) => {
@@ -802,7 +821,8 @@ export const handleItemsListsRemovePOST = async (c: Context) => {
         .bind(list_id, item_id)
         .run();
 
-    return c.html('[removed]');
+    if (result.success) return c.html('[removed]');
+    return c.html('Error while removing item from list');
 };
 
 export const handleItemsAddToFavorites = async (c: Context) => {
