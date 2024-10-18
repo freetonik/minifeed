@@ -2,15 +2,27 @@ import type { Context } from 'hono';
 import { raw } from 'hono/html';
 import type { Bindings } from './bindings';
 import { addItemsToFeed } from './feeds';
-import { renderAddItemByURLForm, renderHTML, renderItemShort, renderMySubsections } from './htmltools';
+import {
+    renderAddItemByURLForm,
+    renderGlobalSubsections,
+    renderHTML,
+    renderItemShort,
+    renderMySubsections,
+} from './htmltools';
 import type { RelatedItemCached } from './interface';
 import { enqueueItemIndex, enqueueItemScrape, enqueueVectorizeStoreItem } from './queue';
 import { scrapeURLIntoObject } from './scrape';
 import { absolutifyImageUrls, feedSqidToId, getRootUrl, itemIdToSqid, itemSqidToId, sanitizeHTML } from './utils';
 
 export const handleGlobal = async (c: Context) => {
-    const user_id = c.get('USER_ID') || -1;
+    const userId = c.get('USER_ID') || -1;
     const items_per_page = 60;
+    const listingType = c.req.param('listingType') || 'latest';
+
+    let ordering = 'items.pub_date DESC';
+    if (listingType === 'random') ordering = 'RANDOM()';
+    else if (listingType === 'oldest') ordering = 'items.pub_date ASC';
+
     const page = Number(c.req.query('p')) || 1;
     const offset = page * items_per_page - items_per_page;
     const { results, meta } = await c.env.DB.prepare(
@@ -20,10 +32,10 @@ export const handleGlobal = async (c: Context) => {
         JOIN feeds ON items.feed_id = feeds.feed_id
         LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
         WHERE items.item_sqid IS NOT 0 AND feeds.type = 'blog'
-        ORDER BY items.pub_date DESC
+        ORDER BY ${ordering}
         LIMIT ? OFFSET ?`,
     )
-        .bind(user_id, items_per_page + 1, offset)
+        .bind(userId, items_per_page + 1, offset)
         .run();
 
     let list = '';
@@ -32,32 +44,48 @@ export const handleGlobal = async (c: Context) => {
     <strong>Minifeed</strong> is a curated blog reader and blog search engine.
     We collect humans-written blogs to make them discoverable and searchable.
     Sign up to subscribe to blogs, follow people, save favorites, or start your own blog.
-    <br><br>
-    ↓ Below is a global feed of all items from all blogs.
-    </div>`;
-    } else {
-        list += `<div class="flash">
-    ↓ Below is a global feed of all items from all blogs.
     </div>`;
     }
 
     if (!results.length) list += '<p><i>Nothing exists on minifeed yet...</i></p>';
 
-    for (let i = 0; i < results.length - 1; i++) {
-        const item = results[i];
-        const itemTitle = item.favorite_id ? `★ ${item.item_title}` : item.item_title;
+    list += renderGlobalSubsections(listingType);
 
-        list += renderItemShort(
-            item.item_sqid,
-            itemTitle,
-            item.item_url,
-            item.feed_title,
-            item.feed_sqid,
-            item.pub_date,
-            item.description,
-        );
+    if (listingType === 'latest' || listingType === 'random') {
+        for (let i = 0; i < results.length - 1; i++) {
+            const item = results[i];
+            const itemTitle = item.favorite_id ? `★ ${item.item_title}` : item.item_title;
+
+            list += renderItemShort(
+                item.item_sqid,
+                itemTitle,
+                item.item_url,
+                item.feed_title,
+                item.feed_sqid,
+                item.pub_date,
+                item.description,
+            );
+        }
     }
-    if (results.length > items_per_page) list += `<a href="?p=${page + 1}">More...</a></p>`;
+
+    if (listingType === 'oldest') {
+        for (let i = results.length - 1; i > 0; i--) {
+            const item = results[i];
+            const itemTitle = item.favorite_id ? `★ ${item.item_title}` : item.item_title;
+
+            list += renderItemShort(
+                item.item_sqid,
+                itemTitle,
+                item.item_url,
+                item.feed_title,
+                item.feed_sqid,
+                item.pub_date,
+                item.description,
+            );
+        }
+    }
+
+    if (listingType !== 'random' && results.length > items_per_page) list += `<a href="?p=${page + 1}">More...</a></p>`;
     return c.html(
         renderHTML(
             'Global feed | minifeed',

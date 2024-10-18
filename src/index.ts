@@ -152,7 +152,7 @@ app.get('/admin/items_without_sqid', handleAdminItemsWithoutSqid);
 app.get('/admin/vectorize', handleVectorize);
 app.get('/admin/generate_related', handleGenerateRelated);
 app.get('/search', handleSearch);
-app.get('/global', handleGlobal);
+app.get('/global/:listingType?', handleGlobal);
 app.get('/feedback', handleFeedback);
 app.get('/suggest', handleSuggestBlog);
 
