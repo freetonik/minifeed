@@ -1,8 +1,8 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
 import { marked } from 'marked';
-import { renderHTML, render_mblog_editor } from './htmltools';
-import { itemIdToSqid, sanitizeHTML } from './utils';
+import { renderHTML, renderHTMLMblog, render_mblog_editor } from './htmltools';
+import { itemIdToSqid, sanitizeHTML, truncate } from './utils';
 
 export const handleMblog = async (c: Context) => {
     const subdomain = c.get('SUBDOMAIN');
@@ -33,7 +33,22 @@ export const handleMblog = async (c: Context) => {
 
     let list = `<h1>${mblog.title}</h1>`;
     if (userLoggedIn && userId === mblog.user_id) {
-        list += render_mblog_editor();
+        list += `
+        <form style="margin-bottom: 3em;" method="POST">
+        <div style="margin-bottom:1em;">
+            <input type="text" id="post-title" name="post-title" hidden>
+        </div>
+        <div style="margin-bottom:1em;">
+            <textarea style="resize: vertical;" id="txt" name="post-content" placeholder="Quick draft..." rows=10></textarea>
+            
+        </div>
+        <div>
+            <input type="submit" name="action" value="Quick save">
+            <input type="submit" name="action" value="Continue editing in full">
+        </div>
+
+    </form>
+        `;
     }
 
     const formatDate = (date: Date) => {
@@ -79,11 +94,11 @@ export const handleMblogPOST = async (c: Context) => {
 
     // ok, user is logged in and is the owner of the mblog
     const body = await c.req.parseBody();
-    const title = body['post-title'].toString();
-    if (!title) return c.text('Post title is required');
+    let title = body['post-title'].toString();
     const post_content = body['post-content'].toString();
     if (!post_content) return c.text('Post content is required');
 
+    if (!title.length) title = truncate(post_content, 45);
     let content_html_scraped = await marked.parse(post_content);
     content_html_scraped = await sanitizeHTML(content_html_scraped);
 
@@ -115,6 +130,7 @@ export const handleMblogPOST = async (c: Context) => {
         const item_url = `https://${subdomain}.minifeed.io/${item_slug}`;
 
         const pub_date = new Date().toISOString();
+
         const status = body.action.toString().toLowerCase() === 'publish' ? 'public' : 'draft';
         const insertion_results = await c.env.DB.prepare(
             'INSERT INTO items (feed_id, title, description, content_html, content_html_scraped, url, pub_date) values (?, ?, ?, ?, ?, ?, ?)',
@@ -132,6 +148,9 @@ export const handleMblogPOST = async (c: Context) => {
             .bind(mblog.mblog_id, new_item_id, item_slug, status)
             .run();
 
+        if (body.action.toString().toLowerCase() === 'quick save') return c.redirect('/');
+        if (body.action.toString().toLowerCase() === 'continue editing in full')
+            return c.redirect(`/${item_slug}/edit`);
         return c.redirect(`/${item_slug}`);
     } catch (err) {
         return c.text('Error!');
@@ -155,7 +174,7 @@ export const handleMblogItemSingle = async (c: Context) => {
 
     const mblog_post_entry = await c.env.DB.prepare(
         `
-            SELECT items.title, items.content_html_scraped, mblogs.user_id, items.pub_date, mblog_items.status
+            SELECT items.title, items.content_html_scraped, mblogs.user_id, items.pub_date, mblog_items.status, feeds.title as feed_title
             FROM items
             JOIN mblog_items ON mblog_items.item_id = items.item_id
             JOIN feeds ON feeds.feed_id = items.feed_id
@@ -178,7 +197,7 @@ export const handleMblogItemSingle = async (c: Context) => {
     const post_date = new Date(post.pub_date).toLocaleDateString('en-UK', date_format_opts);
 
     let list = `
-        <a href="/"><h3>${subdomain}</h3></a>
+        <a href="/"><h3>${post.feed_title}</h3></a>
         <h1>${post.title}</h1>
         <div>${post.content_html_scraped}</div>
         <time>${post_date}</time>
@@ -197,7 +216,7 @@ export const handleMblogItemSingle = async (c: Context) => {
             </div>`;
     }
 
-    return c.html(renderHTML(`${post.title} | minifeed`, raw(list), c.get('USERNAME'), '', '', '', true));
+    return c.html(renderHTML(`${post.title} | minifeed`, raw(list), c.get('USER_LOGGED_IN'), '', '', '', true));
 };
 
 export const handleMblogDeletePOST = async (c: Context) => {
@@ -224,7 +243,7 @@ export const handleMblogDeletePOST = async (c: Context) => {
     return c.redirect('/');
 };
 
-export const handleMblogEditPOST = async (c: Context) => {
+export const handleMblogEditItem = async (c: Context) => {
     const userId = c.get('USER_ID') || -1;
     const post_slug = c.req.param('post_slug');
 
@@ -240,10 +259,9 @@ export const handleMblogEditPOST = async (c: Context) => {
 
     if (!c.get('USER_LOGGED_IN') || userId !== post.user_id) return c.text('Unauthorized', 401);
 
-    let list = ` <p><a href="/${post_slug}">← ${post.title}</a></p> `;
-    list += render_mblog_editor(post.title, post.content_html);
+    const list = render_mblog_editor(post.title, post.content_html);
 
-    return c.html(renderHTML(`${post.title} | ${post.feed_title}`, raw(list), c.get('USERNAME'), 'blogs', ''));
+    return c.html(renderHTMLMblog(`${post.title} | ${post.feed_title}`, raw(list), c.get('USER_LOGGED_IN')));
 };
 
 export const handleBlogItemEditPOST = async (c: Context) => {

@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import { raw } from 'hono/html';
 import type { Bindings } from './bindings';
 import { addItemsToFeed } from './feeds';
-import { renderAddItemByURLForm, renderHTML, renderItemShort, render_my_subsections } from './htmltools';
+import { renderAddItemByURLForm, renderHTML, renderItemShort, renderMySubsections } from './htmltools';
 import type { RelatedItemCached } from './interface';
 import { enqueueItemIndex, enqueueItemScrape, enqueueVectorizeStoreItem } from './queue';
 import { scrapeURLIntoObject } from './scrape';
@@ -114,7 +114,7 @@ export const handleMy = async (c: Context) => {
         .bind(user_id, user_id, user_id, user_id, user_id, items_per_page, offset)
         .all();
 
-    let list = ` ${render_my_subsections('my')} `;
+    let list = ` ${renderMySubsections('my')} `;
     if (results.length) {
         for (const item of results) {
             const title = item.favorite_id ? `★ ${item.title}` : item.title;
@@ -170,7 +170,7 @@ export const handleMySubscriptions = async (c: Context) => {
         .bind(user_id, user_id, items_per_page, offset)
         .all();
 
-    let list = ` ${render_my_subsections('subscriptions')}
+    let list = ` ${renderMySubsections('subscriptions')}
     <div class="main">
     `;
     if (results.length) {
@@ -230,7 +230,7 @@ export const handleMyFriendfeed = async (c: Context) => {
         .all();
 
     let list = `
-    ${render_my_subsections('friendfeed')}
+    ${renderMySubsections('friendfeed')}
     <div class="main">
     `;
     if (results.length) {
@@ -287,7 +287,7 @@ export const handleMyFavorites = async (c: Context) => {
         .all();
 
     let list = `
-    ${render_my_subsections('favorites')}
+    ${renderMySubsections('favorites')}
     <div class="main">
     `;
     if (results.length) {
@@ -746,8 +746,6 @@ export const handleItemsListsNewPOST = async (c: Context) => {
         `<a class="no-underline no-color" href="/lists/${list_sqid}">${list_title}</a> <a hx-post="/items/${itemSqid}/lists/${list_sqid}/remove" hx-swap="outerHTML transition:true">[- remove from list]</a><br>`,
     );
 };
-
-export const handle_items_lists_POST = async (c: Context) => {};
 
 // add item to list
 export const handleItemsListsAddPOST = async (c: Context) => {

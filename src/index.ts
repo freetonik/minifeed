@@ -66,7 +66,7 @@ import {
     handleBlogItemEditPOST,
     handleMblog,
     handleMblogDeletePOST,
-    handleMblogEditPOST,
+    handleMblogEditItem,
     handleMblogItemSingle,
     handleMblogPOST,
     handleMblogRss,
@@ -238,7 +238,7 @@ subdomainApp.post('/', handleMblogPOST);
 
 subdomainApp.get('/rss', handleMblogRss);
 subdomainApp.get('/:post_slug', handleMblogItemSingle);
-subdomainApp.get('/:post_slug/edit', handleMblogEditPOST);
+subdomainApp.get('/:post_slug/edit', handleMblogEditItem);
 subdomainApp.post('/:post_slug/edit', handleBlogItemEditPOST);
 subdomainApp.post('/:post_slug/delete', handleMblogDeletePOST);
 
