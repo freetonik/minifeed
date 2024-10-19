@@ -312,7 +312,11 @@ export const handleFeedsDelete = async (c: Context) => {
             chunks.push(item_ids_to_delete_from_vectorize.slice(i, i + 100));
         }
         for (const chunk of chunks) {
-            await c.env.VECTORIZE.deleteByIds(chunk);
+            try {
+                await c.env.VECTORIZE.deleteByIds(chunk);
+            } catch (e) {
+                console.log(`Error deleting items from vectorize: ${e}`);
+            }
         }
     }
 
@@ -512,10 +516,12 @@ export async function addItemsToFeed(
 
         content_html = getText(content_html);
 
+        const itemTitle = item.title?.length ? item.title : item.published.slice(0, 10);
+
         binds.push(
             stmt.bind(
                 feedId,
-                item.title,
+                itemTitle,
                 link,
                 item.published,
                 truncate(stripTagsSynchronously(item.description), 350),
