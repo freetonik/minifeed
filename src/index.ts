@@ -181,9 +181,9 @@ app.get('/verify_email', handleVerifyEmail);
 
 app.post('/items/:item_sqid/delete', handleItemsDelete);
 
-app.get('/blogs/:feed_sqid', handleBlogsSingle);
 app.get('/blogs/new', handleBlogsNew);
 app.post('/blogs/new', handleBlogsNewPOST);
+app.get('/blogs/:feed_sqid', handleBlogsSingle);
 app.get('/blogs/:feed_sqid/new', handleItemsAddItembyUrl);
 app.post('/blogs/:feed_sqid/new', handleItemsAddItemByUrlPOST);
 
