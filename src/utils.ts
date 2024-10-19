@@ -362,3 +362,7 @@ export const sanitizeHTML = async (contentBlock: string): Promise<string> => {
 
     return sanitizedContentBlock;
 };
+
+export function delay(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
