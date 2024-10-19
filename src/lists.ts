@@ -22,9 +22,9 @@ export const handleLists = async (c: Context) => {
 };
 
 export const handleListsSingle = async (c: Context) => {
-    const list_sqid = c.req.param('list_sqid');
-    const list_id = itemSqidToId(list_sqid);
-    const user_id = c.get('USER_ID');
+    const listSqid = c.req.param('list_sqid');
+    const listId = itemSqidToId(listSqid);
+    const userId = c.get('USER_ID');
 
     const [list, list_items] = await c.env.DB.batch([
         c.env.DB.prepare(
@@ -32,13 +32,13 @@ export const handleListsSingle = async (c: Context) => {
             FROM item_lists 
             JOIN users ON users.user_id = item_lists.user_id
             WHERE list_id = ?`,
-        ).bind(list_id),
+        ).bind(listId),
         c.env.DB.prepare(
             `SELECT * 
             FROM item_list_items 
             JOIN items ON items.item_id = item_list_items.item_id
             WHERE list_id = ?`,
-        ).bind(list_id),
+        ).bind(listId),
     ]);
 
     const list_entry = list.results[0];
@@ -50,8 +50,8 @@ export const handleListsSingle = async (c: Context) => {
         inner += `<li><a href="/items/${item.item_sqid}">${item.title}</a></li>`;
     }
 
-    if (user_id === list_entry.user_id) {
-        inner += `<p><button hx-confirm="Are you sure?" hx-swap="outerHTML transition:true" hx-post="/lists/${list_sqid}/delete">Delete list</button></p>`;
+    if (userId === list_entry.user_id) {
+        inner += `<p><button hx-confirm="Are you sure?" hx-swap="outerHTML transition:true" hx-post="/lists/${listSqid}/delete">Delete list</button></p>`;
     }
 
     return c.html(renderHTML(`List ${list.title} | minifeed`, raw(inner), c.get('USERNAME'), 'lists', '', '', false));
