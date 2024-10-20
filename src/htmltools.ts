@@ -172,7 +172,7 @@ export const renderAddFeedForm = (url = '', flash = '') => {
     return raw(`
     <h1>Add new blog</h1>
     ${flashBlock}
-      <form action="/blogs/new" method="POST">
+      <form action="/admin/blogs/new" method="POST">
         <div style="margin-bottom:1em;">
           <label for="url">Blog URL (or direct RSS URL):</label>
           <input
