@@ -13,7 +13,7 @@ import {
     enqueueRebuildFeedTopItemsCache,
     enqueueScrapeAllItemsOfFeed,
 } from './queue';
-import { deleteFeedFromIndex, updateFeedIndex } from './search';
+import { deleteFeedFromIndex } from './search';
 import {
     extractItemUrl,
     feedIdToSqid,
@@ -387,8 +387,9 @@ export async function handleFeedsItemsGlobalIndex(c: Context) {
 export async function handleFeedsGlobalIndex(c: Context) {
     const feeds = await c.env.DB.prepare('SELECT feed_id FROM feeds').all<FeedRow>();
     for (const feed of feeds.results) {
-        await updateFeedIndex(c.env, feed.feed_id);
+        await enqueueIndexFeed(c.env, feed.feed_id);
     }
+    return c.html('Feed indexing enqueued FOR ALL FEEDS...');
 }
 
 export async function handleFeedsCacheRebuild(c: Context) {

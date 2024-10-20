@@ -75,12 +75,6 @@ export async function enqueueIndexFeed(env: Bindings, feedId: number) {
     });
 }
 
-export async function enqueueIndexAllFeeds(env: Bindings) {
-    await env.FEED_UPDATE_QUEUE.send({
-        type: 'feed_index_all',
-    });
-}
-
 ///////////////////////////////
 // VECTORIZING/////////////////
 export async function enqueueVectorizeStoreItem(env: Bindings, itemId: number) {

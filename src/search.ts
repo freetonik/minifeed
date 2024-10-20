@@ -129,7 +129,13 @@ export async function updateFeedIndex(env: Bindings, feedId: number) {
     if (!feed) return;
 
     const feedDescription = feed.description ? `${feed.description}. ` : '';
-    const feedUrlHost = new URL(feed.url).host;
+    let feedUrlHost = '';
+    try {
+        feedUrlHost = new URL(feed.url).host;
+    } catch (e) {
+        console.log(`Error while getting host from feed url: ${feed.url}`);
+        return;
+    }
     const feedContent = `${feed.title}. ${feedDescription}${feed.url} ${feedUrlHost} ${feed.rss_url}`;
 
     const searchDocument = {
