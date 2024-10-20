@@ -11,9 +11,9 @@ export const handleLists = async (c: Context) => {
         JOIN item_list_items ON item_list_items.list_id = item_lists.list_id`,
     ).all();
 
-    let inner = '<h1>Lists</h1>';
+    let inner = '';
     for (const list of lists.results) {
-        inner += `<div class="borderbox" style="margin-bottom: 1em;"><a href="/lists/${list.list_sqid}">${list.title}</a> (by @${list.username})</div>`;
+        inner += `<div class="borderbox" style="margin-bottom: 1em;"><a href="/lists/${list.list_sqid}">${list.title}</a> (list by @${list.username})</div>`;
     }
 
     return c.html(renderHTML('Lists | minifeed', raw(inner), c.get('USERNAME'), 'lists', '', '', false));
