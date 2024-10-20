@@ -121,3 +121,58 @@
 //     response += '</ol>';
 //     return c.html(response);
 // };
+
+
+
+
+
+
+//////////////////////////////////
+/// loading indicators
+
+        <style>
+        @keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.htmx-indicator {
+opacity: 1;
+    }
+
+.rotating-letter, .htmx-indicator {
+        transform-origin: center center;
+  display: inline-block;
+  animation: rotate 1.5s linear infinite;
+}
+  .htmx-request .htmx-indicator{
+        opacity:1;
+    }
+    .htmx-request.htmx-indicator{
+        opacity:1;
+        transform-origin: center center;
+  display: inline-block;
+  animation: rotate 1s linear infinite;
+    }
+
+    @keyframes pulsate {
+  
+  0, 100% {
+    background-color: var(--color-highlight);
+  }
+  50% {
+    background-color: var(--color-green);
+  }
+}
+
+.pulsating-background {
+  animation: pulsate 1s ease-in-out infinite;
+}
+
+        </style>
+
+>>>>>>>>> hx-indicator="#spinner"
