@@ -87,11 +87,11 @@ export const handleBlogs = async (c: Context) => {
         </span></div>`;
 
         const cache_content = JSON.parse(feed.content);
-        const top_items = cache_content.top_items;
-        let items_count = 0;
-        let top_items_list = '';
 
-        if (top_items) {
+        let top_items_list = '';
+        if (cache_content?.top_items) {
+            const top_items = cache_content.top_items;
+            let items_count = 0;
             items_count = cache_content.items_count - top_items.length;
             top_items_list += '<ul>';
             for (const item of top_items) {
