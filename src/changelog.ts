@@ -1,7 +1,12 @@
-export const version = '0.6.0';
+export const version = '0.6.1';
 
 export const changelog = `
     <h2>Changelog</h2>
+
+    <h3>0.6.1 (20.10.2024)</h3>
+    <ul>
+        <li>Search results now include blogs, not just blog posts.</li>
+    </ul>
 
     <h3>0.6.0 (17.10.2024)</h3>
     <ul>
