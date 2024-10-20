@@ -641,7 +641,7 @@ export const handleItemsSingle = async (c: Context) => {
         </table>
 
         <p>
-        <button hx-post="/items/${item_sqid}/scrape"
+        <button hx-post="/admin/items/${item_sqid}/scrape"
             hx-trigger="click"
             hx-target="#scrape-indicator"
             hx-swap="outerHTML">
@@ -651,7 +651,7 @@ export const handleItemsSingle = async (c: Context) => {
         </p>
 
         <p>
-        <button hx-post="/items/${item_sqid}/index"
+        <button hx-post="/admin/items/${item_sqid}/index"
             hx-trigger="click"
             hx-target="#index-indicator"
             hx-swap="outerHTML">
@@ -661,7 +661,7 @@ export const handleItemsSingle = async (c: Context) => {
         </p>
 
         <p>
-        <button hx-post="/items/${item_sqid}/delete"
+        <button hx-post="/admin/items/${item_sqid}/delete"
             hx-trigger="click"
             hx-target="#delete-indicator"
             hx-swap="outerHTML">

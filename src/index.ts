@@ -90,13 +90,7 @@ import { scrapeItem } from './scrape';
 import { updateFeedIndex, updateFeedItemsIndex, updateItemIndex } from './search';
 import { handleUsers, handleUsersFollowPOST, handleUsersSingle, handleUsersUnfollowPOST } from './users';
 
-// ///////////////////////////////////////////////////////////
-// ///////////////////////////////////////////////////////////////
-// /////////////////////////////////////////////////////////////////
 // ————————————————————————————————————————————————————————————————>>>>
-// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 // main app handles the root paths
 const app = new Hono<{ Bindings: Bindings }>({
@@ -108,34 +102,7 @@ app.get('/robots.txt', async (c) => c.text('User-agent: *\nAllow: /'));
 app.use('*', authCheckMiddleware);
 // all routes below this line require authentication
 app.use('/my/*', authRequiredMiddleware);
-app.use('/feeds/:feed_sqid/subscribe', authRequiredMiddleware);
-app.use('/feeds/:feed_sqid/unsubscribe', authRequiredMiddleware);
-app.use('/items/:feed_sqid/favorite', authRequiredMiddleware);
-app.use('/items/:feed_sqid/unfavorite', authRequiredMiddleware);
-
-app.use('/items/:item_sqid/lists', authCheckMiddleware);
-app.use('/items/:item_sqid/lists/new', authCheckMiddleware);
-app.use('/items/:item_sqid/lists/:list_sqid/add', authCheckMiddleware);
-app.use('/items/:item_sqid/lists/:list_sqid/remove', authCheckMiddleware);
-
 // all routes below this line require admin privileges
-app.use('/my/account/create_mblog', adminRequiredMiddleware);
-app.use('/blogs/:feed_sqid/new', adminRequiredMiddleware);
-app.use('/blogs/:feed_sqid/new', adminRequiredMiddleware);
-app.use('/feeds/:feed_sqid/delete', adminRequiredMiddleware);
-app.use('/feeds/:feed_sqid/update', adminRequiredMiddleware);
-app.use('/feeds/:feed_sqid/scrape', adminRequiredMiddleware);
-app.use('/feeds/:feed_sqid/index', adminRequiredMiddleware);
-app.use('/feeds/:feed_sqid/index_items', adminRequiredMiddleware);
-app.use('/feeds/:feed_sqid/rebuild_cache', adminRequiredMiddleware);
-app.use('/feeds/index', adminRequiredMiddleware);
-app.use('/feeds/rebuild_cache', adminRequiredMiddleware);
-
-app.use('/items/:item_sqid/scrape', adminRequiredMiddleware);
-app.use('/items/:item_sqid/index', adminRequiredMiddleware);
-app.use('/items/:item_sqid/delete', adminRequiredMiddleware);
-
-app.use('/admin', adminRequiredMiddleware);
 app.use('/admin/*', adminRequiredMiddleware);
 
 const handleNotFound = (c: Context) => {
@@ -155,89 +122,93 @@ app.get('/', (c: Context) => {
     return c.redirect('/my');
 });
 
+// ADMIN ROUTES
 app.get('/admin', handleAdmin);
 app.get('/admin/unvectorized_items', handleAdminUnvectorizedItems);
 app.get('/admin/items_without_sqid', handleAdminItemsWithoutSqid);
 app.get('/admin/vectorize', handleVectorize);
 app.get('/admin/generate_related', handleGenerateRelated);
+
+app.post('/admin/feeds/:feed_sqid/delete', handleFeedsDelete);
+app.post('/admin/feeds/:feed_sqid/update', handleFeedsUpdate);
+app.post('/admin/feeds/:feed_sqid/scrape', handleFeedsScrape);
+app.post('/admin/feeds/:feed_sqid/index', handleFeedsIndexing);
+app.post('/admin/feeds/:feed_sqid/index_items', handleFeedsItemsIndexing);
+app.post('/admin/feeds/:feed_sqid/rebuild_cache', handleFeedsCacheRebuild);
+app.post('/admin/feeds/index_items', handleFeedsItemsGlobalIndex);
+app.post('/admin/feeds/index', handleFeedsGlobalIndex);
+app.post('/admin/feeds/rebuild_cache', handleFeedsGlobalCacheRebuild);
+
+app.get('/admin/blogs/:feed_sqid/new', handleItemsAddItembyUrl);
+app.post('/admin/blogs/:feed_sqid/new', handleItemsAddItemByUrlPOST);
+app.get('/admin/blogs/new', handleBlogsNew);
+app.post('/admin/blogs/new', handleBlogsNewPOST);
+
+app.post('/admin/items/:item_sqid/delete', handleItemsDelete);
+app.post('/admin/items/:item_sqid/scrape', handleItemsScraping);
+app.post('/admin/items/:item_sqid/index', handleItemsIndexing);
+
+// NORMAL ROUTES
 app.get('/search', handleSearch);
 app.get('/global/:listingType?', handleGlobal);
 app.get('/feedback', handleFeedback);
 app.get('/suggest', handleSuggestBlog);
 
 app.get('/login', handleLogin);
+app.post('/login', handleLoginPOST);
 app.get('/reset_password', handleResetPassword);
 app.post('/reset_password', handleResetPasswordPOST);
 app.post('/set_password', handleSetPasswordPOST);
 app.get('/signup', handleSignup);
-app.post('/login', handleLoginPOST);
 app.post('/signup', handleSignupPOST);
-app.get('/logout', handleLogout);
+app.get('/logout', authRequiredMiddleware, handleLogout);
 
 app.get('/my', handleMy);
 app.get('/my/subscriptions', handleMySubscriptions);
 app.get('/my/friendfeed', handleMyFriendfeed);
 app.get('/my/favorites', handleMyFavorites);
 app.get('/my/account', handleMyAccount);
-app.post('/my/account/create_mblog', handleNewMblogPost);
+app.post('/my/account/create_mblog', adminRequiredMiddleware, handleNewMblogPost);
 app.post('/my/account/resend_verification_link', handleResentVerificationEmailPOST);
 app.get('/verify_email', handleVerifyEmail);
 
-app.post('/items/:item_sqid/delete', handleItemsDelete);
-
-app.get('/blogs/new', handleBlogsNew);
-app.post('/blogs/new', handleBlogsNewPOST);
 app.get('/blogs/:feed_sqid', handleBlogsSingle);
-app.get('/blogs/:feed_sqid/new', handleItemsAddItembyUrl);
-app.post('/blogs/:feed_sqid/new', handleItemsAddItemByUrlPOST);
-
 app.get('/blogs', handleBlogs);
 app.get('/blogs/by/:listingType?', handleBlogs);
-app.post('/feeds/:feed_sqid/subscribe', handleFeedsSubscribe);
-app.post('/feeds/:feed_sqid/unsubscribe', handleFeedsUnsubscribe);
 
-app.post('/feeds/:feed_sqid/delete', handleFeedsDelete);
-app.post('/feeds/:feed_sqid/update', handleFeedsUpdate);
-app.post('/feeds/:feed_sqid/scrape', handleFeedsScrape);
-app.post('/feeds/:feed_sqid/index', handleFeedsIndexing);
-app.post('/feeds/:feed_sqid/index_items', handleFeedsItemsIndexing);
-app.post('/feeds/:feed_sqid/rebuild_cache', handleFeedsCacheRebuild);
-app.post('/feeds/index_items', handleFeedsItemsGlobalIndex);
-app.post('/feeds/index', handleFeedsGlobalIndex);
-app.post('/feeds/rebuild_cache', handleFeedsGlobalCacheRebuild);
-
-app.get('/podcasts', (c: Context) => {
-    return c.html(renderHTML('Podcasts | minifeed', raw('Coming soon'), c.get('USERNAME'), 'podcasts'));
-});
-app.get('/channels', (c: Context) => {
-    return c.html(renderHTML('Channels | minifeed', raw('Coming soon'), c.get('USERNAME'), 'channels'));
-});
+app.post('/feeds/:feed_sqid/subscribe', authRequiredMiddleware, handleFeedsSubscribe);
+app.post('/feeds/:feed_sqid/unsubscribe', authRequiredMiddleware, handleFeedsUnsubscribe);
 
 app.get('/items/:item_sqid', handleItemsSingle);
-app.get('/items/:item_sqid/lists', handleItemsLists);
-app.get('/items/:item_sqid/lists/new', handleItemsListsNewForm);
-app.post('/items/:item_sqid/lists', handleItemsListsNewPOST);
-app.post('/items/:item_sqid/lists/:list_sqid/add', handleItemsListsAddPOST);
-app.post('/items/:item_sqid/lists/:list_sqid/remove', handleItemsListsRemovePOST);
+app.get('/items/:item_sqid/lists', authRequiredMiddleware, handleItemsLists);
+app.get('/items/:item_sqid/lists/new', authRequiredMiddleware, handleItemsListsNewForm);
+app.post('/items/:item_sqid/lists', authRequiredMiddleware, handleItemsListsNewPOST);
+app.post('/items/:item_sqid/lists/:list_sqid/add', authRequiredMiddleware, handleItemsListsAddPOST);
+app.post('/items/:item_sqid/lists/:list_sqid/remove', authRequiredMiddleware, handleItemsListsRemovePOST);
 
-app.post('/items/:item_sqid/favorite', handleItemsAddToFavorites);
-app.post('/items/:item_sqid/unfavorite', handleItemsRemoveFromFavorites);
-app.post('/items/:item_sqid/scrape', handleItemsScraping);
-app.post('/items/:item_sqid/index', handleItemsIndexing);
+app.post('/items/:item_sqid/favorite', authRequiredMiddleware, handleItemsAddToFavorites);
+app.post('/items/:item_sqid/unfavorite', authRequiredMiddleware, handleItemsRemoveFromFavorites);
 
 app.get('/lists', handleLists);
 app.get('/lists/:list_sqid', handleListsSingle);
-app.post('/lists/:list_sqid/delete', handleListsSingleDeletePOST);
+app.post('/lists/:list_sqid/delete', authRequiredMiddleware, handleListsSingleDeletePOST);
 
 app.get('/users', handleUsers);
 app.get('/users/:username', handleUsersSingle);
-app.post('/users/:username/follow', handleUsersFollowPOST);
-app.post('/users/:username/unfollow', handleUsersUnfollowPOST);
+app.post('/users/:username/follow', authRequiredMiddleware, handleUsersFollowPOST);
+app.post('/users/:username/unfollow', authRequiredMiddleware, handleUsersUnfollowPOST);
 
-app.get('/about', async (c: Context) => c.html(renderHTML('About | minifeed', raw(about), c.get('USERNAME'))));
+app.get('/about', async (c: Context) => c.html(renderHTML('About | minifeed', raw(about), c.get('USER_LOGGED_IN'))));
 app.get('/about/changelog', async (c: Context) =>
-    c.html(renderHTML('Changelog | minifeed', raw(changelog), c.get('USERNAME'))),
+    c.html(renderHTML('Changelog | minifeed', raw(changelog), c.get('USER_LOGGED_IN'))),
 );
+
+app.get('/podcasts', (c: Context) => {
+    return c.html(renderHTML('Podcasts | minifeed', raw('Coming soon'), c.get('USER_LOGGED_IN'), 'podcasts'));
+});
+app.get('/channels', (c: Context) => {
+    return c.html(renderHTML('Channels | minifeed', raw('Coming soon'), c.get('USER_LOGGED_IN'), 'channels'));
+});
 
 const subdomainApp = new Hono<{ Bindings: Bindings }>({
     strict: false,
@@ -246,13 +217,13 @@ subdomainApp.use('*', authCheckMiddleware);
 subdomainApp.use('*', subdomainMiddleware);
 
 subdomainApp.get('/', handleMblog);
-subdomainApp.post('/', handleMblogPOST);
+subdomainApp.post('/', adminRequiredMiddleware, handleMblogPOST);
 
 subdomainApp.get('/rss', handleMblogRss);
 subdomainApp.get('/:post_slug', handleMblogItemSingle);
-subdomainApp.get('/:post_slug/edit', handleMblogEditItem);
-subdomainApp.post('/:post_slug/edit', handleBlogItemEditPOST);
-subdomainApp.post('/:post_slug/delete', handleMblogDeletePOST);
+subdomainApp.get('/:post_slug/edit', adminRequiredMiddleware, handleMblogEditItem);
+subdomainApp.post('/:post_slug/edit', adminRequiredMiddleware, handleBlogItemEditPOST);
+subdomainApp.post('/:post_slug/delete', adminRequiredMiddleware, handleMblogDeletePOST);
 
 subdomainApp.notFound(handleNotFound);
 subdomainApp.onError(handleError);

@@ -93,7 +93,7 @@ export const handleAdmin = async (c: Context) => {
         ${feed.verified ? '✅' : '❌'}
 
         <p>
-        <button hx-post="/feeds/${feed.feed_sqid}/delete"
+        <button hx-post="/admin/feeds/${feed.feed_sqid}/delete"
         hx-confirm="Sure?"
         hx-trigger="click"
         hx-target="#delete-indicator-${feed.feed_sqid}"
@@ -101,7 +101,7 @@ export const handleAdmin = async (c: Context) => {
         delete
         </button>
 
-        <button hx-post="/feeds/${feed.feed_sqid}/update"
+        <button hx-post="/admin/feeds/${feed.feed_sqid}/update"
         hx-confirm="Sure?"
         hx-trigger="click"
         hx-target="#update-indicator-${feed.feed_sqid}"
@@ -109,7 +109,7 @@ export const handleAdmin = async (c: Context) => {
         update
         </button>
 
-        <button hx-post="/feeds/${feed.feed_sqid}/scrape"
+        <button hx-post="/admin/feeds/${feed.feed_sqid}/scrape"
         hx-confirm="Sure?"
         hx-trigger="click"
         hx-target="#scrape-indicator-${feed.feed_sqid}"
@@ -117,7 +117,7 @@ export const handleAdmin = async (c: Context) => {
         scrape
         </button>
 
-        <button hx-post="/feeds/${feed.feed_sqid}/index"
+        <button hx-post="/admin/feeds/${feed.feed_sqid}/index"
         hx-confirm="Sure?"
         hx-trigger="click"
         hx-target="#index-indicator-${feed.feed_sqid}"
@@ -125,7 +125,7 @@ export const handleAdmin = async (c: Context) => {
         re-index feed
         </button>
 
-        <button hx-post="/feeds/${feed.feed_sqid}/index_items"
+        <button hx-post="/admin/feeds/${feed.feed_sqid}/index_items"
         hx-confirm="Sure?"
         hx-trigger="click"
         hx-target="#index-indicator-${feed.feed_sqid}"
@@ -133,7 +133,7 @@ export const handleAdmin = async (c: Context) => {
         re-index items
         </button>
 
-        <button hx-post="/feeds/${feed.feed_sqid}/rebuild_cache"
+        <button hx-post="/admin/feeds/${feed.feed_sqid}/rebuild_cache"
         hx-confirm="Sure?"
         hx-trigger="click"
         hx-target="#rebuild-cache-indicator-${feed.feed_sqid}"
@@ -153,21 +153,21 @@ export const handleAdmin = async (c: Context) => {
     }
 
     list += `
-    <button hx-post="/feeds/index"
+    <button hx-post="/admin/feeds/index"
         hx-confirm="Sure?"
         hx-trigger="click"
         hx-target="#index-indicator-global"
         hx-swap="outerHTML">
         re-index all feeds
     </button>
-    <button hx-post="/feeds/index"
+    <button hx-post="/admin/feeds/index"
         hx-confirm="Sure?"
         hx-trigger="click"
         hx-target="#index-indicator-global"
         hx-swap="outerHTML">
         re-index all items of all feeds
     </button>
-    <button hx-post="/feeds/rebuild_cache"
+    <button hx-post="/admin/feeds/rebuild_cache"
         hx-confirm="Sure?"
         hx-trigger="click"
         hx-target="#rebuild-cache-indicator-global"
