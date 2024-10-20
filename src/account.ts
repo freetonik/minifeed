@@ -52,7 +52,7 @@ export const handleMyAccount = async (c: Context) => {
     )
         .bind(user_id)
         .all();
-    console.log('lists', lists);
+
     if (lists.results.length > 0) {
         list_of_lists = '<h3>My lists</h3><ul>';
         for (const list of lists.results) {
@@ -151,8 +151,6 @@ export const handleResentVerificationEmailPOST = async (c: Context) => {
     )
         .bind(c.get('USER_ID'))
         .first();
-
-    console.log(result);
 
     await send_email_verification_link(c.env, result.username, result.email, result.verification_code);
 

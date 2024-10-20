@@ -36,13 +36,11 @@ export const upsertSingleFeed = async (env: Bindings, document: object) => {
             'Content-Type': 'application/json',
         },
     };
-    console.log(document);
     try {
         const response = await fetch(
             `https://${env.TYPESENSE_CLUSTER}:443/collections/${env.TYPESENSE_FEEDS_COLLECTION}/documents/import?action=upsert`,
             init,
         );
-        console.log(response);
         await gatherResponse(response);
     } catch (e) {
         console.log(`Error while upserting feed: ${e}`);

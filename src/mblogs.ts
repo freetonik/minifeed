@@ -287,7 +287,6 @@ export const handleBlogItemEditPOST = async (c: Context) => {
     if (userId !== post.user_id) return c.redirect('/');
 
     const body = await c.req.parseBody();
-    console.log('body', body);
     const post_title = body['post-title'].toString();
     if (!post_title) return c.text('Post title is required');
     const post_content = body['post-content'].toString();
