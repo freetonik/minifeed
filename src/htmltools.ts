@@ -1,6 +1,6 @@
 import { html, raw } from 'hono/html';
 import { renderedCSS } from './css';
-import type { ItemSearchResult } from './interface';
+import type { FeedSearchResult, ItemSearchResult } from './interface';
 
 export const renderHTMLMblog = (title: string, inner: string, user_logged_in: boolean) => {
     return html`
@@ -151,10 +151,12 @@ export const renderFeedSearchResult = (searchResult: FeedSearchResult) => {
 
     return `
     <div class="item-tiny search-result">
-    <span class="label">${type}</span> <strong><a href="/${uri_root_from_type}/${feed.feed_sqid}">${feed.title}</a></strong> <br>
-    <small class="muted">
-    <a target="_blank" href=${feed.url}>↗ ${feed.url}</a> | <a target="_blank" href=${feed.rss_url}>↗ RSS</a>
-    </small>
+        <span class="label">${type}</span> 
+        <strong><a href="/${uri_root_from_type}/${feed.feed_sqid}">${feed.title}</a></strong>
+        <br>
+        <small class="muted">
+            <a target="_blank" href=${feed.url}>↗ ${feed.url}</a> | <a target="_blank" href=${feed.rss_url}>↗ RSS</a>
+        </small>
     </div>
     `;
 };
@@ -259,7 +261,7 @@ export const renderBlogsSubsections = (active = 'latest') => {
     `;
 };
 
-export const render_mblog_editor = (title = '', content = '') => {
+export const renderMblogEditor = (title = '', content = '') => {
     return `
     <script src="https://unpkg.com/tiny-markdown-editor/dist/tiny-mde.min.js"></script>
 
@@ -276,9 +278,7 @@ export const render_mblog_editor = (title = '', content = '') => {
             <input type="submit" name="action" value="Publish">
             <input type="submit" name="action" value="Save">
         </div>
-
     </form>
-
 
     <script>
     var tinyMDE = new TinyMDE.Editor({element: 'tinymde', textarea: "txt" });
@@ -291,90 +291,90 @@ export const render_mblog_editor = (title = '', content = '') => {
 
     <style>
     .TinyMDE {
-    background-color:#fff;
-    color:#000;
-    font-size:16px;
-    line-height:24px;
-    outline: none;
-    padding:5px;
-    height: 100%;
+        background-color:#fff;
+        color:#000;
+        font-size:16px;
+        line-height:24px;
+        outline: none;
+        padding:5px;
+        height: 100%;
     }
 
     .TMBlankLine {
-    height:24px;
+        height:24px;
     }
 
     .TMH1, .TMSetextH1 {
-    font-size:22px;
-    line-height:32px;
-    font-weight:bold;
-    margin-bottom:8px;
+        font-size:22px;
+        line-height:32px;
+        font-weight:bold;
+        margin-bottom:8px;
     }
 
     .TMSetextH1 {
-    margin-bottom:0px;
+        margin-bottom:0px;
     }
 
     .TMSetextH1Marker {
-    margin-bottom:8px;
+        margin-bottom:8px;
     }
 
     .TMH2, .TMSetextH2 {
-    font-size:20px;
-    line-height:28px;
-    font-weight:bold;
-    margin-bottom:4px;
+        font-size:20px;
+        line-height:28px;
+        font-weight:bold;
+        margin-bottom:4px;
     }
 
     .TMMark_TMCode {
-    font-family:monospace;
-    font-size:.9em;
+        font-family:monospace;
+        font-size:.9em;
     }
 
     .TMFencedCodeBacktick, .TMFencedCodeTilde, .TMIndentedCode, .TMCode {
-    font-family:monospace;
-    font-size:.9em;
-    background-color:#e0e0e0;
+        font-family:monospace;
+        font-size:.9em;
+        background-color:#e0e0e0;
     }
 
     .TMCodeFenceBacktickOpen, .TMCodeFenceTildeOpen {
-    border-bottom: 1px solid #c0c0c0;
-    font-family: monospace;
-    font-size:.9em;
+        border-bottom: 1px solid #c0c0c0;
+        font-family: monospace;
+        font-size:.9em;
     }
 
     .TMCodeFenceBacktickClose, .TMCodeFenceTildeClose {
-    border-top: 1px solid #c0c0c0;
-    font-family: monospace;
-    font-size:.9em;
+        border-top: 1px solid #c0c0c0;
+        font-family: monospace;
+        font-size:.9em;
     }
 
     .TMInfoString {
-    color: #0000ff;
+        color: #0000ff;
     }
 
     .TMCode {
-    border:1px solid #c0c0c0;
-    border-radius: 2px;
+        border:1px solid #c0c0c0;
+        border-radius: 2px;
     }
 
     .TMBlockquote {
-    font-style: italic;
-    border-left:2px solid #c0c0c0;
-    padding-left:10px;
-    margin-left:10px;
+        font-style: italic;
+        border-left:2px solid #c0c0c0;
+        padding-left:10px;
+        margin-left:10px;
     }
 
     .TMMark {
-    color:#a0a0a0;
+        color:#a0a0a0;
     }
 
     .TMMark_TMH1, .TMMark_TMH2 {
-    color:#ff8080;
+        color:#ff8080;
     }
 
     .TMMark_TMUL, .TMMark_TMOL {
-    color:#ff8080;
+        color:#ff8080;
     }
 
     .TMImage {

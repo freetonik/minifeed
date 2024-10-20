@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
 import { marked } from 'marked';
-import { renderHTML, renderHTMLMblog, render_mblog_editor } from './htmltools';
+import { renderHTML, renderHTMLMblog, renderMblogEditor } from './htmltools';
 import { itemIdToSqid, sanitizeHTML, truncate } from './utils';
 
 export const handleMblog = async (c: Context) => {
@@ -259,7 +259,7 @@ export const handleMblogEditItem = async (c: Context) => {
 
     if (!c.get('USER_LOGGED_IN') || userId !== post.user_id) return c.text('Unauthorized', 401);
 
-    const list = render_mblog_editor(post.title, post.content_html);
+    const list = renderMblogEditor(post.title, post.content_html);
 
     return c.html(renderHTMLMblog(`${post.title} | ${post.feed_title}`, raw(list), c.get('USER_LOGGED_IN')));
 };
