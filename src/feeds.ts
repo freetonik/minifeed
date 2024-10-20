@@ -430,12 +430,17 @@ async function addFeed(env: Bindings, url: string, verified = false) {
     const attemptedSiteUrl = r.link && r.link.length > 0 ? r.link : getRootUrl(url);
     const siteUrl = url === RSSUrl ? attemptedSiteUrl : url;
     const verified_as_int = verified ? 1 : 0;
+    let feedTitle = r.title;
+    if (!feedTitle || feedTitle.length === 0) {
+        const siteUrlHost = new URL(siteUrl).host;
+        feedTitle = `${siteUrlHost}`;
+    }
 
     try {
         const dbQueryResult = await env.DB.prepare(
             'INSERT INTO feeds (title, type, url, rss_url, verified) values (?, ?, ?, ?, ?)',
         )
-            .bind(r.title, 'blog', siteUrl, RSSUrl, verified_as_int)
+            .bind(feedTitle, 'blog', siteUrl, RSSUrl, verified_as_int)
             .all();
         if (dbQueryResult.success === true) {
             if (r.entries) {

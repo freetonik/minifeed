@@ -49,10 +49,10 @@ export function validateFeedData(feedData: FeedData): feedValidationResult {
         messages: [],
     };
 
-    if (!feedData.title || feedData.title.length === 0) {
-        result.validated = false;
-        result.messages.push('Feed title is missing');
-    }
+    // if (!feedData.title || feedData.title.length === 0) {
+    //     result.validated = false;
+    //     result.messages.push('Feed title is missing');
+    // }
 
     if (!feedData.entries || feedData.entries.length === 0) {
         result.validated = false;
