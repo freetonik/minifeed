@@ -31,6 +31,8 @@ import {
     handleFeedsGlobalCacheRebuild,
     handleFeedsGlobalIndex,
     handleFeedsIndexing,
+    handleFeedsItemsGlobalIndex,
+    handleFeedsItemsIndexing,
     handleFeedsScrape,
     handleFeedsSubscribe,
     handleFeedsUnsubscribe,
@@ -38,6 +40,7 @@ import {
     regenerateTopItemsCacheForFeed,
     updateFeed,
 } from './feeds';
+import { handleSearch } from './handlers/search/handleSearch';
 import { renderHTML } from './htmltools';
 import type { MFQueueMessage } from './interface';
 import {
@@ -84,7 +87,7 @@ import {
     enqueueVectorizeStoreAllItems,
 } from './queue';
 import { scrapeItem } from './scrape';
-import { handleSearch, updateFeedIndex, updateItemIndex } from './search';
+import { updateFeedIndex, updateFeedItemsIndex, updateItemIndex } from './search';
 import { handleUsers, handleUsersFollowPOST, handleUsersSingle, handleUsersUnfollowPOST } from './users';
 
 // ///////////////////////////////////////////////////////////
@@ -123,6 +126,7 @@ app.use('/feeds/:feed_sqid/delete', adminRequiredMiddleware);
 app.use('/feeds/:feed_sqid/update', adminRequiredMiddleware);
 app.use('/feeds/:feed_sqid/scrape', adminRequiredMiddleware);
 app.use('/feeds/:feed_sqid/index', adminRequiredMiddleware);
+app.use('/feeds/:feed_sqid/index_items', adminRequiredMiddleware);
 app.use('/feeds/:feed_sqid/rebuild_cache', adminRequiredMiddleware);
 app.use('/feeds/index', adminRequiredMiddleware);
 app.use('/feeds/rebuild_cache', adminRequiredMiddleware);
@@ -196,7 +200,9 @@ app.post('/feeds/:feed_sqid/delete', handleFeedsDelete);
 app.post('/feeds/:feed_sqid/update', handleFeedsUpdate);
 app.post('/feeds/:feed_sqid/scrape', handleFeedsScrape);
 app.post('/feeds/:feed_sqid/index', handleFeedsIndexing);
+app.post('/feeds/:feed_sqid/index_items', handleFeedsItemsIndexing);
 app.post('/feeds/:feed_sqid/rebuild_cache', handleFeedsCacheRebuild);
+app.post('/feeds/index_items', handleFeedsItemsGlobalIndex);
 app.post('/feeds/index', handleFeedsGlobalIndex);
 app.post('/feeds/rebuild_cache', handleFeedsGlobalCacheRebuild);
 
@@ -321,6 +327,18 @@ export default {
                         } catch (e: unknown) {
                             console.log(
                                 `Error indexing item ${message.body.item_id}: ${e instanceof Error ? e.message : String(e)}`,
+                            );
+                        }
+                    }
+                    break;
+
+                case 'feed_items_index':
+                    if (message.body.feed_id) {
+                        try {
+                            await updateFeedItemsIndex(env, message.body.feed_id);
+                        } catch (e: unknown) {
+                            console.log(
+                                `Error indexing feed ${message.body.feed_id}: ${e instanceof Error ? e.message : String(e)}`,
                             );
                         }
                     }

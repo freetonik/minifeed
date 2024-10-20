@@ -33,8 +33,59 @@ export type ItemRow = {
     item_sqid: string;
 };
 
+export type FeedRow = {
+    feed_id: number;
+    created: string;
+    type: string;
+    title: string;
+    url: string;
+    rss_url: string;
+    verified: boolean;
+    feed_sqid: string;
+    description: string;
+};
+
 export type MFQueueMessage = {
     type: string;
     feed_id?: number;
     item_id?: number;
+};
+
+// SEARCH RESULTS
+export type ItemSearchResult = {
+    document: ItemSearchResultDocument;
+    highlight: ItemSearchResultHighlight;
+};
+
+export type FeedSearchResult = {
+    document: FeedSearchResultDocument;
+    highlight: ItemSearchResultHighlight;
+};
+
+export type FeedSearchResultDocument = {
+    title: string;
+    type: string;
+    feed_sqid: string;
+    url: string;
+    rss_url: string;
+};
+
+export type ItemSearchResultDocument = {
+    title: string;
+    type: string;
+    feed_sqid: string;
+    feed_title: string;
+    item_sqid: string;
+    url: string;
+    pub_date: string;
+};
+
+export type ItemSearchResultHighlight = {
+    title?: ItemSearchResultHighlightEntity;
+    content?: ItemSearchResultHighlightEntity;
+};
+
+export type ItemSearchResultHighlightEntity = {
+    matched_tokens: Array<unknown>;
+    snippet: string;
 };

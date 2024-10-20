@@ -388,6 +388,17 @@ export const renderedCSS = raw(`
             font-weight: bold;
         }
 
+        .search-result span.label {
+            font-weight: bold;
+            margin-right: 0.1em;
+            color: var(--color-bg);
+            background-color: var(--color-gray);
+            padding: 0.125em 0.4em;
+            border-radius: 0.25em;
+            text-transform: uppercase;
+            font-size: 0.725em;
+        }
+
         /* ADMIN CONTROLS */
         .admin-control#hidden {
             display: none;

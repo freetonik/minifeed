@@ -122,7 +122,15 @@ export const handleAdmin = async (c: Context) => {
         hx-trigger="click"
         hx-target="#index-indicator-${feed.feed_sqid}"
         hx-swap="outerHTML">
-        re-index
+        re-index feed
+        </button>
+
+        <button hx-post="/feeds/${feed.feed_sqid}/index_items"
+        hx-confirm="Sure?"
+        hx-trigger="click"
+        hx-target="#index-indicator-${feed.feed_sqid}"
+        hx-swap="outerHTML">
+        re-index items
         </button>
 
         <button hx-post="/feeds/${feed.feed_sqid}/rebuild_cache"
@@ -151,6 +159,13 @@ export const handleAdmin = async (c: Context) => {
         hx-target="#index-indicator-global"
         hx-swap="outerHTML">
         re-index all feeds
+    </button>
+    <button hx-post="/feeds/index"
+        hx-confirm="Sure?"
+        hx-trigger="click"
+        hx-target="#index-indicator-global"
+        hx-swap="outerHTML">
+        re-index all items of all feeds
     </button>
     <button hx-post="/feeds/rebuild_cache"
         hx-confirm="Sure?"

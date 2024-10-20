@@ -1,5 +1,6 @@
 import { html, raw } from 'hono/html';
 import { renderedCSS } from './css';
+import type { ItemSearchResult } from './interface';
 
 export const renderHTMLMblog = (title: string, inner: string, user_logged_in: boolean) => {
     return html`
@@ -114,11 +115,9 @@ export const renderItemShort = (
     `;
 };
 
-export const renderItemSearchResult = (searchResult: any) => {
+export const renderItemSearchResult = (searchResult: ItemSearchResult) => {
     const item = searchResult.document;
     const postDate = new Date(item.pub_date).toLocaleDateString('en-UK', dateFormatOptions);
-    const feedSqid = item.feed_sqid;
-    const itemSqid = item.item_sqid;
     const uri_root_from_type = item.type === 'blog' ? 'blogs' : '';
 
     let title = item.title;
@@ -132,15 +131,30 @@ export const renderItemSearchResult = (searchResult: any) => {
 
     return `
     <div class="item-short search-result">
-        <a href="/items/${itemSqid}" class="no-underline bold">${title}</a> <br>
+        <a href="/items/${item.item_sqid}" class="no-underline bold">${title}</a> <br>
         <div class="muted"><small>
-            from ${item.type} <a href="/${uri_root_from_type}/${feedSqid}">${item.feed_title}</a> |
+            from ${item.type} <a href="/${uri_root_from_type}/${item.feed_sqid}">${item.feed_title}</a> |
             <time>${postDate}</time> |
             <a class="no-underline no-color" href="${item.url}">original</a>
         </small></div>
         <p class="item-summary">
         ${content}...
         </p>
+    </div>
+    `;
+};
+
+export const renderFeedSearchResult = (searchResult: FeedSearchResult) => {
+    const feed = searchResult.document;
+    const uri_root_from_type = feed.type === 'blog' ? 'blogs' : '';
+    const type = feed.type === 'blog' ? 'blog' : 'Minifeed blog';
+
+    return `
+    <div class="item-tiny search-result">
+    <span class="label">${type}</span> <strong><a href="/${uri_root_from_type}/${feed.feed_sqid}">${feed.title}</a></strong> <br>
+    <small class="muted">
+    <a target="_blank" href=${feed.url}>↗ ${feed.url}</a> | <a target="_blank" href=${feed.rss_url}>↗ RSS</a>
+    </small>
     </div>
     `;
 };

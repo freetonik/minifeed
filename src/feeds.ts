@@ -4,15 +4,16 @@ import { raw } from 'hono/html';
 import type { Bindings } from './bindings';
 import { extractRSS, validateFeedData } from './feed_extractor';
 import { renderAddFeedForm, renderBlogsSubsections, renderHTML, renderItemShort } from './htmltools';
-import type { ItemRow, MFFeedEntry } from './interface';
+import type { FeedRow, ItemRow, MFFeedEntry } from './interface';
 import {
     enqueueFeedUpdate,
     enqueueIndexAllItemsOfFeed,
+    enqueueIndexFeed,
     enqueueItemScrape,
     enqueueRebuildFeedTopItemsCache,
     enqueueScrapeAllItemsOfFeed,
 } from './queue';
-import { deleteFeedFromIndex } from './search';
+import { deleteFeedFromIndex, updateFeedIndex } from './search';
 import {
     extractItemUrl,
     feedIdToSqid,
@@ -363,18 +364,31 @@ export async function handleFeedsScrape(c: Context) {
     return c.html('Feed scrape enqueued...');
 }
 
-export async function handleFeedsIndexing(c: Context) {
+export async function handleFeedsItemsIndexing(c: Context) {
     const feed_id: number = feedSqidToId(c.req.param('feed_sqid'));
     await enqueueIndexAllItemsOfFeed(c.env, feed_id);
     return c.html('Feed index enqueued...');
 }
 
-export async function handleFeedsGlobalIndex(c: Context) {
+export async function handleFeedsIndexing(c: Context) {
+    const feedId: number = feedSqidToId(c.req.param('feed_sqid'));
+    await enqueueIndexFeed(c.env, feedId);
+    return c.html('Feed index enqueued...');
+}
+
+export async function handleFeedsItemsGlobalIndex(c: Context) {
     const feeds = await c.env.DB.prepare('SELECT feed_id FROM feeds').all();
     for (const feed of feeds.results) {
         await enqueueIndexAllItemsOfFeed(c.env, feed.feed_id);
     }
     return c.html('Feed index enqueued FOR ALL FEEDS...');
+}
+
+export async function handleFeedsGlobalIndex(c: Context) {
+    const feeds = await c.env.DB.prepare('SELECT feed_id FROM feeds').all<FeedRow>();
+    for (const feed of feeds.results) {
+        await updateFeedIndex(c.env, feed.feed_id);
+    }
 }
 
 export async function handleFeedsCacheRebuild(c: Context) {

@@ -54,17 +54,30 @@ export async function enqueueItemScrape(env: Bindings, item_id: number) {
 
 ///////////////////////////////
 // INDEXING ///////////////////
-export async function enqueueItemIndex(env: Bindings, item_id: number) {
+export async function enqueueItemIndex(env: Bindings, itemId: number) {
     await env.FEED_UPDATE_QUEUE.send({
         type: 'item_index',
-        item_id: item_id,
+        item_id: itemId,
     });
 }
 
-export async function enqueueIndexAllItemsOfFeed(env: Bindings, feed_id: number) {
+export async function enqueueIndexAllItemsOfFeed(env: Bindings, feedId: number) {
+    await env.FEED_UPDATE_QUEUE.send({
+        type: 'feed_items_index',
+        feed_id: feedId,
+    });
+}
+
+export async function enqueueIndexFeed(env: Bindings, feedId: number) {
     await env.FEED_UPDATE_QUEUE.send({
         type: 'feed_index',
-        feed_id: feed_id,
+        feed_id: feedId,
+    });
+}
+
+export async function enqueueIndexAllFeeds(env: Bindings) {
+    await env.FEED_UPDATE_QUEUE.send({
+        type: 'feed_index_all',
     });
 }
 
