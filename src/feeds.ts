@@ -475,6 +475,8 @@ export async function updateFeed(env: Bindings, feedId: number) {
 
     if (r.description && r.description.length > 7 && description !== r.description) {
         await env.DB.prepare('UPDATE feeds SET description = ? WHERE feed_id = ?').bind(r.description, feedId).run();
+        // this may be the first time we are setting the description, so we need to update the index
+        await enqueueIndexFeed(env, feedId);
     }
 
     // get URLs of existing items from DB
