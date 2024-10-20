@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
-import { html, raw } from 'hono/html';
-import { renderHTML } from './htmltools';
+import { raw } from 'hono/html';
+import { renderHTML, renderItemShort } from './htmltools';
 import { itemSqidToId } from './utils';
 
 export const handleLists = async (c: Context) => {
@@ -11,11 +11,9 @@ export const handleLists = async (c: Context) => {
         JOIN item_list_items ON item_list_items.list_id = item_lists.list_id`,
     ).all();
 
-    let inner = `
-    <h1>Lists</h1>
-    `;
+    let inner = '<h1>Lists</h1>';
     for (const list of lists.results) {
-        inner += html`<li><a href="/lists/${list.list_sqid}">${list.title}</a> (by @${list.username})</li>`;
+        inner += `<div class="borderbox" style="margin-bottom: 1em;"><a href="/lists/${list.list_sqid}">${list.title}</a> (by @${list.username})</div>`;
     }
 
     return c.html(renderHTML('Lists | minifeed', raw(inner), c.get('USERNAME'), 'lists', '', '', false));
@@ -34,27 +32,32 @@ export const handleListsSingle = async (c: Context) => {
             WHERE list_id = ?`,
         ).bind(listId),
         c.env.DB.prepare(
-            `SELECT * 
+            `SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title as feed_title, feeds.feed_sqid
             FROM item_list_items 
             JOIN items ON items.item_id = item_list_items.item_id
+            JOIN feeds ON items.feed_id = feeds.feed_id
             WHERE list_id = ?`,
         ).bind(listId),
     ]);
 
-    const list_entry = list.results[0];
-    if (!list_entry) return c.notFound();
+    const listEntry = list.results[0];
+    if (!listEntry) return c.notFound();
 
-    let inner = `<h1>List "${list_entry.title}"</h1>
-    <p>by <a href="/users/${list_entry.username}">@${list_entry.username}</a></p>`;
+    let inner = `<h1 style="margin-bottom:0">${listEntry.title}</h1>
+    <p style="margin: 0.75em 0 3em;">list by <a href="/users/${listEntry.username}">@${listEntry.username}</a></p>`;
     for (const item of list_items.results) {
-        inner += `<li><a href="/items/${item.item_sqid}">${item.title}</a></li>`;
+        inner += renderItemShort(item.item_sqid, item.title, item.url, item.feed_title, item.feed_sqid, item.pub_date);
     }
 
-    if (userId === list_entry.user_id) {
-        inner += `<p><button hx-confirm="Are you sure?" hx-swap="outerHTML transition:true" hx-post="/lists/${listSqid}/delete">Delete list</button></p>`;
+    if (userId === listEntry.user_id) {
+        inner += `<p>
+            <button hx-confirm="Are you sure?" hx-swap="outerHTML transition:true" hx-post="/lists/${listSqid}/delete">Delete list</button>
+        </p>`;
     }
 
-    return c.html(renderHTML(`List ${list.title} | minifeed`, raw(inner), c.get('USERNAME'), 'lists', '', '', false));
+    return c.html(
+        renderHTML(`List ${list.title} | minifeed`, raw(inner), c.get('USER_LOGGED_IN'), 'lists', '', '', false),
+    );
 };
 
 export const handleListsSingleDeletePOST = async (c: Context) => {

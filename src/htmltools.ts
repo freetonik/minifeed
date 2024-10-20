@@ -60,11 +60,11 @@ export const renderHTML = (
         <nav aria-label="Site navigation">
             <div>
                 <a href="${root_url}/" class="logo"><span>⬤</span> <span class="bold" style="margin-left: 0.2em;margin-right:1.5em;">minifeed</span></a>
-                <a href="${root_url}/my" class="${active === 'my' ? 'bold' : ''}">My feed</a>
-                <a href="${root_url}/global" class="${active === 'global' ? 'bold' : ''}" style="margin-left: 0.5em">Global</a>
-                <a href="${root_url}/blogs" class="${active === 'blogs' ? 'bold' : ''}" style="margin-left: 0.5em">Blogs</a>
-                <a href="${root_url}/lists" class="${active === 'lists' ? 'bold' : ''}" style="margin-left: 0.5em">Lists</a>
-                <a href="${root_url}/users" class="${active === 'users' ? 'bold' : ''}" style="margin-left: 0.5em">Users</a>
+                <a href="${root_url}/my" class="${active === 'my' ? 'chapter bold active' : 'chapter'}">My feed</a>
+                <a href="${root_url}/global" class="${active === 'global' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Global</a>
+                <a href="${root_url}/blogs" class="${active === 'blogs' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Blogs</a>
+                <a href="${root_url}/lists" class="${active === 'lists' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Lists</a>
+                <a href="${root_url}/users" class="${active === 'users' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Users</a>
             </div>
             ${userBlock}
         </nav>

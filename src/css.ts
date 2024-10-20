@@ -77,6 +77,11 @@ export const renderedCSS = raw(`
             justify-content: space-between;
         }
 
+        header nav .active, header nav a.chapter:hover {
+            border-bottom: 1px solid var(--color-text);
+        }
+
+
         nav.subsections {
             margin-bottom: 2em;
             border: 1px solid var(--color-text);
