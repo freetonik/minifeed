@@ -14,6 +14,7 @@ TYPESENSE_API_KEY_SEARCH = "GCuPvjR4vz3gvACRo2N5hpRjZnEaijKE"
 TYPESENSE_BLOG_FEEDS_COLLECTION = "blog_feeds"
 TYPESENSE_CLUSTER = "3afyidm6tgzxlvq7p-1.a1.typesense.net"
 TYPESENSE_ITEMS_COLLECTION = "items"
+TYPESENSE_FEEDS_COLLECTION = "feeds"
 
 [[vectorize]]
 binding = "VECTORIZE"
