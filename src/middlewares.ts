@@ -23,7 +23,7 @@ export async function authCheckMiddleware(c: Context, next) {
 }
 
 // User must be logged in
-export async function authRequiredMiddleware(c: Contex, next: () => any) {
+export async function authRequiredMiddleware(c: Context, next: () => any) {
     if (!c.get('USER_ID')) return c.redirect('/login');
     await next();
 }
