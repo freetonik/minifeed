@@ -265,7 +265,7 @@ export const renderBlogsSubsections = (active = 'latest') => {
 
 export const renderMblogEditor = (title = '', content = '') => {
     return `
-    <script src="https://unpkg.com/tiny-markdown-editor/dist/tiny-mde.min.js"></script>
+    <script src="https://unpkg.com/tiny-markdown-editor@0.1.29/dist/tiny-mde.min.js"></script>
 
     <form style="height: 100%; display: flex; flex-direction: column;" method="POST">
         <div style="margin-bottom:1em;">
