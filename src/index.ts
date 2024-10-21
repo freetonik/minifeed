@@ -220,6 +220,7 @@ subdomainApp.get('/', handleMblog);
 subdomainApp.post('/', adminRequiredMiddleware, handleMblogPOST);
 
 subdomainApp.get('/rss', handleMblogRss);
+subdomainApp.get('/robots.txt', async (c) => c.text('User-agent: *\nAllow: /'));
 subdomainApp.get('/:post_slug', handleMblogItemSingle);
 subdomainApp.get('/:post_slug/edit', adminRequiredMiddleware, handleMblogEditItem);
 subdomainApp.post('/:post_slug/edit', adminRequiredMiddleware, handleBlogItemEditPOST);
@@ -227,7 +228,6 @@ subdomainApp.post('/:post_slug/delete', adminRequiredMiddleware, handleMblogDele
 
 subdomainApp.notFound(handleNotFound);
 subdomainApp.onError(handleError);
-subdomainApp.get('/robots.txt', async (c) => c.text('User-agent: *\nAllow: /'));
 
 // Main app to route based on Host
 const appMain = new Hono<{ Bindings: Bindings }>({
