@@ -65,7 +65,7 @@ export const handleMblog = async (c: Context) => {
             status_block = `(${item.status})`;
         }
         list += `
-            <li>
+            <li style="margin-bottom: 0.25em;">
                 <span class="muted" style="font-family: monospace; letter-spacing: -0.07em; margin-right: 0.5em;">${postDate}</span>
                 <a href="/${item.slug}">${item.title}</a> ${status_block}
             </li>
