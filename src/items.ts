@@ -478,12 +478,11 @@ export const handleItemsSingle = async (c: Context) => {
         <span id="lists">
             <button class="button" hx-get="/items/${item_sqid}/lists"
             class="button"
-            hx-trigger="click"
             hx-target="#lists_section"
             hx-swap="outerHTML">
             ⛬ add to list
             </button>
-            </span>
+        </span>
         `;
 
         if (item.favorite_id) {
@@ -582,7 +581,7 @@ export const handleItemsSingle = async (c: Context) => {
         ${subscriptionBlock}
         </div>
     </div>
-    <div id="lists_section"></div>
+    <div id="lists_section" class="lists-section"></div>
     <article style="margin-top:3em;">
     ${contentBlock}
     </article>
@@ -734,13 +733,15 @@ export const handleItemsLists = async (c: Context) => {
         .join('');
 
     const content = `
-    <div id="lists_section" class="lists-section">
+    <div id="lists_section" class="lists-section" >
+    <div style="padding: 1em;">
     ${lists_html}
     <strong>
     <a href="" hx-get="/items/${itemSqid}/lists/new" hx-trigger="click" hx-target="this" hx-swap="outerHTML"><br>
         [create new list and add to it]
     </a>
     </strong>
+    </div>
     </div>
     `;
 

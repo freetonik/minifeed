@@ -169,10 +169,10 @@ export const renderedCSS = raw(`
         }
 
         .lists-section {
-            background-color: #ebebe8;
-            padding: 1em;
-            margin: 20px 0;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+            background-color: var(--color-highlight);
+            
+            margin: 1.5em 0;
+            box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1);
         }
 
 
@@ -356,7 +356,7 @@ export const renderedCSS = raw(`
         .related-items h4 {
             border-bottom: 1px solid var(--color-text);
             padding: 1em 1.25em;
-            background-color: #ebebe8;
+            background-color: var(--color-highlight);
         }
 
         .related-items div.items {
