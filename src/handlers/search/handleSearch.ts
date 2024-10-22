@@ -21,7 +21,9 @@ export async function handleSearch(c: Context) {
     const itemsPerPage = 30;
     const page = Number(c.req.query('p')) || 1;
 
-    const searchDocuments: { searches: Array<{ collection: string; q: string; per_page: number }> } = {
+    const searchDocuments: {
+        searches: Array<{ collection: string; q: string; per_page: number; num_typos?: number }>;
+    } = {
         searches: [],
     };
 
