@@ -1,5 +1,6 @@
 export type Bindings = {
     DB: D1Database;
+    MBLOG_IMAGES: R2Bucket;
     FEED_UPDATE_QUEUE: Queue;
     SESSIONS_KV: KVNamespace;
 

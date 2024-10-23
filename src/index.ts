@@ -73,6 +73,7 @@ import {
     handleMblogItemSingle,
     handleMblogPOST,
     handleMblogRss,
+    handleUploadImage,
 } from './mblogs';
 import {
     adminRequiredMiddleware,
@@ -217,6 +218,7 @@ subdomainApp.use('*', authCheckMiddleware);
 subdomainApp.use('*', subdomainMiddleware);
 
 subdomainApp.get('/', handleMblog);
+subdomainApp.post('/upload', adminRequiredMiddleware, handleUploadImage);
 subdomainApp.post('/', adminRequiredMiddleware, handleMblogPOST);
 
 subdomainApp.get('/rss', handleMblogRss);

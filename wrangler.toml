@@ -25,6 +25,10 @@ binding = "DB"
 database_name = "minifeed"
 database_id = "d059129a-d855-4e39-ae1f-64e92b9c40a1"
 
+[[r2_buckets]]
+binding = 'MBLOG_IMAGES'
+bucket_name = 'mblog-images'
+
 [[kv_namespaces]]
 binding = "SESSIONS_KV"
 id = "269cab6a695244cfab39cdc624497d4a"

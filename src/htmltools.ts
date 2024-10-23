@@ -277,6 +277,8 @@ export const renderMblogEditor = (title = '', content = '') => {
             <div id="toolbar"></div>
             <div id="tinymde" style="height:300px; overflow-y:scroll; border:1px solid #c0c0c0; background-color: white;padding:0.25em;flex-grow: 1;"></div>
         </div>
+        <div id="uploadedImages">
+        </div>
         <div style="padding-top: 1em;">
             <input type="submit" name="action" value="Publish">
             <input type="submit" name="action" value="Save">
@@ -290,9 +292,47 @@ export const renderMblogEditor = (title = '', content = '') => {
         editor: tinyMDE,
         commands: ['bold', 'italic', 'strikethrough', '|', 'code', 'h2', 'ul', 'ol', 'blockquote', '|', 'insertLink', 'insertImage',]
     });
+
+    tinyMDE.addEventListener("drop", async function (event) {
+    let formData = new FormData();
+
+    for (let i = 0; i < event.dataTransfer.items.length; i++) {
+        if (event.dataTransfer.items[i].kind === "file") {
+        let file = event.dataTransfer.items[i].getAsFile();
+        formData.append("image", file);
+        }
+    }
+
+    const response = await fetch('/upload', { method: 'POST', body: formData });
+    result = await response.json();
+
+    if (result.imageUrl) {
+        tinyMDE.paste('\\n![](' + result.imageUrl +')\\n');
+
+        const uploadedImagesDiv = document.getElementById('uploadedImages');
+        const codeElement = document.createElement('code');
+        codeElement.textContent = result.imageUrl;
+        uploadedImagesDiv.appendChild(codeElement);
+        
+    } else {
+        const uploadedImagesDiv = document.getElementById('uploadedImages');
+        const codeElement = document.createElement('code');
+        codeElement.textContent = result.error;
+        uploadedImagesDiv.appendChild(codeElement);
+    }
+    });
+
     </script>
 
     <style>
+    #uploadedImages code {
+        display: inline-block;
+        font-size: small;
+        padding: 0.15em 0.5em;
+    }
+    #uploadedImages code:first-child {
+        margin-top:1em;
+    }
     .TinyMDE {
         background-color:#fff;
         color:#000;

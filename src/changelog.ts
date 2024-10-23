@@ -1,7 +1,12 @@
-export const version = '0.6.1';
+export const version = '0.6.2';
 
 export const changelog = `
     <h2>Changelog</h2>
+
+    <h3>0.6.1 (23.10.2024)</h3>
+    <ul>
+        <li>Minifeed-hosted blogs: image uploads.</li>
+    </ul>
 
     <h3>0.6.1 (20.10.2024)</h3>
     <ul>

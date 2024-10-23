@@ -12,6 +12,7 @@ export async function authCheckMiddleware(c: Context, next) {
             c.set('USERNAME', values[1]);
             c.set('USER_LOGGED_IN', true);
             c.set('USER_IS_ADMIN', values[0] === '1');
+            // TODO: upsert KV only when key is expiring soon
             await c.env.SESSIONS_KV.put(sessionKey, kv_value, {
                 expirationTtl: 31536000, // 1 year
             });

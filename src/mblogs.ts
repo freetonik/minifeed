@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
 import { marked } from 'marked';
+import { nanoid } from 'nanoid';
 import { renderHTML, renderHTMLMblog, renderMblogEditor } from './htmltools';
 import { itemIdToSqid, sanitizeHTML, truncate } from './utils';
 
@@ -309,3 +310,44 @@ export const handleBlogItemEditPOST = async (c: Context) => {
 export const handleMblogRss = async (c: Context) => {
     return c.html('RSS SOON');
 };
+
+export const handleUploadImage = async (c: Context) => {
+    const contentType = c.req.headers.get('Content-Type') || '';
+    if (!contentType.includes('multipart/form-data')) {
+        return c.json({ error: 'Invalid content type' });
+    }
+
+    const body = await c.req.parseBody();
+    const allowedFileTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+    const image = body.image as File;
+    if (!image) {
+        return c.json({ error: 'Bad file' });
+    }
+
+    const imageType = image.type;
+    if (!allowedFileTypes.includes(imageType)) {
+        c.status(400);
+        return c.json({ error: 'Invalid file type' });
+    }
+
+    const extension = mimeToExtension[imageType];
+
+    const arrayBuffer = await image.arrayBuffer();
+    const filename = `${nanoid()}.${extension}`;
+    const namespace = c.get('SUBDOMAIN');
+    try {
+        await c.env.MBLOG_IMAGES.put(filename, arrayBuffer);
+    } catch (e) {
+        console.log(e);
+    }
+    const imageUrl = `https://usermedia.minifeed.net/${namespace}_${filename}`;
+    c.status(201);
+    return c.json({ imageUrl: imageUrl });
+};
+
+const mimeToExtension = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'image/webp': 'webp',
+}; // more at https://github.com/fabiospampinato/mime-standard
