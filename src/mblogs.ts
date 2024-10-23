@@ -333,14 +333,14 @@ export const handleUploadImage = async (c: Context) => {
     const extension = mimeToExtension[imageType];
 
     const arrayBuffer = await image.arrayBuffer();
-    const filename = `${nanoid()}.${extension}`;
     const namespace = c.get('SUBDOMAIN');
+    const filename = `${namespace}_${nanoid()}.${extension}`;
     try {
         await c.env.MBLOG_IMAGES.put(filename, arrayBuffer);
     } catch (e) {
         console.log(e);
     }
-    const imageUrl = `https://usermedia.minifeed.net/${namespace}_${filename}`;
+    const imageUrl = `https://usermedia.minifeed.net/${filename}`;
     c.status(201);
     return c.json({ imageUrl: imageUrl });
 };
