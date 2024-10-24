@@ -267,7 +267,7 @@ export const renderBlogsSubsections = (active = 'latest') => {
 export const renderMblogEditor = (title = '', content = '') => {
     return `
     <script src="https://unpkg.com/tiny-markdown-editor@0.1.29/dist/tiny-mde.min.js"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/2.0.3/htmx.min.js" integrity="sha512-dQu3OKLMpRu85mW24LA1CUZG67BgLPR8Px3mcxmpdyijgl1UpCM1RtJoQP6h8UkufSnaHVRTUx98EQT9fcKohw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <form style="height: 100%; display: flex; flex-direction: column;" method="POST">
         <div style="margin-bottom:1em;">
             <input type="text" id="post-title" name="post-title" value="${title}">
@@ -285,7 +285,19 @@ export const renderMblogEditor = (title = '', content = '') => {
         </div>
     </form>
 
+
+    <form id='form' hx-encoding='multipart/form-data' hx-post='/upload' hx-swap="none">
+        <input type='file' name='image'>
+        <button>
+            Upload
+        </button>
+    </form>
+
     <script>
+        htmx.on('#form', 'htmx:afterOnLoad', function(evt) {
+          console.log(evt.detail.xhr.response);
+        });
+
     var tinyMDE = new TinyMDE.Editor({element: 'tinymde', textarea: "txt" });
     var commandBar = new TinyMDE.CommandBar({
         element: "toolbar",
