@@ -12,6 +12,7 @@
         "hono": "^3.10.0",
         "marked": "^14.1.2",
         "nanoid": "^5.0.7",
+        "robots-parser": "^3.0.1",
         "rss-url-finder": "^0.0.5-1",
         "sqids": "^0.3.0",
         "typesense": "^1.7.2"

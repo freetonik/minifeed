@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import { decode } from 'html-entities';
+import robotsParser from 'robots-parser';
 import { getRssUrlsFromHtmlBody } from 'rss-url-finder';
 import Sqids from 'sqids';
 
@@ -365,4 +366,30 @@ export const sanitizeHTML = async (contentBlock: string): Promise<string> => {
 
 export function delay(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function getRobots(url: string) {
+    let baseUrl = '';
+    try {
+        baseUrl = new URL(url).origin;
+    } catch (error) {
+        console.error(`Error getting base URL from ${url}`);
+        return;
+    }
+
+    const robotsUrl = new URL('/robots.txt', baseUrl);
+    try {
+        const response = await fetch(robotsUrl.toString());
+        if (response.ok) {
+            const robotsTxt = await response.text();
+            const robots = robotsParser(robotsUrl.toString(), robotsTxt);
+            console.log(`Robots.txt found at ${robotsUrl.toString()}`);
+            return robots;
+        }
+        console.log(`No robots.txt found at ${robotsUrl.toString()}`);
+
+        return;
+    } catch (error) {
+        console.error(`Error fetching robots.txt from ${robotsUrl.toString()}`);
+    }
 }
