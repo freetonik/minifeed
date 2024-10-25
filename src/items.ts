@@ -441,11 +441,11 @@ export const handleItemsSingle = async (c: Context) => {
             } catch {
                 contentBlock = item.description;
             }
+            contentBlock += `<div class="flash" style="margin-top:1em;">This page shows contents from RSS. <a href="${item.item_url}" target="_blank">↗ Open original to view full content</a></div>`;
         } else {
             // User is not logged in; description has tags stripped, no need to sanitize
-            contentBlock = `${item.description} <div class="flash" style="margin-top:1em;"><a href="/login">Log in</a> and subscribe to this blog to view full content</div>`;
+            contentBlock = `${item.description} <div class="flash" style="margin-top:1em;">This is a short summary only. <a href="${item.item_url}" target="_blank">↗ Open original to view full content</a></div>`;
         }
-        contentBlock += `<div class="flash" style="margin-top:1em;">This post cannot be viewed on Minifeed. <a href="${item.item_url}" target="_blank">↗ Open original</a></div>`;
     }
 
     let favoriteBlock = '';
