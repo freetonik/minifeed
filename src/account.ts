@@ -456,7 +456,7 @@ const createSessionSetCookieAndRedirect = async (
     redirectTo = '/',
     first_login = false,
 ) => {
-    const sessionKey = randomHash(16);
+    const sessionKey = randomHash(32);
     const kv_value = `${userId};${username}`;
     await c.env.SESSIONS_KV.put(sessionKey, kv_value);
     setCookie(c, 'minifeed_session', sessionKey, {
