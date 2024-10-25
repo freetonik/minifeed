@@ -377,7 +377,6 @@ export const handleItemsSingle = async (c: Context) => {
         items.title AS item_title,
         items.description,
         items.content_html,
-        items.content_html_scraped,
         items.pub_date,
         items.url AS item_url,
         feeds.title AS feed_title,
@@ -431,33 +430,11 @@ export const handleItemsSingle = async (c: Context) => {
 
     let contentBlock = '';
 
-    if (!item.description && !item.content_html && !item.content_html_scraped) {
+    if (!item.description && !item.content_html) {
         contentBlock = `<div class="flash" style="margin-top:1em;">This post cannot be viewed on Minifeed. <a href="${item.item_url}" target="_blank">↗ Open original</a></div>`;
     } else {
         if (user_logged_in) {
-            // User is logged in
-            if (item.content_html) {
-                // We have full content from feed
-                if (item.content_html_scraped) {
-                    // We have scraped content
-                    if (item.content_html.length > item.content_html_scraped.length * 0.5) {
-                        // Full content is longer than 0.65 of scraped content
-                        contentBlock = raw(item.content_html);
-                    } else {
-                        // Full content is shorted, so use scraped
-                        contentBlock = raw(item.content_html_scraped);
-                    }
-                } else {
-                    // No scraped content, use full content
-                    contentBlock = raw(item.content_html);
-                }
-            } else if (item.content_html_scraped) {
-                contentBlock = raw(item.content_html_scraped);
-            } else {
-                contentBlock = item.description;
-            }
-
-            // whatever content block was, sanitize it
+            contentBlock = item.content_html || item.description;
             try {
                 contentBlock = await sanitizeHTML(contentBlock);
                 contentBlock = await absolutifyImageUrls(contentBlock, getRootUrl(item.item_url));
@@ -465,9 +442,10 @@ export const handleItemsSingle = async (c: Context) => {
                 contentBlock = item.description;
             }
         } else {
-            // User is not logged in; description has tags scraped, no need to sanitize
+            // User is not logged in; description has tags stripped, no need to sanitize
             contentBlock = `${item.description} <div class="flash" style="margin-top:1em;"><a href="/login">Log in</a> and subscribe to this blog to view full content</div>`;
         }
+        contentBlock += `<div class="flash" style="margin-top:1em;">This post cannot be viewed on Minifeed. <a href="${item.item_url}" target="_blank">↗ Open original</a></div>`;
     }
 
     let favoriteBlock = '';
@@ -593,17 +571,10 @@ export const handleItemsSingle = async (c: Context) => {
     if (c.get('USER_IS_ADMIN')) {
         debug_info = `${batch[0].meta.duration}+${batch[1].meta.duration}+${batch[2].meta.duration} ms.;
             ${batch[0].meta.rows_read}+${batch[1].meta.rows_read}+${batch[2].meta.rows_read} rows read`;
-        const show_content_html_over_scraped =
-            item.content_html &&
-            item.content_html_scraped &&
-            item.content_html.length > item.content_html_scraped.length * 0.5;
-        let show_content_html_over_scraped_block = 'not applicable';
-        if (item.content_html_scraped && show_content_html_over_scraped) show_content_html_over_scraped_block = 'yes';
-        else if (item.content_html_scraped && !show_content_html_over_scraped)
-            show_content_html_over_scraped_block = 'no';
+
         list += `
         <p style="text-align:center;"><a class="no-underline" href="#hidden">🦎</a></p>
-        <div class="admin-control" id="hidden">
+        <div class="borderbox admin-control" id="hidden">
         <table>
         <tr>
         <td>Item ID:</td>
@@ -625,18 +596,6 @@ export const handleItemsSingle = async (c: Context) => {
         <td>Length of content_html:</td>
         <td>${item.content_html ? item.content_html.length : 0}</td>
         </tr>
-        <tr>
-        <td>Show content_html over scraped:</td>
-        <td>${show_content_html_over_scraped_block}</td>
-        </tr>
-        <tr>
-        <td>Scraped:</td>
-        <td>${item.content_html_scraped ? 'yes' : 'no'}</td>
-        </tr>
-        <tr>
-        <td>Length of content_html_scraped:</td>
-        <td>${item.content_html_scraped ? item.content_html_scraped.length : 'not applicable'}</td>
-        </tr>
         </table>
 
         <p>
@@ -647,9 +606,7 @@ export const handleItemsSingle = async (c: Context) => {
             scrape
         </button>
         <span id="scrape-indicator"></span>
-        </p>
-
-        <p>
+        
         <button hx-post="/admin/items/${item_sqid}/index"
             hx-trigger="click"
             hx-target="#index-indicator"
@@ -657,9 +614,7 @@ export const handleItemsSingle = async (c: Context) => {
             re-index
         </button>
         <span id="index-indicator"></span>
-        </p>
 
-        <p>
         <button hx-post="/admin/items/${item_sqid}/delete"
             hx-trigger="click"
             hx-target="#delete-indicator"
