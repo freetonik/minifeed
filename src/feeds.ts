@@ -23,6 +23,7 @@ import {
     getRootUrl,
     getText,
     itemIdToSqid,
+    stripTags,
     stripTagsSynchronously,
     truncate,
 } from './utils';
@@ -468,13 +469,19 @@ export async function updateFeed(env: Bindings, feedId: number) {
         .all();
 
     const RSSUrl = String(feeds[0].rss_url);
-    const description = String(feeds[0].description);
+    const currentDescription = String(feeds[0].description);
     console.log(`Updating feed ${feedId} (${RSSUrl})`);
 
     const r: FeedData = await extractRSS(RSSUrl); // fetch RSS content
 
-    if (r.description && r.description.length > 7 && description !== r.description) {
-        await env.DB.prepare('UPDATE feeds SET description = ? WHERE feed_id = ?').bind(r.description, feedId).run();
+    if (r.description && r.description.length > 7) {
+        const feedDescription = await stripTags(r.description);
+        if (!feedDescription.includes('<img') && feedDescription !== currentDescription) {
+            await env.DB.prepare('UPDATE feeds SET description = ? WHERE feed_id = ?')
+                .bind(feedDescription, feedId)
+                .run();
+            console.log(`Feed ${feedId} description updated`);
+        }
         // this may be the first time we are setting the description, so we need to update the index
         await enqueueIndexFeed(env, feedId);
     }
