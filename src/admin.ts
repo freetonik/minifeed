@@ -150,6 +150,12 @@ export const handleAdmin = async (c: Context) => {
         </div>
         </p>
         </div>`;
+
+        // const robots = await getRobots(feed.url);
+        // if (!robots) list += '<p>no robots.txt</p>';
+        // else {
+        //     list += `<p><strong>Robots.txt:</strong> ${robots.isAllowed(feed.url, 'ia_archiver')}</p>`;
+        // }
     }
 
     list += `

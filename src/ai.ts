@@ -1,5 +1,4 @@
 import type { Context } from 'hono';
-import { raw } from 'hono/html';
 import type { Bindings } from './bindings';
 import type { ItemRow } from './interface';
 import { enqueueRegenerateItemRelatedCache, enqueueVectorizeStoreItem } from './queue';
@@ -50,50 +49,25 @@ export const vectorizeAndStoreItem = async (env: Bindings, item_id: number) => {
     if (vectors.length) return;
 
     const item = await env.DB.prepare(
-        'SELECT item_id, feed_id, title, description, content_html, content_html_scraped FROM items WHERE item_id = ?',
+        'SELECT item_id, feed_id, title, description, content_html FROM items WHERE item_id = ?',
     )
         .bind(item_id)
         .first<ItemRow>();
-
     if (!item) return;
 
     let contentBlock = '';
 
-    if (!item.description && !item.content_html && !item.content_html_scraped) {
-        // We have nothing but title
-        contentBlock = item.title;
+    if (!item.description && !item.content_html) {
+        contentBlock = item.title; // We have nothing but title
     } else {
         // We have some content
-        if (item.content_html) {
-            // We have full content from feed
-            if (item.content_html_scraped) {
-                // We have scraped content
-                if (item.content_html.length > item.content_html_scraped.length * 0.5) {
-                    contentBlock = raw(item.content_html);
-                } else {
-                    contentBlock = raw(item.content_html_scraped);
-                }
-            } else {
-                // No scraped content, use full content
-                contentBlock = raw(item.content_html);
-            }
-        } else if (item.content_html_scraped) {
-            // no full content, use scraped
-            contentBlock = raw(item.content_html_scraped);
-        } else {
-            // nothing but description
-            contentBlock = item.description;
-        }
-        if (contentBlock.length < 10) {
-            contentBlock = item.title;
-        } else {
-            try {
-                const stripped = await stripNonLinguisticElements(contentBlock);
-                const stripped2 = await stripTags(stripped);
-                contentBlock = `${item.title}. ${stripped2}`;
-            } catch {
-                contentBlock = `${item.title}. ${item.description}`;
-            }
+        contentBlock += `. ${item.content_html || item.description}`;
+
+        try {
+            const stripped = await stripNonLinguisticElements(contentBlock);
+            contentBlock = await stripTags(stripped);
+        } catch {
+            contentBlock = `${item.title}. ${item.description || ''}`;
         }
     }
 
@@ -108,28 +82,6 @@ export const vectorizeAndStoreItem = async (env: Bindings, item_id: number) => {
         },
     );
 };
-
-// export const summarize_and_store_item = async (env: Bindings, itemId: number) => {
-//     const item = await env.DB.prepare(
-//         'SELECT title, description, content_html, content_html_scraped FROM items WHERE item_id = ?',
-//     )
-//         .bind(itemId)
-//         .first<ItemRow>();
-//     if (!item) return;
-
-//     const parts: { title: string; description: string; fullContent: string } = {
-//         title: item.title,
-//         description: item.description || '',
-//         fullContent: item.content_html || item.content_html_scraped || '',
-//     };
-
-//     parts.fullContent = await stripNonLinguisticElements(parts.fullContent);
-//     parts.fullContent = await stripTags(parts.fullContent);
-
-//     const result = await summarizeText(env, parts.fullContent);
-//     await env.DB.prepare('UPDATE items SET summary = ? WHERE item_id = ?').bind(result.summary, itemId).run();
-//     return;
-// };
 
 export const handleVectorize = async (c: Context) => {
     const env = c.env as Bindings;
