@@ -527,10 +527,19 @@ export async function addItemsToFeed(
 
     for (const item of items) {
         const link = extractItemUrl(item, feedRSSUrl);
-        if (!item.published) {
+
+        if (item.published) {
+            // if item.published is in future, set it to current date
+            if (new Date(item.published) > new Date()) item.published = new Date().toISOString();
+        } else {
             // if date was not properly parsed, try to parse it (expects 'pubdate' to be retrieved by feed_extractor's extractRSS function)
             if (item.pubdate) {
-                item.published = new Date(item.pubdate).toISOString();
+                const dateFromPubdate = new Date(item.pubdate);
+                if (dateFromPubdate > new Date()) {
+                    item.published = new Date().toISOString();
+                } else {
+                    item.published = dateFromPubdate.toISOString();
+                }
             } else {
                 item.published = new Date().toISOString(); // if date is still not available, use current date
             }
