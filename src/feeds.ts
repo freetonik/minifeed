@@ -554,7 +554,8 @@ export async function addItemsToFeed(
 
         content_html = getText(content_html);
 
-        const itemTitle = item.title?.length ? item.title : item.published.slice(0, 10);
+        let itemTitle = item.title?.length ? item.title : item.published.slice(0, 10);
+        itemTitle = await stripTags(itemTitle);
 
         binds.push(
             stmt.bind(
