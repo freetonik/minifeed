@@ -170,7 +170,7 @@ export const renderedCSS = raw(`
 
         .lists-section {
             background-color: var(--color-highlight);
-            
+
             margin: 1.5em 0;
             box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1);
         }
@@ -179,7 +179,7 @@ export const renderedCSS = raw(`
         /* BUTTONS */
 
         .button,
-        a.button:visited {
+        a.button {
             appearance: none;
             text-decoration: none;
             background-color: #FAFBFC;
@@ -349,7 +349,7 @@ export const renderedCSS = raw(`
 
 
         .related-items {
-            border: 1px solid var(--color-text);    
+            border: 1px solid var(--color-text);
             margin: 2em 0;
         }
 

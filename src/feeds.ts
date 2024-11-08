@@ -203,6 +203,11 @@ export const handleBlogsSingle = async (c: Context) => {
 
     ${feedDescriptionBlock}
     ${subscriptionBlock}
+    <span id="subscription">
+        <a class="button" href="${feedUrl}">
+        visit blog <strong>↗</strong>
+        </a>
+      </span>
 
 
     </div>
@@ -224,6 +229,10 @@ export const handleBlogsSingle = async (c: Context) => {
             );
         }
     }
+
+    list += `
+    <div class="flash">↑ these items are from RSS. Visit the <strong><a href="${feedUrl}">blog itself at ${feedUrl}</a></strong> to find other articles and to appreciate the author's digital home.</div>
+    `;
 
     let debug_info = '';
     if (c.get('USER_IS_ADMIN')) {
