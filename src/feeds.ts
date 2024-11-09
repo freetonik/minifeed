@@ -99,16 +99,18 @@ export const handleBlogs = async (c: Context) => {
                 top_items_list += `<li><a href="/items/${item.item_sqid}">${item.title}</a></li>`;
             }
             if (items_count > 0) {
-                top_items_list += `<li><i>and <a href="/blogs/${feed.feed_sqid}">${items_count} more...</a></i></li></ul>`;
+                top_items_list += `<li><i>and <a href="/blogs/${feed.feed_sqid}">more...</a></i></li></ul>`;
             }
         }
         list += `
         <div class="blog-summary">
-
           <h2>
-            <a class="no-color" href="/blogs/${feed.feed_sqid}">${feed.title}</a>
-            <small>(<a href="${feed.url}">site</a> / <a href="${feed.rss_url}">rss</a>)</small>
+            <a class="no-color no-underline" href="/blogs/${feed.feed_sqid}">${feed.title}</a>
           </h2>
+          <p class="urls">
+            <a href="${feed.url}">${feed.url}</a> |
+            <a href="${feed.rss_url}">RSS</a>
+          </p>
           ${feedDescriptionBlock}
           ${subscriptionBlock}
           ${top_items_list}
@@ -231,7 +233,7 @@ export const handleBlogsSingle = async (c: Context) => {
     }
 
     list += `
-    <div class="flash">↑ these items are from RSS. Visit the <strong><a href="${feedUrl}">blog itself at ${feedUrl}</a></strong> to find other articles and to appreciate the author's digital home.</div>
+    <div class="flash">↑ these items are from RSS. Visit the blog itself at <strong><a href="${feedUrl}">${feedUrl}</a></strong> to find other articles and to appreciate the author's digital home.</div>
     `;
 
     let debug_info = '';

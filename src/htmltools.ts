@@ -109,7 +109,7 @@ export const renderItemShort = (
             <small>
                 ${feedLink}
                 <span>${postDate}</span>
-                <a class="no-underline no-color" href="${url}">original</a>
+                <a class="no-underline no-color" href="${url}">original ↗</a>
             </small>
         </div>
         ${summaryContent}
@@ -137,7 +137,7 @@ export const renderItemSearchResult = (searchResult: ItemSearchResult) => {
         <div class="muted"><small>
             from ${item.type} <a href="/${uri_root_from_type}/${item.feed_sqid}">${item.feed_title}</a> |
             <time>${postDate}</time> |
-            <a class="no-underline no-color" href="${item.url}">original</a>
+            <a class="no-underline no-color" href="${item.url}">original ↗</a>
         </small></div>
         <p class="item-summary">
         ${content}...
@@ -154,7 +154,7 @@ export const renderFeedSearchResult = (searchResult: FeedSearchResult) => {
 
     return `
     <div class="item-tiny search-result">
-        <span class="label">${type}</span> 
+        <span class="label">${type}</span>
         <strong><a href="${url}">${feed.title}</a></strong>
         <br>
         <small class="muted">
@@ -325,7 +325,7 @@ export const renderMblogEditor = (title = '', content = '') => {
         const codeElement = document.createElement('code');
         codeElement.textContent = result.imageUrl;
         uploadedImagesDiv.appendChild(codeElement);
-        
+
     } else {
         const uploadedImagesDiv = document.getElementById('uploadedImages');
         const codeElement = document.createElement('code');

@@ -347,6 +347,14 @@ export const renderedCSS = raw(`
             margin-bottom: 3em;
         }
 
+        .blog-summary h2 {
+            margin-bottom: 0;
+        }
+        .blog-summary p.urls {
+            margin-top: 0;
+        }
+
+
 
         .related-items {
             border: 1px solid var(--color-text);

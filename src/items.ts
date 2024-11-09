@@ -444,7 +444,7 @@ export const handleItemsSingle = async (c: Context) => {
             contentBlock += `<div class="flash" style="margin-top:1em;">This page shows contents from RSS. <a href="${item.item_url}" target="_blank">↗ Open original to view full content</a></div>`;
         } else {
             // User is not logged in; description has tags stripped, no need to sanitize
-            contentBlock = `${item.description} <div class="flash" style="margin-top:1em;">This is a short summary only. <a href="${item.item_url}" target="_blank">↗ Open original to view full content</a></div>`;
+            contentBlock = `${item.description} <div class="flash" style="margin-top:1em;">This is a short summary. <a href="${item.item_url}" target="_blank">↗ Open original to view full content</a></div>`;
         }
     }
 
@@ -548,7 +548,7 @@ export const handleItemsSingle = async (c: Context) => {
 
     let list = `
     <h1 style="margin-bottom: 0.25em;">${item.item_title} </h1>
-    
+
     <div style="margin-bottom:1.25em;">from ${item.type} <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time> | <a href="${item.item_url}" target="_blank">↗ original</a></div>
     <div class="item-actions">
         <div style="display: flex; gap: 0.25em;">
@@ -606,7 +606,7 @@ export const handleItemsSingle = async (c: Context) => {
             scrape
         </button>
         <span id="scrape-indicator"></span>
-        
+
         <button hx-post="/admin/items/${item_sqid}/index"
             hx-trigger="click"
             hx-target="#index-indicator"
@@ -650,7 +650,7 @@ export const handleItemsLists = async (c: Context) => {
 
     const lists = await c.env.DB.prepare(
         `SELECT item_lists.list_id, item_lists.title, item_lists.list_sqid, item_list_items.item_id
-        FROM item_lists 
+        FROM item_lists
         LEFT JOIN item_list_items ON item_list_items.list_id = item_lists.list_id
         WHERE user_id = ?`,
     )
@@ -730,7 +730,7 @@ export const handleItemsListsNewPOST = async (c: Context) => {
             <i style="margin-top: 0.5em; display: block; color: var(--color-red);">
             Such bad title! Rules: 3 char minimum, latin letters, numbers, -, +, =, ?, _, and one space space at a time. This is good for everybody.
             </i>
-        </form> 
+        </form>
         `);
 
     const result = await c.env.DB.prepare('INSERT INTO item_lists (user_id, title) VALUES (?, ?)')
@@ -952,7 +952,7 @@ export const regenerateRelatedCacheForItem = async (env: Bindings, itemId: numbe
 
     const item = await env.DB.prepare(
         `SELECT items.item_id, feeds.title as feed_title
-        FROM items 
+        FROM items
         JOIN feeds ON items.feed_id = feeds.feed_id
         WHERE item_id = ?`,
     )
@@ -980,7 +980,7 @@ export const regenerateRelatedCacheForItem = async (env: Bindings, itemId: numbe
     const queryBindPlaceholders = relatedIDsOtherBlog.map(() => '?').join(','); // Generate '?,?,...,?'
     const relatedItemsOtherBlog = await env.DB.prepare(
         `SELECT item_id, item_sqid, items.title, feeds.title as feed_title, items.feed_id, feeds.feed_sqid, items.url
-        FROM items 
+        FROM items
         JOIN  feeds ON items.feed_id = feeds.feed_id
         WHERE item_id IN (${queryBindPlaceholders})`,
     )
