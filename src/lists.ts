@@ -6,7 +6,7 @@ import { itemSqidToId } from './utils';
 export const handleLists = async (c: Context) => {
     const lists = await c.env.DB.prepare(
         `SELECT DISTINCT item_lists.*, users.username
-        FROM item_lists 
+        FROM item_lists
         JOIN users ON users.user_id = item_lists.user_id
         JOIN item_list_items ON item_list_items.list_id = item_lists.list_id`,
     ).all();
@@ -26,14 +26,14 @@ export const handleListsSingle = async (c: Context) => {
 
     const [list, list_items] = await c.env.DB.batch([
         c.env.DB.prepare(
-            `SELECT * 
-            FROM item_lists 
+            `SELECT *
+            FROM item_lists
             JOIN users ON users.user_id = item_lists.user_id
             WHERE list_id = ?`,
         ).bind(listId),
         c.env.DB.prepare(
             `SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title as feed_title, feeds.feed_sqid
-            FROM item_list_items 
+            FROM item_list_items
             JOIN items ON items.item_id = item_list_items.item_id
             JOIN feeds ON items.feed_id = feeds.feed_id
             WHERE list_id = ?`,
@@ -56,7 +56,7 @@ export const handleListsSingle = async (c: Context) => {
     }
 
     return c.html(
-        renderHTML(`List ${list.title} | minifeed`, raw(inner), c.get('USER_LOGGED_IN'), 'lists', '', '', false),
+        renderHTML(`${listEntry.title} list | minifeed`, raw(inner), c.get('USER_LOGGED_IN'), 'lists', '', '', false),
     );
 };
 
