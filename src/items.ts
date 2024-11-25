@@ -139,7 +139,7 @@ export const handleMy = async (c: Context) => {
     LIMIT ? OFFSET ?
     `,
     )
-        .bind(user_id, user_id, user_id, user_id, user_id, items_per_page, offset)
+        .bind(user_id, user_id, user_id, user_id, user_id, items_per_page + 1, offset)
         .all();
 
     let list = ` ${renderMySubsections('my')} `;
@@ -156,7 +156,7 @@ export const handleMy = async (c: Context) => {
                 item.description,
             );
         }
-        list += `<p><a href="?p=${page + 1}">More</a></p>`;
+        if (results.length > items_per_page) list += `<p><a href="?p=${page + 1}">More</a></p>`;
     } else {
         if (page === 1) {
             list += `Your home is empty :-( <br>Subscribe to some <strong><a href="/blogs">blogs</a></strong> or follow some <strong><a href="/users">users</a></strong>.`;
@@ -195,7 +195,7 @@ export const handleMySubscriptions = async (c: Context) => {
     LIMIT ? OFFSET ?
     `,
     )
-        .bind(user_id, user_id, items_per_page, offset)
+        .bind(user_id, user_id, items_per_page + 1, offset)
         .all();
 
     let list = ` ${renderMySubsections('subscriptions')}
@@ -214,7 +214,7 @@ export const handleMySubscriptions = async (c: Context) => {
                 item.description,
             );
         }
-        list += `<p><a href="?p=${page + 1}">More</a></p></div>`;
+        if (results.length > items_per_page) list += `<p><a href="?p=${page + 1}">More</a></p></div>`;
     } else {
         if (page === 1) {
             list += `Your have no subscriptions :-( <br>Subscribe to some <strong><a href="/blogs">blogs</a></strong>.`;
@@ -254,7 +254,7 @@ export const handleMyFriendfeed = async (c: Context) => {
     LIMIT ? OFFSET ?
     `,
     )
-        .bind(userId, userId, itemsPerPage, offset)
+        .bind(userId, userId, itemsPerPage + 1, offset)
         .all();
 
     let list = `
@@ -274,7 +274,7 @@ export const handleMyFriendfeed = async (c: Context) => {
                 item.description,
             );
         }
-        list += `<p><a href="?p=${page + 1}">More</a></p></div>`;
+        if (results.length > itemsPerPage) list += `<p><a href="?p=${page + 1}">More</a></p></div>`;
     } else {
         if (page === 1) {
             list += `You don't follow anyone, or you do, but they aren't subscribed to anything :-( <br> <strong><a href="/users">View all users</a></strong>.`;
@@ -311,7 +311,7 @@ export const handleMyFavorites = async (c: Context) => {
     LIMIT ? OFFSET ?
     `,
     )
-        .bind(userId, itemsPerPage, offset)
+        .bind(userId, itemsPerPage + 1, offset)
         .all();
 
     let list = `
@@ -331,7 +331,7 @@ export const handleMyFavorites = async (c: Context) => {
                 item.description,
             );
         }
-        list += `<p><a href="?p=${page + 1}">More</a></p>`;
+        if (results.length > itemsPerPage) list += `<p><a href="?p=${page + 1}">More</a></p>`;
     } else {
         if (page === 1) {
             list += `You haven't added anything to favorites yet :-(`;
