@@ -40,6 +40,8 @@ import {
     regenerateTopItemsCacheForFeed,
     updateFeed,
 } from './feeds';
+import { handleFavicon } from './handlers/handleFavicon';
+import { handleOpensearchXML } from './handlers/search/handleOpensearchXML';
 import { handleSearch } from './handlers/search/handleSearch';
 import { renderHTML } from './htmltools';
 import type { MFQueueMessage } from './interface';
@@ -154,6 +156,8 @@ app.get('/search', handleSearch);
 app.get('/global/:listingType?', handleGlobal);
 app.get('/feedback', handleFeedback);
 app.get('/suggest', handleSuggestBlog);
+app.get('/opensearch.xml', handleOpensearchXML);
+app.get('/favicon.ico', handleFavicon);
 
 app.get('/login', handleLogin);
 app.post('/login', handleLoginPOST);
