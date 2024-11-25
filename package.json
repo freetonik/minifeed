@@ -1,7 +1,6 @@
 {
     "scripts": {
         "dev": "wrangler dev src/index.ts --host localhost.dev --port 8181",
-        "dev-sub": "wrangler dev src/index.ts --host blog.localhost.dev --port 8182",
         "dev-remote": "wrangler dev src/index.ts --remote",
         "deploy": "wrangler deploy --minify src/index.ts"
     },

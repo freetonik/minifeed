@@ -4,50 +4,31 @@ import { raw } from 'hono/html';
 import type { Bindings } from './bindings';
 import { sendEmail } from './email';
 import { renderHTML } from './htmltools';
-import { feedIdToSqid } from './utils';
 
 export const handleMyAccount = async (c: Context) => {
     const user_id = c.get('USER_ID');
-    const batch = await c.env.DB.batch([
-        c.env.DB.prepare(`
+    const user = await c.env.DB.prepare(`
             SELECT created, username, email_verified, status, email
             FROM users
-            WHERE user_id = ?`).bind(user_id),
+            WHERE user_id = ?`)
+        .bind(user_id)
+        .first();
 
-        c.env.DB.prepare(`
-            SELECT mblogs.feed_id, feeds.title, mblogs.slug
-            FROM mblogs
-            JOIN feeds ON mblogs.feed_id = feeds.feed_id
-            WHERE user_id = ?`).bind(user_id),
-    ]);
-
-    const user = batch[0];
-    const user_mblogs = batch[1];
-
-    const resend_verification_link_form = !user.results[0].email_verified
+    const resend_verification_link_form = !user.email_verified
         ? `<form action="/my/account/resend_verification_link" method="post">
              <input type="submit" value="Resend verification link">
            </form>`
         : '';
 
-    const verified = user.results[0].email_verified ? 'yes' : `no ${resend_verification_link_form}`;
-    const email = user.results[0].email ? user.results[0].email : 'no';
-    const username = user.results[0].username;
-    const status = user.results[0].status;
-
-    let listOfMblogs = '';
-    if (user_mblogs.results.length > 0) {
-        listOfMblogs += '<h3>My blogs hosted at minifeed</h3><ul>';
-        for (const mblog of user_mblogs.results) {
-            listOfMblogs += `<li><a href="https://${mblog.slug}.minifeed.net">${mblog.title}</a></li>`;
-        }
-        listOfMblogs += '</ul>';
-    }
+    const verified = user.email_verified ? 'yes' : `no ${resend_verification_link_form}`;
+    const email = user.email ? user.email : 'no';
+    const username = user.username;
+    const status = user.status;
 
     let list_of_lists = '';
     const lists = await c.env.DB.prepare(
         `SELECT *
-        FROM item_lists 
+        FROM item_lists
         WHERE user_id = ?`,
     )
         .bind(user_id)
@@ -61,35 +42,6 @@ export const handleMyAccount = async (c: Context) => {
         list_of_lists += '</ul>';
     }
 
-    let new_mblog_form = '';
-    if (c.get('USER_IS_ADMIN')) {
-        new_mblog_form = `
-        <details>
-        <summary>Create new blog</summary>
-        <div class="borderbox" style="margin-top: 1em;">
-            <form action="/my/account/create_mblog" method="POST">
-                <div style="max-width:25em;margin:0;">
-                    <h2 style="margin-top: 0;">Create new blog</h2>
-                    <div style="margin-bottom:1em;">
-                        <label for="username">Address</label>
-                        <div style="display: flex; flex-wrap: wrap;    align-items: flex-end;">
-                        <input style="flex: 50%;" type="text" id="address" name="address" required />
-                        <span style="flex: 50%;"> .minifeed.net</span>
-                        </div>
-
-                    </div>
-
-                    <div style="margin-bottom:1em;">
-                        <label for="username">Title</label>
-                        <input type="text" id="title" name="title" required />
-                    </div>
-
-                <input type="submit" value="Create">
-                </div>
-            </form>
-        </div>
-    </details>`;
-    }
     const list = `
     <h1>My account</h1>
     <p>
@@ -101,11 +53,9 @@ export const handleMyAccount = async (c: Context) => {
         Email: ${email}<br>
         Email verified: ${verified}<br>
     </p>
-    ${listOfMblogs}
-    ${new_mblog_form}
     ${list_of_lists}
     <p style="margin-top:2em;">
-        <a href="/logout">Log out</a>
+        <a class="button" href="/logout">Log out</a>
     </p>`;
 
     return c.html(renderHTML('My account | minifeed', raw(list), username, ''));
@@ -145,7 +95,7 @@ export const handleVerifyEmail = async (c: Context) => {
 export const handleResentVerificationEmailPOST = async (c: Context) => {
     const result = await c.env.DB.prepare(
         `SELECT verification_code, email, username
-        FROM email_verifications 
+        FROM email_verifications
         JOIN users ON email_verifications.user_id = users.user_id
         WHERE email_verifications.user_id = ?`,
     )
@@ -539,44 +489,3 @@ function checkUsername(username: string) {
 function checkEmail(email: string) {
     return /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email);
 }
-
-export const handleNewMblogPost = async (c: Context) => {
-    const body = await c.req.parseBody();
-    const slug = body.address.toString();
-    if (!slug) throw new Error('Address is required');
-    const title = body.title.toString();
-    if (!title) throw new Error('Title is required');
-
-    const full_final_url = `https://${slug}.minifeed.net`;
-    const full_final_rss_url = `https://${slug}.minifeed.net/rss`;
-
-    try {
-        const feed_insertion_results = await c.env.DB.prepare(
-            'INSERT INTO feeds (title, type, url, rss_url, verified) values (?,?,?,?,?)',
-        )
-            .bind(title, 'mblog', full_final_url, full_final_rss_url, 0)
-            .run();
-
-        if (feed_insertion_results.success) {
-            const new_feed_id = feed_insertion_results.meta.last_row_id;
-            // update feed_sqid
-            const new_feed_sqid = feedIdToSqid(new_feed_id);
-            await c.env.DB.prepare('UPDATE feeds SET feed_sqid = ? WHERE feed_id = ?')
-                .bind(new_feed_sqid, new_feed_id)
-                .run();
-
-            const mblog_insertion_results = await c.env.DB.prepare(
-                'INSERT INTO mblogs (user_id, feed_id, slug) values (?,?,?)',
-            )
-                .bind(c.get('USER_ID'), new_feed_id, slug)
-                .run();
-
-            if (mblog_insertion_results.success) {
-                return c.redirect(`https://${slug}.minifeed.net`);
-            }
-        }
-        return c.redirect('/');
-    } catch (err) {
-        throw new Error('Something went horribly wrong.');
-    }
-};

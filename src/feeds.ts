@@ -233,7 +233,7 @@ export const handleBlogsSingle = async (c: Context) => {
     }
 
     list += `
-    <div class="flash">↑ these items are from RSS. Visit the blog itself at <strong><a href="${feedUrl}">${feedUrl}</a></strong> to find other articles and to appreciate the author's digital home.</div>
+    <div class="flash">↑ These items are from RSS. Visit the blog itself at <strong><a href="${feedUrl}">${feedUrl}</a></strong> to find everything else and to appreciate author's digital home.</div>
     `;
 
     let debug_info = '';

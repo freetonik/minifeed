@@ -1,4 +1,4 @@
-import type { Context, Env } from 'hono';
+import type { Context } from 'hono';
 import { Hono } from 'hono';
 import { raw } from 'hono/html';
 import { about } from './about';
@@ -7,7 +7,6 @@ import {
     handleLoginPOST,
     handleLogout,
     handleMyAccount,
-    handleNewMblogPost,
     handleResentVerificationEmailPOST,
     handleResetPassword,
     handleResetPasswordPOST,
@@ -67,22 +66,7 @@ import {
     regenerateRelatedCacheForItem,
 } from './items';
 import { handleLists, handleListsSingle, handleListsSingleDeletePOST } from './lists';
-import {
-    handleBlogItemEditPOST,
-    handleMblog,
-    handleMblogDeletePOST,
-    handleMblogEditItem,
-    handleMblogItemSingle,
-    handleMblogPOST,
-    handleMblogRss,
-    handleUploadImage,
-} from './mblogs';
-import {
-    adminRequiredMiddleware,
-    authCheckMiddleware,
-    authRequiredMiddleware,
-    subdomainMiddleware,
-} from './middlewares';
+import { adminRequiredMiddleware, authCheckMiddleware, authRequiredMiddleware } from './middlewares';
 import {
     enqueueRegenerateAllItemsRelatedCache,
     enqueueScrapeAllItemsOfFeed,
@@ -173,7 +157,6 @@ app.get('/my/subscriptions', handleMySubscriptions);
 app.get('/my/friendfeed', handleMyFriendfeed);
 app.get('/my/favorites', handleMyFavorites);
 app.get('/my/account', handleMyAccount);
-app.post('/my/account/create_mblog', adminRequiredMiddleware, handleNewMblogPost);
 app.post('/my/account/resend_verification_link', handleResentVerificationEmailPOST);
 app.get('/verify_email', handleVerifyEmail);
 
@@ -215,47 +198,9 @@ app.get('/channels', (c: Context) => {
     return c.html(renderHTML('Channels | minifeed', raw('Coming soon'), c.get('USER_LOGGED_IN'), 'channels'));
 });
 
-const subdomainApp = new Hono<{ Bindings: Bindings }>({
-    strict: false,
-});
-subdomainApp.use('*', authCheckMiddleware);
-subdomainApp.use('*', subdomainMiddleware);
-
-subdomainApp.get('/', handleMblog);
-subdomainApp.post('/upload', adminRequiredMiddleware, handleUploadImage);
-subdomainApp.post('/', adminRequiredMiddleware, handleMblogPOST);
-
-subdomainApp.get('/rss', handleMblogRss);
-subdomainApp.get('/robots.txt', async (c) => c.text('User-agent: *\nAllow: /'));
-subdomainApp.get('/:post_slug', handleMblogItemSingle);
-subdomainApp.get('/:post_slug/edit', adminRequiredMiddleware, handleMblogEditItem);
-subdomainApp.post('/:post_slug/edit', adminRequiredMiddleware, handleBlogItemEditPOST);
-subdomainApp.post('/:post_slug/delete', adminRequiredMiddleware, handleMblogDeletePOST);
-
-subdomainApp.notFound(handleNotFound);
-subdomainApp.onError(handleError);
-
-// Main app to route based on Host
-const appMain = new Hono<{ Bindings: Bindings }>({
-    strict: false,
-});
-
-appMain.all('*', async (c: Context, next) => {
-    const host = c.req.raw.headers.get('host'); // Cloudflare Workers use lowercase 'host'
-    if (host) {
-        if (host.split('.').length === 3) {
-            // if subdomain is in the form of sub.example.com
-            return await subdomainApp.fetch(c.req.raw, c.env);
-        }
-        // Default to root app for the main domain (example.com)
-        return await app.fetch(c.req.raw, c.env);
-    }
-    return await app.fetch(c.req.raw, c.env);
-});
-
 // MAIN EXPORT
 export default {
-    fetch: (req: Request, env: Env, ctx: ExecutionContext) => appMain.fetch(req, env, ctx), // normal processing of requests
+    fetch: app.fetch, // normal processing of requests
 
     async queue(batch: MessageBatch<MFQueueMessage>, env: Bindings) {
         // consumer of queue FEED_UPDATE_QUEUE
