@@ -3,7 +3,7 @@ compatibility_flags = ["nodejs_compat"]
 compatibility_date = "2024-09-23"
 
 workers_dev = false
-route = { pattern = "*minifeed.net/*", zone_name = "minifeed.net" }
+route = { pattern = "minifeed.net", custom_domain = true }
 main = "src/index.ts"
 
 [placement]
