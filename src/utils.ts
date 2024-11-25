@@ -200,6 +200,10 @@ export const extractItemUrl = (item: any, feedRSSUrl: string) => {
         link = new URL(link, feedRSSUrlBase).toString();
     }
 
+    if (link.startsWith('http://localhost') || link.startsWith('http://127.0.0.1')) {
+        throw new Error('Cannot extract item URL: localhost is used as the URL');
+    }
+
     return link;
 };
 

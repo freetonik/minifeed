@@ -537,7 +537,13 @@ export async function addItemsToFeed(
     const binds: D1PreparedStatement[] = [];
 
     for (const item of items) {
-        const link = extractItemUrl(item, feedRSSUrl);
+        let link: string;
+        try {
+            link = extractItemUrl(item, feedRSSUrl);
+        } catch (e) {
+            console.log(`Error extracting item URL: ${e}`);
+            continue;
+        }
 
         if (item.published) {
             // if item.published is in future, set it to current date
