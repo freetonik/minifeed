@@ -32,8 +32,7 @@ export async function authRequiredMiddleware(c: Context, next: () => any) {
 // User must be logged in and be admin
 export async function adminRequiredMiddleware(c: Context, next: () => any) {
     if (!c.get('USER_IS_ADMIN')) {
-        c.status(401);
-        return c.body('Unauthorized');
+        return c.notFound();
     }
     await next();
 }
