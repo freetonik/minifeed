@@ -18,8 +18,8 @@ export const handleAdmin = async (c: Context) => {
     const items_without_sqid = await c.env.DB.prepare('SELECT count(item_id) FROM Items where item_sqid=0').all();
     const unvectorized_items_count = await c.env.DB.prepare(
         `SELECT count(items.item_id)
-        FROM items 
-        LEFT JOIN items_vector_relation on items.item_id = items_vector_relation.item_id 
+        FROM items
+        LEFT JOIN items_vector_relation on items.item_id = items_vector_relation.item_id
         WHERE items_vector_relation.vectorized is null`,
     ).all();
 
@@ -195,18 +195,18 @@ export const handleAdminUnvectorizedItems = async (c: Context) => {
 
     const unvectorized_items = await c.env.DB.prepare(
         `SELECT items.item_id, items.feed_id, items.title, items.item_sqid, feeds.title as feed_title, feeds.feed_sqid
-        FROM items 
+        FROM items
         LEFT JOIN feeds on items.feed_id = feeds.feed_id
-        LEFT JOIN items_vector_relation on items.item_id = items_vector_relation.item_id 
+        LEFT JOIN items_vector_relation on items.item_id = items_vector_relation.item_id
         WHERE items_vector_relation.vectorized is null
         `,
     ).all();
 
     for (const item of unvectorized_items.results) {
         list += `<li>
-            <a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a> 
+            <a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
             <a href="/admin/vectorize?start=${item.item_id}&stop=${item.item_id}">[vectorize]</a>
-            <br> 
+            <br>
             <code>${item.item_id}</code> | <code>${item.item_sqid}</code>
             <br>
             <a href="/blogs/${item.feed_sqid}">${item.feed_title}</a>
@@ -223,16 +223,16 @@ export const handleAdminItemsWithoutSqid = async (c: Context) => {
 
     const items_without_sqid = await c.env.DB.prepare(`
         SELECT item_id, item_sqid, items.title, feed_sqid, feeds.title as feed_title
-        FROM Items 
+        FROM Items
         JOIN feeds on items.feed_id = feeds.feed_id
         WHERE item_sqid=0`).all();
 
     for (const item of items_without_sqid.results) {
-        list += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a> 
-            <br> 
+        list += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
+            <br>
             <code>${item.item_id}</code> | <code>${item.item_sqid}</code>
             <br>
-            <a href="/feeds/${item.feed_sqid}">${item.feed_title}</a>
+            <a href="/blogs/${item.feed_sqid}">${item.feed_title}</a>
             <br><br>
             </li>`;
     }
