@@ -613,6 +613,7 @@ export async function regenerateTopItemsCacheForFeed(env: Bindings, feedId: numb
     )
         .bind(feedId)
         .all();
+
     top_items.forEach((item: any) => {
         item.item_sqid = itemIdToSqid(item.item_id);
         delete item.item_id;

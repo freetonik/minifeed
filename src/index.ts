@@ -15,7 +15,12 @@ import {
     handleSignupPOST,
     handleVerifyEmail,
 } from './account';
-import { handleAdmin, handleAdminItemsWithoutSqid, handleAdminUnvectorizedItems } from './admin';
+import {
+    handleAdmin,
+    handleAdminItemsWithoutSqid,
+    handleAdminUnindexedItems,
+    handleAdminUnvectorizedItems,
+} from './admin';
 import { handleGenerateRelated, handleVectorize, vectorizeAndStoreItem } from './ai';
 import type { Bindings } from './bindings';
 import { changelog } from './changelog';
@@ -112,6 +117,7 @@ app.get('/', (c: Context) => {
 // ADMIN ROUTES
 app.get('/admin', handleAdmin);
 app.get('/admin/unvectorized_items', handleAdminUnvectorizedItems);
+app.get('/admin/unindexed_items', handleAdminUnindexedItems);
 app.get('/admin/items_without_sqid', handleAdminItemsWithoutSqid);
 app.get('/admin/vectorize', handleVectorize);
 app.get('/admin/generate_related', handleGenerateRelated);

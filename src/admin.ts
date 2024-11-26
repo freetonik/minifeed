@@ -49,10 +49,23 @@ export const handleAdmin = async (c: Context) => {
             <td>Items</td>
             <td>${all_items_count.results[0]['COUNT(item_id)']}</td>
         </tr>
+
+        <tr> <td></td> <td></td> </tr>
+
         <tr>
             <td>Indexed items</td>
             <td>${items_collection.num_documents}</td>
         </tr>
+        <tr>
+            <td>Unindexed items</td>
+            <td>
+                ${all_items_count.results[0]['COUNT(item_id)'] - items_collection.num_documents}
+                <a href="/admin/unindexed_items">[list]</a>
+            </td>
+        </tr>
+
+        <tr> <td></td> <td></td> </tr>
+
         <tr>
             <td>Vectorized items</td>
             <td>${items_vector_relation_count.results[0]['COUNT(item_id)']}</td>
@@ -72,6 +85,9 @@ export const handleAdmin = async (c: Context) => {
             <td>Related missing</td>
             <td>${items_vector_relation_count.results[0]['COUNT(item_id)'] - items_related_cache_count.results[0]['COUNT(item_id)']}</td>
         </tr>
+
+        <tr> <td></td> <td></td> </tr>
+
         <tr>
             <td>Items without SQID</td>
             <td>${items_without_sqid.results[0]['count(item_id)']}
@@ -218,6 +234,47 @@ export const handleAdminUnvectorizedItems = async (c: Context) => {
     return c.html(renderHTML('admin | minifeed', raw(list), c.get('USERNAME'), ''));
 };
 
+export const handleAdminUnindexedItems = async (c: Context) => {
+    const allItemIdsEntries = await c.env.DB.prepare(
+        'SELECT item_id, item_sqid, items.feed_id, feeds.feed_sqid FROM Items JOIN feeds on items.feed_id = feeds.feed_id ',
+    ).all();
+    const allDBItems = [];
+    for (const item of allItemIdsEntries.results) {
+        allDBItems.push({
+            feed_id: item.feed_id,
+            feed_sqid: item.feed_sqid,
+            id: String(item.item_id),
+            item_sqid: item.item_sqid,
+        });
+    }
+
+    const response = await fetch(
+        `https://${c.env.TYPESENSE_CLUSTER}:443/collections/${c.env.TYPESENSE_ITEMS_COLLECTION}/documents/export?exclude_fields=content,feed_title,pub_date,url,type,title`,
+        {
+            method: 'GET',
+            headers: { 'X-TYPESENSE-API-KEY': c.env.TYPESENSE_API_KEY },
+        },
+    );
+
+    const allIndexedItems = await processJsonlStream(response);
+    const orphanIndexedItems = findObjsUniqueToListOne(allIndexedItems, allDBItems);
+    const unIndexedItems = findObjsUniqueToListOne(allDBItems, allIndexedItems);
+
+    const inner = `
+        <h2>All items: ${allDBItems.length}</h2>
+
+        <h2>Indexed items: ${allIndexedItems.length} / Missing from index: ${allDBItems.length - allIndexedItems.length}</h2>
+
+        <h2>Orphan indexed items (in index, but not in DB): ${orphanIndexedItems.length}</h2>
+        ${JSON.stringify(orphanIndexedItems)}
+
+        <h2>Unindexed items (in DB, but not in index): ${unIndexedItems.length}</h2>
+        ${JSON.stringify(unIndexedItems)}
+    `;
+
+    return c.html(renderHTML('admin | minifeed', raw(inner), c.get('USERNAME'), ''));
+};
+
 export const handleAdminItemsWithoutSqid = async (c: Context) => {
     let list = '<ol>';
 
@@ -240,3 +297,43 @@ export const handleAdminItemsWithoutSqid = async (c: Context) => {
 
     return c.html(renderHTML('admin | minifeed', raw(list), c.get('USERNAME'), ''));
 };
+
+async function processJsonlStream(response) {
+    const decoder = new TextDecoderStream();
+    const reader = response.body.pipeThrough(decoder).getReader();
+
+    const items = [];
+    let buffer = '';
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+            // Process any remaining data in buffer
+            if (buffer.trim()) {
+                items.push(JSON.parse(buffer.trim()));
+            }
+            break;
+        }
+
+        // Append new chunk to buffer
+        buffer += value;
+
+        // Split by newlines and process complete lines
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep the last incomplete line in buffer
+
+        for (const line of lines) {
+            if (line.trim()) {
+                items.push(JSON.parse(line));
+            }
+        }
+    }
+
+    return items;
+}
+
+function findObjsUniqueToListOne(list1, list2) {
+    const list2Ids = new Set(list2.map((obj) => obj.id));
+
+    return list1.filter((obj) => !list2Ids.has(obj.id));
+}
