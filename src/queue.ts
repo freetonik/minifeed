@@ -115,7 +115,7 @@ export async function enqueueGenerateInitialRelatedCacheForItems(env: Bindings) 
     ).all();
 
     for (const item of items) {
-        console.log(`Generating initial related cache for item ${item.item_id}`);
+        console.log(`Enqueuing generate initial related cache for item ${item.item_id}`);
         await env.FEED_UPDATE_QUEUE.send({
             type: 'item_update_related_cache',
             item_id: item.item_id,
@@ -132,8 +132,10 @@ export async function enqueueRegenerateRelatedCacheForAllItems(env: Bindings) {
         .bind(twoWeeksAgo.toISOString())
         .all();
 
+    console.log(`Regenerating related cache for ${items.length} items which are older than 2 weeks ago`);
+
     for (const item of items) {
-        console.log(`Regenerating related cache for item ${item.item_id}`);
+        console.log(`Enqueuing regenerate related cache for item ${item.item_id}`);
         await env.FEED_UPDATE_QUEUE.send({
             type: 'item_update_related_cache',
             item_id: item.item_id,
