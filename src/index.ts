@@ -335,8 +335,8 @@ export default {
                 // generate related items cache
                 await enqueueGenerateInitialRelatedCacheForItems(env);
                 break;
-            case '0 0 * * MON':
-                // Every Monday at midnight
+            case '0 0 * * *':
+                // Every midnight
                 await enqueueRegenerateRelatedCacheForAllItems(env);
                 break;
         }
