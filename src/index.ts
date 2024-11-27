@@ -73,7 +73,8 @@ import {
 import { handleLists, handleListsSingle, handleListsSingleDeletePOST } from './lists';
 import { adminRequiredMiddleware, authCheckMiddleware, authRequiredMiddleware } from './middlewares';
 import {
-    enqueueRegenerateAllItemsRelatedCache,
+    enqueueGenerateInitialRelatedCacheForItems,
+    enqueueRegenerateRelatedCacheForAllItems,
     enqueueScrapeAllItemsOfFeed,
     enqueueUpdateAllFeeds,
     enqueueVectorizeStoreAllItems,
@@ -324,11 +325,20 @@ export default {
     },
 
     async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
-        // update feeds
-        await enqueueUpdateAllFeeds(env);
-        // vectorize
-        await enqueueVectorizeStoreAllItems(env);
-        // generate related items cache
-        await enqueueRegenerateAllItemsRelatedCache(env);
+        switch (event.cron) {
+            case '*/30 * * * *':
+                // Every 30 minutes
+                // update feeds
+                await enqueueUpdateAllFeeds(env);
+                // vectorize
+                await enqueueVectorizeStoreAllItems(env);
+                // generate related items cache
+                await enqueueGenerateInitialRelatedCacheForItems(env);
+                break;
+            case '0 0 * * MON':
+                // Every Monday at midnight
+                await enqueueRegenerateRelatedCacheForAllItems(env);
+                break;
+        }
     },
 };

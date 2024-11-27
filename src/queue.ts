@@ -86,8 +86,8 @@ export async function enqueueVectorizeStoreItem(env: Bindings, itemId: number) {
 
 export async function enqueueVectorizeStoreAllItems(env: Bindings) {
     const { results: items } = await env.DB.prepare(
-        `SELECT items.item_id FROM items 
-        LEFT JOIN items_vector_relation on items.item_id = items_vector_relation.item_id 
+        `SELECT items.item_id FROM items
+        LEFT JOIN items_vector_relation on items.item_id = items_vector_relation.item_id
         WHERE items_vector_relation.vectorized is null LIMIT 250`,
     ).all();
 
@@ -109,10 +109,28 @@ export async function enqueueRegenerateItemRelatedCache(env: Bindings, itemId: n
     });
 }
 
-export async function enqueueRegenerateAllItemsRelatedCache(env: Bindings) {
+export async function enqueueGenerateInitialRelatedCacheForItems(env: Bindings) {
     const { results: items } = await env.DB.prepare(
         'SELECT items.item_id FROM items LEFT JOIN items_related_cache on items.item_id=items_related_cache.item_id WHERE items_related_cache.content is null',
     ).all();
+
+    for (const item of items) {
+        console.log(`Generating initial related cache for item ${item.item_id}`);
+        await env.FEED_UPDATE_QUEUE.send({
+            type: 'item_update_related_cache',
+            item_id: item.item_id,
+        });
+    }
+}
+
+export async function enqueueRegenerateRelatedCacheForAllItems(env: Bindings) {
+    // const { results: items } = await env.DB.prepare('SELECT items.item_id FROM items').all();
+    const twoWeeksAgo = new Date();
+    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+    const { results: items } = await env.DB.prepare('SELECT items.item_id FROM items WHERE created < ? LIMIT 1000')
+        .bind(twoWeeksAgo.toISOString())
+        .all();
 
     for (const item of items) {
         console.log(`Regenerating related cache for item ${item.item_id}`);

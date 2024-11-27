@@ -44,7 +44,10 @@ max_batch_size = 1    # optional: defaults to 10
 max_batch_timeout = 5 # optional: defaults to 5 seconds
 
 [triggers]
-crons = ["*/30 * * * *"]
+crons = [
+    "*/30 * * * *",
+    "0 0 * * MON"
+]
 
 [observability]
 enabled = true

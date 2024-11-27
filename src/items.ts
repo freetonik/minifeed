@@ -998,7 +998,9 @@ export const regenerateRelatedCacheForItem = async (env: Bindings, itemId: numbe
             url: i.url as string,
         });
     }
-    await env.DB.prepare('REPLACE INTO items_related_cache (item_id, content) values (?, ?)')
+    await env.DB.prepare(
+        'REPLACE INTO items_related_cache (item_id, content, created) values (?, ?, CURRENT_TIMESTAMP)',
+    )
         .bind(itemId, JSON.stringify(cache_content))
         .run();
 };
