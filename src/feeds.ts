@@ -552,7 +552,12 @@ export async function addItemsToFeed(
             // if date was not properly parsed, try to parse it (expects 'pubdate' to be retrieved by feed_extractor's extractRSS function)
             if (item.pubdate) {
                 const dateFromPubdate = new Date(item.pubdate);
+                // if date is in future, set it to current date
                 if (dateFromPubdate > new Date()) {
+                    item.published = new Date().toISOString();
+                }
+                // if date is older than unix epoch start date, set it to current date
+                else if (dateFromPubdate < new Date('1970-01-01')) {
                     item.published = new Date().toISOString();
                 } else {
                     item.published = dateFromPubdate.toISOString();
