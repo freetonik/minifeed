@@ -391,6 +391,10 @@ export const renderedCSS = raw(`
             background-color: lightcoral;
         }
 
+        .fancy-gradient-bg {
+            background:linear-gradient(180deg, rgb(178 150 90 / 10%), rgba(178, 155, 90, 0) 56.56%);
+        }
+
         .borderbox {
             border: 1px solid var(--color-text);
             padding: 1.25em;

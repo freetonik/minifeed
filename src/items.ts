@@ -517,7 +517,7 @@ export const handleItemsSingle = async (c: Context) => {
 
     let otherItemsBlock = '';
     if (batch[2].results.length) {
-        otherItemsBlock += `<div class="related-items"><h4>More from <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a></h4><div class="items">`;
+        otherItemsBlock += `<div class="related-items fancy-gradient-bg"><h4>More from <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a></h4><div class="items">`;
         for (const related_item of batch[2].results) {
             const itemTitle = related_item.favorite_id ? `★ ${related_item.item_title}` : related_item.item_title;
             otherItemsBlock += renderItemShort(
@@ -539,7 +539,7 @@ export const handleItemsSingle = async (c: Context) => {
         const related_from_other_blogs = related_content.relatedFromOtherBlogs;
 
         related_block += `<div class="related-items">`;
-        if (related_from_other_blogs?.length) related_block += '<h4>Related</h4><div class="items">';
+        if (related_from_other_blogs?.length) related_block += '<h4>Related</h4><div class="items fancy-gradient-bg">';
         for (const i of related_from_other_blogs) {
             related_block += renderItemShort(i.item_sqid, i.title, i.url, i.feed_title, i.feed_sqid);
         }
@@ -977,6 +977,66 @@ export const regenerateRelatedCacheForItem = async (env: Bindings, itemId: numbe
         if (match.id === `${itemId}`) continue; // skip current item itself
         relatedIDsOtherBlog.push(match.id);
     }
+    const queryBindPlaceholders = relatedIDsOtherBlog.map(() => '?').join(','); // Generate '?,?,...,?'
+    const relatedItemsOtherBlog = await env.DB.prepare(
+        `SELECT item_id, item_sqid, items.title, feeds.title as feed_title, items.feed_id, feeds.feed_sqid, items.url
+        FROM items
+        JOIN  feeds ON items.feed_id = feeds.feed_id
+        WHERE item_id IN (${queryBindPlaceholders})`,
+    )
+        .bind(...relatedIDsOtherBlog)
+        .all();
+
+    for (const i of relatedItemsOtherBlog.results) {
+        cache_content.relatedFromOtherBlogs.push({
+            title: i.title as string,
+            item_id: i.item_id as number,
+            item_sqid: i.item_sqid as string,
+            feed_title: i.feed_title as string,
+            feed_id: i.feed_id as number,
+            feed_sqid: i.feed_sqid as string,
+            url: i.url as string,
+        });
+    }
+    console.log(`Regenerated cache for item ${itemId}`);
+    await env.DB.prepare(
+        'REPLACE INTO items_related_cache (item_id, content, created) values (?, ?, CURRENT_TIMESTAMP)',
+    )
+        .bind(itemId, JSON.stringify(cache_content))
+        .run();
+};
+
+export const regenerateRelatedCacheForItemMOCK = async (env: Bindings, itemId: number) => {
+    if (env.ENVIRONMENT !== 'dev') return;
+
+    const item = await env.DB.prepare(
+        `SELECT items.item_id, feeds.title as feed_title
+        FROM items
+        JOIN feeds ON items.feed_id = feeds.feed_id
+        WHERE item_id = ?`,
+    )
+        .bind(itemId)
+        .first();
+
+    if (!item) throw new Error(`Item with id ${itemId} not found`);
+
+    const cache_content: { relatedFromOtherBlogs: RelatedItemCached[]; relatedFromThisBlog: RelatedItemCached[] } = {
+        relatedFromOtherBlogs: [],
+        relatedFromThisBlog: [],
+    };
+
+    const relatedIDsOtherBlog: Array<string> = [];
+
+    const randomItems = await env.DB.prepare(
+        `SELECT item_id, item_sqid, items.title, feeds.title as feed_title, items.feed_id, feeds.feed_sqid, items.url
+        FROM items
+        JOIN  feeds ON items.feed_id = feeds.feed_id
+        ORDER BY RANDOM()
+        LIMIT 10`,
+    ).all();
+
+    relatedIDsOtherBlog.push(...randomItems.results.map((i: any) => i.item_id));
+
     const queryBindPlaceholders = relatedIDsOtherBlog.map(() => '?').join(','); // Generate '?,?,...,?'
     const relatedItemsOtherBlog = await env.DB.prepare(
         `SELECT item_id, item_sqid, items.title, feeds.title as feed_title, items.feed_id, feeds.feed_sqid, items.url

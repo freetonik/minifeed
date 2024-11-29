@@ -103,7 +103,7 @@ export const handleBlogs = async (c: Context) => {
             }
         }
         list += `
-        <div class="blog-summary">
+        <div class="blog-summary fancy-gradient-bg">
           <h2>
             <a class="no-color no-underline" href="/blogs/${feed.feed_sqid}">${feed.title}</a>
           </h2>

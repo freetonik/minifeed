@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import type { Bindings } from './bindings';
 import type { ItemRow } from './interface';
+import { regenerateRelatedCacheForItemMOCK } from './items';
 import { enqueueRegenerateItemRelatedCache, enqueueVectorizeStoreItem } from './queue';
 import { stripNonLinguisticElements, stripTags } from './utils';
 
@@ -120,7 +121,11 @@ export const handleGenerateRelated = async (c: Context) => {
     let response = '<ol>';
     for (const item of items.results) {
         response += `<li>Generating related cache for item <a href="/items/${item.item_sqid}">${item.item_id} / ${item.item_sqid}: ${item.title}</a>`;
-        await enqueueRegenerateItemRelatedCache(c.env, item.item_id);
+        if (c.env.ENVIRONMENT === 'dev') {
+            await regenerateRelatedCacheForItemMOCK(c.env, item.item_id);
+        } else {
+            await enqueueRegenerateItemRelatedCache(c.env, item.item_id);
+        }
     }
     response += '</ol>';
     return c.html(response);
