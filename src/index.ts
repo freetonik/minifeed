@@ -93,8 +93,7 @@ const app = new Hono<{ Bindings: Bindings }>({
 app.get('/robots.txt', async (c) => c.text('User-agent: *\nAllow: /'));
 
 app.use('*', authCheckMiddleware);
-// all routes below this line require authentication
-app.use('/my/*', authRequiredMiddleware);
+
 // all routes below this line require admin privileges
 app.use('/admin/*', adminRequiredMiddleware);
 
@@ -110,10 +109,20 @@ app.notFound(handleNotFound);
 app.onError(handleError);
 
 // APP ROUTES
-app.get('/', (c: Context) => {
-    if (!c.get('USER_ID')) return c.redirect('/global');
-    return c.redirect('/my');
-});
+app.get('/my', (c: Context) => c.redirect('/'));
+app.get('/my/subscriptions', (c: Context) => c.redirect('/subscriptions'));
+app.get('/my/friendfeed', (c: Context) => c.redirect('/friendfeed'));
+app.get('/my/favorites', (c: Context) => c.redirect('/favorites'));
+app.get('/my/account', (c: Context) => c.redirect('/account'));
+
+app.get('/', handleMy);
+app.get('/subscriptions', authRequiredMiddleware, handleMySubscriptions);
+app.get('/friendfeed', authRequiredMiddleware, handleMyFriendfeed);
+app.get('/favorites', authRequiredMiddleware, handleMyFavorites);
+app.get('/account', authRequiredMiddleware, handleMyAccount);
+app.post('/account/resend_verification_link', handleResentVerificationEmailPOST);
+
+app.get('/verify_email', handleVerifyEmail);
 
 // ADMIN ROUTES
 app.get('/admin', handleAdmin);
@@ -158,14 +167,6 @@ app.post('/set_password', handleSetPasswordPOST);
 app.get('/signup', handleSignup);
 app.post('/signup', handleSignupPOST);
 app.get('/logout', authRequiredMiddleware, handleLogout);
-
-app.get('/my', handleMy);
-app.get('/my/subscriptions', handleMySubscriptions);
-app.get('/my/friendfeed', handleMyFriendfeed);
-app.get('/my/favorites', handleMyFavorites);
-app.get('/my/account', handleMyAccount);
-app.post('/my/account/resend_verification_link', handleResentVerificationEmailPOST);
-app.get('/verify_email', handleVerifyEmail);
 
 app.get('/blogs/:feed_sqid', handleBlogsSingle);
 app.get('/blogs', handleBlogs);

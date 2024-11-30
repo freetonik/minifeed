@@ -8,7 +8,8 @@ export const handleLists = async (c: Context) => {
         `SELECT DISTINCT item_lists.*, users.username
         FROM item_lists
         JOIN users ON users.user_id = item_lists.user_id
-        JOIN item_list_items ON item_list_items.list_id = item_lists.list_id`,
+        JOIN item_list_items ON item_list_items.list_id = item_lists.list_id
+        `,
     ).all();
 
     let inner = '';

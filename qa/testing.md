@@ -15,8 +15,8 @@
 #### All pages
 
 1. check that "Log in or create account" link in the upper right corner is always visible for guests, but not for logged in users
-    - same for links in footer 
-1. check that top navigation menu always shows correct active section (white tab-like block) 
+    - same for links in footer
+1. check that top navigation menu always shows correct active section (white tab-like block)
 
 
 #### "Global feed" page
@@ -24,7 +24,7 @@
 https://minifeed.net/global
 
 1. click on items' titles
-1. click on items' feed titles 
+1. click on items' feed titles
 1. click on original links
 1. check dates rendered correctly
 1. check dates sorted correctly
@@ -71,7 +71,7 @@ https://minifeed.net/blog
 1. try signing up with empty fields
 1. sign up correctly
 1. logout in several ways
-    - via https://minifeed.net/my/account
+    - via https://minifeed.net/account
     - via header link (upper-right corner)
     - via footer link
 1. try logging in with bad username and/or password
@@ -87,7 +87,7 @@ https://minifeed.net/blog
 
 1. check that "username (logout)" link in the upper right corner is always visible for logged in users, but not for guests
     - same for links in footer
-1. check that top navigation menu always shows correct active section (white tab-like block) 
+1. check that top navigation menu always shows correct active section (white tab-like block)
 
 
 
@@ -95,13 +95,13 @@ https://minifeed.net/blog
 
 1. check sub-pages:
     - https://minifeed.net/my
-    - https://minifeed.net/my/subscriptions
-    - https://minifeed.net/my/friendfeed
+    - https://minifeed.net/subscriptions
+    - https://minifeed.net/friendfeed
 1. sub-pages must be empty for a new user
 1. subscribe to blogs feeds at https://minifeed.net/blogs
-    - sub-pages https://minifeed.net/my and https://minifeed.net/my/subscriptions should show content now
+    - sub-pages https://minifeed.net/my and https://minifeed.net/subscriptions should show content now
 1. follow some users at https://minifeed.net/users
-    - sub-page https://minifeed.net/my/friendfeed should show content now
+    - sub-page https://minifeed.net/friendfeed should show content now
 1. randomly unsubscribe/resubscribe and unfollow/refollow users to check that corresponding sub-pages always show correct content
 
 #### "Users" page https://minifeed.net/users

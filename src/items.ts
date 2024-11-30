@@ -14,6 +14,12 @@ import { enqueueItemIndex, enqueueItemScrape, enqueueVectorizeStoreItem } from '
 import { scrapeURLIntoObject } from './scrape';
 import { absolutifyImageUrls, feedSqidToId, getRootUrl, itemIdToSqid, itemSqidToId, sanitizeHTML } from './utils';
 
+export const guestFlash = `<div class="flash">
+    <strong>Minifeed</strong> is a curated blog reader and search engine.
+    We collect humans-written blogs to make them discoverable and searchable.
+    Sign up to subscribe to blogs, follow people, save favorites, and create lists.
+    </div>`;
+
 export const handleGlobal = async (c: Context) => {
     const userId = c.get('USER_ID') || -1;
     const items_per_page = 60;
@@ -40,11 +46,7 @@ export const handleGlobal = async (c: Context) => {
 
     let list = '';
     if (!c.get('USER_LOGGED_IN')) {
-        list += `<div class="flash">
-    <strong>Minifeed</strong> is a curated blog reader and blog search engine.
-    We collect humans-written blogs to make them discoverable and searchable.
-    Sign up to subscribe to blogs, follow people, save favorites, or start your own blog.
-    </div>`;
+        list += guestFlash;
     }
 
     if (!results.length) list += '<p><i>Nothing exists on minifeed yet...</i></p>';
@@ -103,6 +105,96 @@ export const handleGlobal = async (c: Context) => {
 // // MY HOME FEED: subs + favorites + friendfeed
 export const handleMy = async (c: Context) => {
     const user_id = c.get('USER_ID');
+
+    // GUEST VIEW
+    if (!user_id) {
+        const batch = await c.env.DB.batch([
+            c.env.DB.prepare(`
+            SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, items_top_cache.content from feeds
+            LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
+            WHERE feeds.type = 'blog'
+            ORDER BY RANDOM()
+            LIMIT 6`),
+
+            c.env.DB.prepare(`
+            SELECT items.item_id, items.item_sqid, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title, feeds.feed_sqid, items.description
+            FROM items
+            JOIN feeds ON items.feed_id = feeds.feed_id
+            WHERE items.item_sqid IS NOT 0 AND feeds.type = 'blog'
+            ORDER BY items.pub_date DESC
+            LIMIT 10`),
+        ]);
+
+        const latestBlogs = batch[0].results;
+        const latestItems = batch[1].results;
+
+        let latestBlogsBlock = '';
+        for (const feed of latestBlogs) {
+            const cache_content = JSON.parse(feed.content);
+            let top_items_list = '';
+            if (cache_content?.top_items) {
+                const top_items = cache_content.top_items;
+                let items_count = 0;
+                items_count = cache_content.items_count - top_items.length;
+                top_items_list += '';
+                for (const item of top_items) {
+                    top_items_list += `<li><a class="no-underline hover-underline" href="/items/${item.item_sqid}">${item.title}</a></li>`;
+                }
+                if (items_count > 0) {
+                    top_items_list += `<li><i>and <a href="/blogs/${feed.feed_sqid}">more...</a></i></li>`;
+                }
+            }
+            latestBlogsBlock += `
+                <div class="blog-summary fancy-gradient-bg box-grid">
+                    <h3>
+                    <a class="no-color no-underline util-mr-05" href="/blogs/${feed.feed_sqid}">${feed.title}</a>
+                    <small>
+                        <a class="tag-label no-color" href="${feed.url}">WEB↗</a>
+                        <a class="tag-label no-color" href="${feed.rss_url}">RSS↗</a>
+                    </small>
+                    </h3>
+                    <ul>
+                        ${top_items_list}
+                    </ul>
+                </div>`;
+        }
+
+        let latestItemsBlock = '';
+        for (const item of latestItems) {
+            latestItemsBlock += renderItemShort(
+                item.item_sqid,
+                item.item_title,
+                item.item_url,
+                item.feed_title,
+                item.feed_sqid,
+                item.pub_date,
+                item.description,
+            );
+        }
+
+        const guestInner = `
+            ${guestFlash}
+            <h2>Few random blogs</h2>
+            <div class="container-grid">
+            ${latestBlogsBlock}
+            </div>
+
+            <a class="box-grid box-aftergrid-element no-underline no-color" href="/blogs">
+                BROWSE ALL BLOGS →
+            </a>
+
+            <h2 style="margin-top: 2em;">Latest posts from all blogs</h2>
+            ${latestItemsBlock}
+
+            <a class="box-grid box-aftergrid-element no-underline no-color" href="/global">
+                BROWSE ALL POSTS →
+            </a>
+            `;
+
+        return c.html(renderHTML('My feed | minifeed', raw(guestInner), false, 'my', '', '', false));
+    }
+
+    // USER VIEW
     const items_per_page = 30;
     const page = Number(c.req.query('p')) || 1;
     const offset = page * items_per_page - items_per_page;
@@ -652,7 +744,8 @@ export const handleItemsLists = async (c: Context) => {
         `SELECT item_lists.list_id, item_lists.title, item_lists.list_sqid, item_list_items.item_id
         FROM item_lists
         LEFT JOIN item_list_items ON item_list_items.list_id = item_lists.list_id
-        WHERE user_id = ?`,
+        WHERE user_id = ?
+        `,
     )
         .bind(userId)
         .all();

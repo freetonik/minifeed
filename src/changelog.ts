@@ -1,7 +1,15 @@
-export const version = '0.6.3';
+export const version = '0.7.0';
 
 export const changelog = `
     <h2>Changelog</h2>
+
+    <h3>0.7.0 (30.11.2024)</h3>
+    <ul>
+        <li>Lists of related blog posts are now regenerated every 2 weeks.</li>
+        <li>Front page for guests now shows a selection of random blogs and latest blog posts.</li>
+        <li>Links to original websites and RSS feeds are now displayed more predominantly.</li>
+        <li>Small improvements to typography and visual design.</li>
+    </ul>
 
     <h3>0.6.3 (25.11.2024)</h3>
     <ul>

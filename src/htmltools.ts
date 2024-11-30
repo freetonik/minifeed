@@ -16,9 +16,9 @@ export const renderHTML = (
     const canonicalUrlBlock = canonicalUrl ? raw(`<link rel="canonical" href="${canonicalUrl}" />`) : '';
 
     const userBlock = user_logged_in
-        ? raw(`<a href="${root_url}/my/account">account</a>`)
+        ? raw(`<a href="${root_url}/account">account</a>`)
         : raw(
-              `<span><a href="${root_url}/login" class="bold">Log in</a> | <a class="bold" href="${root_url}/signup">Sign up</a></span>`,
+              `<span><a href="${root_url}/login" class="bold">Log&nbsp;in</a> | <a class="bold" href="${root_url}/signup">Sign&nbsp;up</a></span>`,
           );
 
     return html`
@@ -45,7 +45,7 @@ export const renderHTML = (
         <nav aria-label="Site navigation">
             <div>
                 <a href="${root_url}/" class="logo"><span>⬤</span> <span class="bold" style="margin-left: 0.2em;margin-right:1.5em;">minifeed</span></a>
-                <a href="${root_url}/my" class="${active === 'my' ? 'chapter bold active' : 'chapter'}">My feed</a>
+                <a href="${root_url}/" class="${active === 'my' && user_logged_in ? 'chapter bold active' : 'chapter'}">My feed</a>
                 <a href="${root_url}/global" class="${active === 'global' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Global</a>
                 <a href="${root_url}/blogs" class="${active === 'blogs' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Blogs</a>
                 <a href="${root_url}/lists" class="${active === 'lists' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Lists</a>
@@ -136,12 +136,12 @@ export const renderFeedSearchResult = (searchResult: FeedSearchResult) => {
     const url = feed.type === 'blog' ? `/${uri_root_from_type}/${feed.feed_sqid}` : feed.url;
 
     return `
-    <div class="item-tiny search-result">
+    <div class="item-tiny search-result box-grid fancy-gradient-bg borderbox">
         <span class="label">${type}</span>
         <strong><a href="${url}">${feed.title}</a></strong>
         <br>
         <small class="muted">
-            <a target="_blank" href=${feed.url}>↗ ${feed.url}</a> | <a target="_blank" href=${feed.rss_url}>↗ RSS</a>
+            <a target="_blank" href=${feed.url}>${feed.url}</a> | <a target="_blank" href=${feed.rss_url}>RSS↗</a>
         </small>
     </div>
     `;
@@ -218,10 +218,10 @@ export const renderAddItemByURLForm = (url = '', urls = '', flash = '', blogTitl
 export const renderMySubsections = (active = 'all') => {
     return `
     <nav class="subsections">
-        <a href="/my" class="no-color no-underline ${active === 'my' ? 'active bold' : ''}">all</a>
-        <a href="/my/subscriptions" class="no-color no-underline ${active === 'subscriptions' ? 'active bold' : ''}">subscriptions</a>
-        <a href="/my/favorites" class="no-color no-underline ${active === 'favorites' ? 'active bold' : ''}">favorites</a>
-        <a href="/my/friendfeed" class="no-color no-underline ${active === 'friendfeed' ? 'active bold' : ''}">friendfeed</a>
+        <a href="/" class="no-color no-underline ${active === 'my' ? 'active bold' : ''}">all</a>
+        <a href="/subscriptions" class="no-color no-underline ${active === 'subscriptions' ? 'active bold' : ''}">subscriptions</a>
+        <a href="/favorites" class="no-color no-underline ${active === 'favorites' ? 'active bold' : ''}">favorites</a>
+        <a href="/friendfeed" class="no-color no-underline ${active === 'friendfeed' ? 'active bold' : ''}">friendfeed</a>
     </nav>
     `;
 };

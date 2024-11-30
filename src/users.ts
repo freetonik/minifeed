@@ -137,7 +137,7 @@ export const handleUsersSingle = async (c: Context) => {
             </button>
             </span>`;
         } else {
-            top_block += `<div class="flash flash-blue">This is your public profile (<a href="/my/account">account settings</a>)</div>`;
+            top_block += `<div class="flash flash-blue">This is your public profile (<a href="/account">account settings</a>)</div>`;
         }
     } else {
         top_block += `<div class="flash"><a href="/login">Log in</a> to follow users and read their feeds on your home page.</div>`;

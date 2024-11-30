@@ -90,8 +90,9 @@ export async function handleSearch(c: Context) {
 
     // found feeds
     if (resultsForBlogs?.length) {
+        inner += `<div class="container-grid util-mb-2">`;
         for (const feed of resultsForBlogs) inner += renderFeedSearchResult(feed);
-        inner += '<div style="margin-bottom:3em;"></div>';
+        inner += '</div>';
     }
 
     // found posts

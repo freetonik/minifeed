@@ -108,8 +108,10 @@ export const handleBlogs = async (c: Context) => {
             <a class="no-color no-underline" href="/blogs/${feed.feed_sqid}">${feed.title}</a>
           </h2>
           <p class="urls">
-            <a href="${feed.url}">${feed.url}</a> |
-            <a href="${feed.rss_url}">RSS</a>
+            <a class="util-mr-05" href="${feed.url}">${feed.url}</a>
+            <small>
+                <a class="tag-label no-color" href="${feed.rss_url}">RSS↗</a>
+            </small>
           </p>
           ${feedDescriptionBlock}
           ${subscriptionBlock}

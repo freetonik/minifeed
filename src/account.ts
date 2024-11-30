@@ -15,7 +15,7 @@ export const handleMyAccount = async (c: Context) => {
         .first();
 
     const resend_verification_link_form = !user.email_verified
-        ? `<form action="/my/account/resend_verification_link" method="post">
+        ? `<form action="/account/resend_verification_link" method="post">
              <input type="submit" value="Resend verification link">
            </form>`
         : '';
@@ -86,7 +86,7 @@ export const handleVerifyEmail = async (c: Context) => {
     ]);
 
     const message_flash = username
-        ? `<div class="flash flash-blue">You can now go to <a href="/my">your feed</a>... Or contemplate life.</div>`
+        ? `<div class="flash flash-blue">You can now go to <a href="/">your feed</a>... Or contemplate life.</div>`
         : `<div class="flash flash-blue">You can now <a href="/login">log in</a>.</div>`;
 
     return c.html(renderHTML('Email verification | minifeed', raw(message_flash), username, ''));
@@ -125,11 +125,11 @@ export const handleLogout = async (c: Context) => {
 };
 
 export const handleLogin = async (c: Context) => {
-    if (c.get('USER_ID')) return c.redirect('/my');
+    if (c.get('USER_ID')) return c.redirect('/');
 
     const list = `
     <div style="max-width:25em;margin:auto;">
-        <div class="borderbox">
+        <div class="borderbox fancy-gradient-bg">
             <h2 style="margin-top:0;">Log in</h2>
             <form action="/login" method="POST">
                 <div style="margin-bottom:1em;">
@@ -142,7 +142,7 @@ export const handleLogin = async (c: Context) => {
                 <input type="password" id="pass" name="password" minlength="8" required />
                 </div>
 
-                <input type="submit" value="Log in">
+                <input class="button" type="submit" value="Log in">
             </form>
         </div>
         <p style="text-align:center;">
@@ -156,7 +156,7 @@ export const handleLogin = async (c: Context) => {
 };
 
 export const handleResetPassword = async (c: Context) => {
-    if (c.get('USER_LOGGED_IN')) return c.redirect('/my');
+    if (c.get('USER_LOGGED_IN')) return c.redirect('/');
     const code = c.req.query('code');
     let inner = '';
 
@@ -269,12 +269,12 @@ export const handleSetPasswordPOST = async (c: Context) => {
 };
 
 export const handleSignup = async (c: Context) => {
-    if (c.get('USER_LOGGED_IN')) return c.redirect('/my');
+    if (c.get('USER_LOGGED_IN')) return c.redirect('/');
 
     const inner = `
     <div style="max-width:25em;margin:auto;">
 
-    <div class="borderbox">
+    <div class="borderbox fancy-gradient-bg">
         <h2 style="margin-top:0;">Create account</h2>
         <form action="/signup" method="POST">
             <div style="margin-bottom:1em;">
@@ -297,7 +297,7 @@ export const handleSignup = async (c: Context) => {
             <input type="text" id="invitation_code" name="invitation_code" required />
         </div>
 
-        <input class="blue" type="submit" value="Create account">
+        <input class="button" type="submit" value="Create account">
     </form>
     </div>
     `;
