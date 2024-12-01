@@ -23,7 +23,7 @@ export const guestFlash = `<div class="flash">
 export const handleGlobal = async (c: Context) => {
     const userId = c.get('USER_ID') || -1;
     const items_per_page = 60;
-    const listingType = c.req.param('listingType') || 'latest';
+    const listingType = c.req.param('listingType') || 'newest';
 
     let ordering = 'items.pub_date DESC';
     if (listingType === 'random') ordering = 'RANDOM()';
@@ -53,7 +53,7 @@ export const handleGlobal = async (c: Context) => {
 
     list += renderGlobalSubsections(listingType);
 
-    if (listingType === 'latest' || listingType === 'random') {
+    if (listingType === 'newest' || listingType === 'random') {
         for (let i = 0; i < results.length - 1; i++) {
             const item = results[i];
             const itemTitle = item.favorite_id ? `★ ${item.item_title}` : item.item_title;

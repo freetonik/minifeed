@@ -34,12 +34,12 @@ export const handleBlogs = async (c: Context) => {
     const user_id = c.get('USER_ID') || -1;
     const userLoggedIn = c.get('USER_LOGGED_IN');
 
-    const listingType = c.req.param('listingType') || 'latest';
+    const listingType = c.req.param('listingType') || 'newest';
 
     let ordering = 'feeds.created DESC';
 
     if (listingType === 'random') ordering = 'RANDOM()';
-    else if (listingType === 'latest') ordering = 'feeds.created DESC';
+    else if (listingType === 'newest') ordering = 'feeds.created DESC';
     else if (listingType === 'oldest') ordering = 'feeds.created ASC';
     else if (listingType === 'alphabetical') ordering = 'feeds.title';
     else return c.notFound();

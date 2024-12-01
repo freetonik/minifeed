@@ -226,20 +226,20 @@ export const renderMySubsections = (active = 'all') => {
     `;
 };
 
-export const renderGlobalSubsections = (active = 'latest') => {
+export const renderGlobalSubsections = (active = 'newest') => {
     return `
     <nav class="subsections">
-        <a href="/global" class="no-color no-underline ${active === 'latest' ? 'active bold' : ''}">latest</a>
+        <a href="/global" class="no-color no-underline ${active === 'newest' ? 'active bold' : ''}">newest</a>
         <a href="/global/oldest" class="no-color no-underline ${active === 'oldest' ? 'active bold' : ''}">oldest</a>
         <a href="/global/random" class="no-color no-underline ${active === 'random' ? 'active bold' : ''}">random</a>
     </nav>
     `;
 };
 
-export const renderBlogsSubsections = (active = 'latest') => {
+export const renderBlogsSubsections = (active = 'newest') => {
     return `
     <nav class="subsections">
-        <a href="/blogs" class="no-color no-underline ${active === 'latest' ? 'active bold' : ''}">latest</a>
+        <a href="/blogs" class="no-color no-underline ${active === 'newest' ? 'active bold' : ''}">newest</a>
         <a href="/blogs/by/oldest" class="no-color no-underline ${active === 'oldest' ? 'active bold' : ''}">oldest</a>
         <a href="/blogs/by/alphabetical" class="no-color no-underline ${active === 'alphabetical' ? 'active bold' : ''}">alphabetical</a>
         <a href="/blogs/by/random" class="no-color no-underline ${active === 'random' ? 'active bold' : ''}">random</a>
