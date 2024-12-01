@@ -14,7 +14,12 @@ ${cssContent}
 // Function to handle the file conversion
 function handleCssChange() {
     try {
-        const cssContent = fs.readFileSync(cssFilePath, 'utf8');
+        const cssContent = fs
+            .readFileSync(cssFilePath, 'utf8')
+            .replace(/\n/g, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+
         const tsContent = convertCssToTs(cssContent);
         fs.writeFileSync(tsOutputPath, tsContent);
         console.log(`Successfully converted ${cssFilePath} to ${tsOutputPath}`);
