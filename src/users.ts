@@ -1,20 +1,23 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
 import { renderHTML, renderItemShort } from './htmltools';
+import { guestFlash } from './items';
 import { feedIdToSqid } from './utils';
 
 export const handleUsers = async (c: Context) => {
     const username = c.get('USERNAME');
     const { results } = await c.env.DB.prepare('SELECT * from users ORDER BY created ASC').run();
 
-    let list = `<div class="main">`;
+    let inner = '';
+    if (!c.get('USER_LOGGED_IN')) {
+        inner += guestFlash;
+    }
     for (const user of results) {
         if (user.username === username)
-            list += `<div><strong><a href="/users/${user.username}">${user.username}</a></strong> (this is me)</div>`;
-        else list += `<div><a href="/users/${user.username}">${user.username}</a></div>`;
+            inner += `<div><strong><a href="/users/${user.username}">${user.username}</a></strong> (this is me)</div>`;
+        else inner += `<div><a href="/users/${user.username}">${user.username}</a></div>`;
     }
-    list += '</div>';
-    return c.html(renderHTML('Users', raw(list), c.get('USERNAME'), 'users'));
+    return c.html(renderHTML('Users', raw(inner), c.get('USERNAME'), 'users'));
 };
 
 export const handleUsersSingle = async (c: Context) => {

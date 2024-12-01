@@ -19,7 +19,10 @@ export async function authCheckMiddleware(c: Context, next) {
         } else {
             c.set('USER_LOGGED_IN', false);
         }
+    } else {
+        c.set('USER_LOGGED_IN', false);
     }
+
     await next();
 }
 
