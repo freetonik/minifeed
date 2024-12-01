@@ -89,3 +89,29 @@ export type ItemSearchResultHighlightEntity = {
     matched_tokens: Array<unknown>;
     snippet: string;
 };
+
+// SEARCH DOCUMENT
+
+export type ItemSearchDocument = {
+    id: string;
+    title: string;
+    content: string;
+    type: string;
+    item_sqid: string;
+    url: string;
+    pub_date: string;
+    feed_id: number;
+    feed_sqid: string;
+    feed_title: string;
+};
+
+// SCRAPING
+
+export type ArticleInfo = {
+    url: string;
+    title: string;
+    HTMLcontent: string;
+    textContent: string;
+    description: string;
+    published: string;
+};

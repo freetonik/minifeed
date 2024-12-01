@@ -1,10 +1,10 @@
 import type { Bindings } from './bindings';
-import type { FeedRow } from './interface';
+import type { FeedRow, ItemSearchDocument } from './interface';
 import { collapseWhitespace, gatherResponse, stripASCIIFormatting, stripTags } from './utils';
 
 ////////////////////////////////
 // SEARCH INDEX MANAGEMENT /////
-export const upsertSingleDocument = async (env: Bindings, document: object) => {
+export const upsertSingleDocument = async (env: Bindings, document: ItemSearchDocument) => {
     const json = JSON.stringify(document);
     const init = {
         body: json,
@@ -16,6 +16,7 @@ export const upsertSingleDocument = async (env: Bindings, document: object) => {
     };
 
     try {
+        console.log(`Upserting document index: ${document.id} - ${document.title}`);
         const response = await fetch(
             `https://${env.TYPESENSE_CLUSTER}:443/collections/${env.TYPESENSE_ITEMS_COLLECTION}/documents/import?action=upsert`,
             init,
@@ -67,7 +68,7 @@ export const deleteFeedFromIndex = async (env: Bindings, feedId: number) => {
 };
 
 // Upserts the search index for a single item
-export async function updateItemIndex(env: Bindings, item_id: number) {
+export async function updateItemIndex(env: Bindings, itemId: number, textContent?: string) {
     type ItemsFeedsRowPartial = {
         item_sqid: string;
         title: string;
@@ -87,20 +88,21 @@ export async function updateItemIndex(env: Bindings, item_id: number) {
         JOIN feeds ON feeds.feed_id = items.feed_id
         WHERE item_id = ?`,
     )
-        .bind(item_id)
+        .bind(itemId)
         .all<ItemsFeedsRowPartial>();
 
     const item = items[0];
     let content: string;
-    // prefer scraped content over content_html over description
-    if (item.content_html_scraped && item.content_html_scraped.length > 0)
+    // preference: given text content → scraped content → content_html → description
+    if (textContent) content = textContent;
+    else if (item.content_html_scraped && item.content_html_scraped.length > 0)
         content = await stripTags(item.content_html_scraped);
     else if (item.content_html && item.content_html.length > 0) content = await stripTags(item.content_html);
     else content = item.description;
 
-    const searchDocument = {
+    const searchDocument: ItemSearchDocument = {
         // we provide explicit id so it will be used as id in the typesense index
-        id: item_id.toString(),
+        id: itemId.toString(),
         // searchable fields
         title: item.title,
         content: collapseWhitespace(stripASCIIFormatting(content)),
@@ -113,7 +115,7 @@ export async function updateItemIndex(env: Bindings, item_id: number) {
         feed_sqid: item.feed_sqid,
         feed_title: item.feed_title,
     };
-    console.log(`Upserting document: ${item_id.toString()} - ${item.title}`);
+
     await upsertSingleDocument(env, searchDocument);
 }
 

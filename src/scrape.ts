@@ -1,43 +1,58 @@
 import type { Bindings } from './bindings';
+
+import { Readability } from '@mozilla/readability';
+import { parseHTML } from 'linkedom';
+import type { ArticleInfo } from './interface';
 import { enqueueItemIndex } from './queue';
-import { stripTags, truncate } from './utils';
+import { updateItemIndex } from './search';
 
-export async function scrapeItem(env: Bindings, item_id: number) {
-    const { results: items } = await env.DB.prepare('SELECT url, description FROM items WHERE item_id = ?')
-        .bind(item_id)
-        .all();
+export async function scrapeItem(env: Bindings, itemId: number) {
+    // TODO: probably should not couple indexing with scraping
+    const item = await env.DB.prepare('SELECT url, description FROM items WHERE item_id = ?').bind(itemId).first();
 
-    const item_url = String(items[0].url);
-    let item_description = String(items[0].description);
-
-    console.log(`Scraping item ${item_id} (${item_url})`);
-
-    try {
-        const articleInfoParsed = await scrapeURLIntoObject(env, item_url);
-        const content = articleInfoParsed.data.content;
-        if (!item_description || item_description.length < 5)
-            item_description = await stripTags(truncate(content, 500));
-        await env.DB.prepare('UPDATE items SET content_html_scraped = ?, description = ? WHERE item_id = ?')
-            .bind(content, item_description, item_id)
-            .run();
-    } catch (err: unknown) {
-        console.log(
-            `Error scraping item ${item_id} (${item_url}): ${err instanceof Error ? err.message : String(err)}`,
-        );
+    if (!item) {
+        console.log(`Item ${itemId} not found`);
+        return;
     }
 
-    // TODO: probably should not bind indexing to scraping
-    await enqueueItemIndex(env, item_id);
+    const itemURL = String(item.url);
+    let itemDescription = String(item.description);
+
+    console.log(`Scraping item ${itemId} (${itemURL})`);
+
+    try {
+        const scrapedArticle = await scrapeURLIntoObject(itemURL);
+        // if no description was set, use the scraped one
+        if (!itemDescription || itemDescription.length < 5) itemDescription = scrapedArticle.description;
+
+        await env.DB.prepare('UPDATE items SET content_html_scraped = ?, description = ? WHERE item_id = ?')
+            .bind(scrapedArticle.HTMLcontent, itemDescription, itemId)
+            .run();
+
+        // scraping succeeded, update index directly
+        await updateItemIndex(env, itemId, scrapedArticle.textContent);
+    } catch (err) {
+        console.log(`Error scraping item ${itemId} (${itemURL}): ${err?.toString()}`);
+        // scraping failed, enqueue indexing
+        await enqueueItemIndex(env, itemId);
+    }
 }
 
-export async function scrapeURLIntoObject(env: Bindings, url: string) {
-    const maeServiceUrl = `https://mae.deno.dev/?apikey=${env.MAE_SERVICE_API_KEY}&url=${url}`;
-    try {
-        const req = await fetch(maeServiceUrl);
-        const articleInfo = await req.text();
-        const articleInfoParsed = JSON.parse(articleInfo);
-        return articleInfoParsed;
-    } catch (err: any) {
-        console.log(`Error scraping URL ${url}: ${err.toString()}`);
+export async function scrapeURLIntoObject(url: string): Promise<ArticleInfo> {
+    const response = await fetch(url);
+    const html = await response.text();
+    const { document } = parseHTML(html);
+    const cleanArticleContent = new Readability(document).parse();
+
+    if (cleanArticleContent?.textContent) {
+        return {
+            url,
+            title: cleanArticleContent.title,
+            HTMLcontent: cleanArticleContent.content,
+            textContent: cleanArticleContent.textContent,
+            description: cleanArticleContent.excerpt,
+            published: cleanArticleContent.publishedTime,
+        };
     }
+    throw new Error('Error parsing article content');
 }

@@ -12,6 +12,7 @@ import {
 import type { RelatedItemCached } from './interface';
 import { enqueueItemIndex, enqueueItemScrape, enqueueVectorizeStoreItem } from './queue';
 import { scrapeURLIntoObject } from './scrape';
+import { updateItemIndex } from './search';
 import { absolutifyImageUrls, feedSqidToId, getRootUrl, itemIdToSqid, itemSqidToId, sanitizeHTML } from './utils';
 
 export const guestFlash = `<div class="flash">
@@ -957,7 +958,7 @@ export const handleItemsDelete = async (c: Context) => {
     const itemId = itemSqidToId(itemSqid);
 
     const dbDeleteResults = await c.env.DB.prepare('DELETE FROM items WHERE item_id = ?').bind(itemId).run();
-    await c.env.VECTORIZE.deleteByIds([`${itemId}`]);
+    if (c.env.ENVIRONMENT !== 'dev') await c.env.VECTORIZE.deleteByIds([`${itemId}`]);
     if (dbDeleteResults.success) {
         return c.html('Item deleted. Delete it from the index yourself dude');
     }
@@ -1000,20 +1001,21 @@ export const handleItemsAddItemByUrlPOST = async (c: Context) => {
         if (existingItem.results.length > 0) {
             continue;
         }
-        const articleContent = await scrapeURLIntoObject(c.env, url_value);
+        const articleContent = await scrapeURLIntoObject(url_value);
         const item = {
             feed_id: feedId,
-            title: articleContent.data.title,
+            title: articleContent.title,
             link: url_value,
-            published: articleContent.data.published,
-            description: articleContent.data.description,
-            content_from_content: articleContent.data.content,
+            published: articleContent.published,
+            description: articleContent.description,
+            content_from_content: articleContent.HTMLcontent,
         };
 
         const insert_results = await addItemsToFeed(c.env, [item], feedId, false); // don't scrape after adding
         const addedItemId = insert_results[0].meta.last_row_id;
 
-        await enqueueItemIndex(c.env, addedItemId); // addItemsToFeed(..scrapeAfterAdding=false), so scrape it...
+        // await enqueueItemIndex(c.env, addedItemId); // addItemsToFeed(..scrapeAfterAdding=false), so scrape it...
+        await updateItemIndex(c.env, addedItemId, articleContent.textContent);
         await enqueueVectorizeStoreItem(c.env, addedItemId); // ... and vectorize it...
 
         const addedItemSqid = itemIdToSqid(addedItemId);
@@ -1021,7 +1023,10 @@ export const handleItemsAddItemByUrlPOST = async (c: Context) => {
     }
     // it was a single URL, redirect to new post
     if (url) {
-        return c.redirect(`/items/${added_items_sqids[0]}`);
+        if (added_items_sqids.length > 1) {
+            return c.redirect(`/items/${added_items_sqids[0]}`);
+        }
+        throw new Error('No items added. Probably all of them already exist in the database by unique URL');
     }
     // it was multiple URLs, redirect to blog
     return c.redirect(`/blogs/${feedSqid}`);
