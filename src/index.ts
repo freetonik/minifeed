@@ -51,6 +51,7 @@ import { renderHTML } from './htmltools';
 import type { MFQueueMessage } from './interface';
 import {
     handleGlobal,
+    handleHomeForGuest,
     handleItemsAddItemByUrlPOST,
     handleItemsAddItembyUrl,
     handleItemsAddToFavorites,
@@ -90,32 +91,38 @@ const app = new Hono<{ Bindings: Bindings }>({
     strict: false,
 });
 
-app.get('/robots.txt', async (c) => c.text('User-agent: *\nAllow: /'));
-
 app.use('*', authCheckMiddleware);
 
-// all routes below this line require admin privileges
-app.use('/admin/*', adminRequiredMiddleware);
+app.get('/robots.txt', async (c) => c.text('User-agent: *\nAllow: /'));
 
 const handleNotFound = (c: Context) => {
-    return c.html(renderHTML('404 | minifeed', raw(`<div class="flash">Page not found.</div>`), c.get('USERNAME')));
+    return c.html(
+        renderHTML('404 | minifeed', raw(`<div class="flash">Page not found.</div>`), c.get('USER_LOGGED_IN')),
+    );
 };
 
 const handleError = (err: Error, c: Context) => {
-    return c.html(renderHTML('Error | minifeed', raw(`<div class="flash flash-red">${err}.</div>`), c.get('USERNAME')));
+    return c.html(renderHTML('Error | minifeed', raw(`<div class="flash">${err}.</div>`), c.get('USER_LOGGED_IN')));
 };
 
 app.notFound(handleNotFound);
 app.onError(handleError);
 
 // APP ROUTES
+app.get('/', (c: Context) => {
+    if (!c.get('USER_ID')) return c.redirect('/welcome');
+    return handleMy(c);
+});
+
+// BACKWARDS COMPATIBILITY ROUTES
 app.get('/my', (c: Context) => c.redirect('/'));
 app.get('/my/subscriptions', (c: Context) => c.redirect('/subscriptions'));
 app.get('/my/friendfeed', (c: Context) => c.redirect('/friendfeed'));
 app.get('/my/favorites', (c: Context) => c.redirect('/favorites'));
 app.get('/my/account', (c: Context) => c.redirect('/account'));
 
-app.get('/', handleMy);
+app.get('/welcome', handleHomeForGuest);
+
 app.get('/subscriptions', authRequiredMiddleware, handleMySubscriptions);
 app.get('/friendfeed', authRequiredMiddleware, handleMyFriendfeed);
 app.get('/favorites', authRequiredMiddleware, handleMyFavorites);
@@ -125,6 +132,8 @@ app.post('/account/resend_verification_link', handleResentVerificationEmailPOST)
 app.get('/verify_email', handleVerifyEmail);
 
 // ADMIN ROUTES
+// all routes below this line require admin privileges
+app.use('/admin/*', adminRequiredMiddleware);
 app.get('/admin', handleAdmin);
 app.get('/admin/unvectorized_items', handleAdminUnvectorizedItems);
 app.get('/admin/unindexed_items', handleAdminUnindexedItems);

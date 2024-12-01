@@ -236,13 +236,15 @@ export const renderGlobalSubsections = (active = 'newest') => {
     `;
 };
 
-export const renderBlogsSubsections = (active = 'newest') => {
+export const renderBlogsSubsections = (active = 'newest', userLoggedIn = true) => {
     return `
     <nav class="subsections">
         <a href="/blogs" class="no-color no-underline ${active === 'newest' ? 'active bold' : ''}">newest</a>
         <a href="/blogs/by/oldest" class="no-color no-underline ${active === 'oldest' ? 'active bold' : ''}">oldest</a>
         <a href="/blogs/by/alphabetical" class="no-color no-underline ${active === 'alphabetical' ? 'active bold' : ''}">alphabetical</a>
         <a href="/blogs/by/random" class="no-color no-underline ${active === 'random' ? 'active bold' : ''}">random</a>
+        <a ${userLoggedIn ? 'href="/blogs/by/subscribed"' : ''} class="no-color no-underline ${active === 'subscribed' ? 'active bold' : ''}
+        ${!userLoggedIn ? 'disabled' : ''} ">subscribed</a>
     </nav>
     `;
 };

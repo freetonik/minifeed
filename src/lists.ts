@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
 import { renderHTML, renderItemShort } from './htmltools';
+import { guestFlash } from './items';
 import { itemSqidToId } from './utils';
 
 export const handleLists = async (c: Context) => {
@@ -13,6 +14,9 @@ export const handleLists = async (c: Context) => {
     ).all();
 
     let inner = '';
+    if (!c.get('USER_LOGGED_IN')) {
+        inner += guestFlash;
+    }
     for (const list of lists.results) {
         inner += `<div class="borderbox" style="margin-bottom: 1em;"><a href="/lists/${list.list_sqid}">${list.title}</a> (list by @${list.username})</div>`;
     }

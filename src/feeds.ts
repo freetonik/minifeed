@@ -5,6 +5,7 @@ import type { Bindings } from './bindings';
 import { extractRSS, validateFeedData } from './feed_extractor';
 import { renderAddFeedForm, renderBlogsSubsections, renderHTML, renderItemShort } from './htmltools';
 import type { FeedRow, ItemRow, MFFeedEntry } from './interface';
+import { guestFlash } from './items';
 import {
     enqueueFeedUpdate,
     enqueueIndexAllItemsOfFeed,
@@ -33,23 +34,29 @@ import {
 export const handleBlogs = async (c: Context) => {
     const user_id = c.get('USER_ID') || -1;
     const userLoggedIn = c.get('USER_LOGGED_IN');
+    console.log('user logged in', userLoggedIn);
 
     const listingType = c.req.param('listingType') || 'newest';
 
     let ordering = 'feeds.created DESC';
+    let filtering = '';
 
     if (listingType === 'random') ordering = 'RANDOM()';
     else if (listingType === 'newest') ordering = 'feeds.created DESC';
     else if (listingType === 'oldest') ordering = 'feeds.created ASC';
     else if (listingType === 'alphabetical') ordering = 'feeds.title';
-    else return c.notFound();
+    else if (listingType === 'subscribed') {
+        if (!userLoggedIn) return c.redirect('/blogs');
+        filtering = 'AND subscriptions.subscription_id IS NOT NULL';
+        ordering = 'subscriptions.subscription_id DESC';
+    } else return c.notFound();
 
     const { results, meta } = await c.env.DB.prepare(
         `
     SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, subscriptions.subscription_id, items_top_cache.content from feeds
     LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
     LEFT JOIN subscriptions on feeds.feed_id = subscriptions.feed_id AND subscriptions.user_id = ?
-    WHERE feeds.type = 'blog'
+    WHERE feeds.type = 'blog' ${filtering}
     ORDER BY ${ordering}`,
     )
         .bind(user_id)
@@ -57,13 +64,8 @@ export const handleBlogs = async (c: Context) => {
 
     let list = '';
 
-    if (!userLoggedIn) {
-        list += `<div class="flash">
-    <strong>Minifeed</strong> is a curated blog reader and blog search engine. We collect humans-written blogs to make them discoverable and searchable. Sign up to subscribe to blogs, follow people, save favorites, or start your own blog.
-    </div>`;
-    }
-
-    list += renderBlogsSubsections(listingType);
+    if (!userLoggedIn) list += guestFlash;
+    list += renderBlogsSubsections(listingType, userLoggedIn);
 
     for (const feed of results) {
         const subscriptionAction = feed.subscription_id ? 'unsubscribe' : 'subscribe';

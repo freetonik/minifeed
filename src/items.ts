@@ -103,49 +103,46 @@ export const handleGlobal = async (c: Context) => {
     );
 };
 
-// // MY HOME FEED: subs + favorites + friendfeed
-export const handleMy = async (c: Context) => {
+export const handleHomeForGuest = async (c: Context) => {
     const user_id = c.get('USER_ID');
 
-    // GUEST VIEW
-    if (!user_id) {
-        const batch = await c.env.DB.batch([
-            c.env.DB.prepare(`
+    const batch = await c.env.DB.batch([
+        c.env.DB.prepare(`
             SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, items_top_cache.content from feeds
             LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
             WHERE feeds.type = 'blog'
             ORDER BY RANDOM()
             LIMIT 6`),
 
-            c.env.DB.prepare(`
+        c.env.DB.prepare(`
             SELECT items.item_id, items.item_sqid, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title, feeds.feed_sqid, items.description
             FROM items
             JOIN feeds ON items.feed_id = feeds.feed_id
             WHERE items.item_sqid IS NOT 0 AND feeds.type = 'blog'
             ORDER BY items.pub_date DESC
             LIMIT 10`),
-        ]);
+    ]);
 
-        const latestBlogs = batch[0].results;
-        const latestItems = batch[1].results;
+    const latestBlogs = batch[0].results;
+    const latestItems = batch[1].results;
 
-        let latestBlogsBlock = '';
-        for (const feed of latestBlogs) {
-            const cache_content = JSON.parse(feed.content);
-            let top_items_list = '';
-            if (cache_content?.top_items) {
-                const top_items = cache_content.top_items;
-                let items_count = 0;
-                items_count = cache_content.items_count - top_items.length;
-                top_items_list += '';
-                for (const item of top_items) {
-                    top_items_list += `<li><a class="no-underline hover-underline" href="/items/${item.item_sqid}">${item.title}</a></li>`;
-                }
-                if (items_count > 0) {
-                    top_items_list += `<li><i>and <a href="/blogs/${feed.feed_sqid}">more...</a></i></li>`;
-                }
+    let latestBlogsBlock = '';
+    for (const feed of latestBlogs) {
+        const cache_content = JSON.parse(feed.content);
+        let top_items_list = '';
+        if (cache_content?.top_items) {
+            const top_items = cache_content.top_items;
+            let items_count = 0;
+            items_count = cache_content.items_count - top_items.length;
+            top_items_list += '';
+            for (const item of top_items) {
+                top_items_list += `<li><a class="no-underline hover-underline" href="/items/${item.item_sqid}">${item.title}</a></li>`;
             }
-            latestBlogsBlock += `
+            if (items_count > 0) {
+                top_items_list += `<li><i>and <a href="/blogs/${feed.feed_sqid}">more...</a></i></li>`;
+            }
+        }
+        latestBlogsBlock += `
                 <div class="blog-summary fancy-gradient-bg box-grid">
                     <h3>
                     <a class="no-color no-underline util-mr-05" href="/blogs/${feed.feed_sqid}">${feed.title}</a>
@@ -158,22 +155,22 @@ export const handleMy = async (c: Context) => {
                         ${top_items_list}
                     </ul>
                 </div>`;
-        }
+    }
 
-        let latestItemsBlock = '';
-        for (const item of latestItems) {
-            latestItemsBlock += renderItemShort(
-                item.item_sqid,
-                item.item_title,
-                item.item_url,
-                item.feed_title,
-                item.feed_sqid,
-                item.pub_date,
-                item.description,
-            );
-        }
+    let latestItemsBlock = '';
+    for (const item of latestItems) {
+        latestItemsBlock += renderItemShort(
+            item.item_sqid,
+            item.item_title,
+            item.item_url,
+            item.feed_title,
+            item.feed_sqid,
+            item.pub_date,
+            item.description,
+        );
+    }
 
-        const guestInner = `
+    const guestInner = `
             ${guestFlash}
             <h2>Few random blogs</h2>
             <div class="container-grid">
@@ -192,54 +189,101 @@ export const handleMy = async (c: Context) => {
             </a>
             `;
 
-        return c.html(renderHTML('My feed | minifeed', raw(guestInner), false, 'my', '', '', false));
-    }
+    return c.html(renderHTML('My feed | minifeed', raw(guestInner), c.get('USER_LOGGED_IN'), 'my', '', '', false));
+};
 
-    // USER VIEW
+// // MY HOME FEED: subs + favorites + friendfeed
+export const handleMy = async (c: Context) => {
+    const user_id = c.get('USER_ID');
+    if (!user_id) return c.redirect('/welcome');
+
     const items_per_page = 30;
     const page = Number(c.req.query('p')) || 1;
     const offset = page * items_per_page - items_per_page;
 
-    const { results, meta } = await c.env.DB.prepare(
-        `
-    SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
-    FROM items
-    JOIN subscriptions ON items.feed_id = subscriptions.feed_id
-    JOIN feeds ON items.feed_id = feeds.feed_id
-    LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
-    WHERE items.item_sqid IS NOT 0 AND subscriptions.user_id = ? AND feeds.type = 'blog'
+    const batch = await c.env.DB.batch([
+        c.env.DB.prepare(
+            `
+        SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
+        FROM items
+        JOIN subscriptions ON items.feed_id = subscriptions.feed_id
+        JOIN feeds ON items.feed_id = feeds.feed_id
+        LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
+        WHERE items.item_sqid IS NOT 0 AND subscriptions.user_id = ? AND feeds.type = 'blog'
 
-    UNION
+        UNION
 
-    SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
-    FROM items
-    JOIN subscriptions ON items.feed_id = subscriptions.feed_id
-    JOIN feeds ON items.feed_id = feeds.feed_id
-    LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
-    JOIN followings ON subscriptions.user_id = followings.followed_user_id
-    WHERE items.item_sqid IS NOT 0 AND followings.follower_user_id = ? AND feeds.type = 'blog'
+        SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
+        FROM items
+        JOIN subscriptions ON items.feed_id = subscriptions.feed_id
+        JOIN feeds ON items.feed_id = feeds.feed_id
+        LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
+        JOIN followings ON subscriptions.user_id = followings.followed_user_id
+        WHERE items.item_sqid IS NOT 0 AND followings.follower_user_id = ? AND feeds.type = 'blog'
 
-    UNION
+        UNION
 
-    SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
-    FROM items
-    JOIN feeds ON items.feed_id = feeds.feed_id
-    JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
-    WHERE items.item_sqid IS NOT 0 AND feeds.type = 'blog'
+        SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
+        FROM items
+        JOIN feeds ON items.feed_id = feeds.feed_id
+        JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
+        WHERE items.item_sqid IS NOT 0 AND feeds.type = 'blog'
 
-    ORDER BY items.pub_date DESC
+        ORDER BY items.pub_date DESC
 
-    LIMIT ? OFFSET ?
-    `,
-    )
-        .bind(user_id, user_id, user_id, user_id, user_id, items_per_page + 1, offset)
-        .all();
+        LIMIT ? OFFSET ?`,
+        ).bind(user_id, user_id, user_id, user_id, user_id, items_per_page + 1, offset),
 
-    let list = ` ${renderMySubsections('my')} `;
+        c.env.DB.prepare(`
+        SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, items_top_cache.content from feeds
+        LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
+        WHERE feeds.type = 'blog'
+        ORDER BY feeds.created DESC
+        LIMIT 2`),
+    ]);
+
+    const results = batch[0].results;
+    const latestBlogs = batch[1].results;
+
+    const meta0 = batch[0].meta;
+    const meta1 = batch[1].meta;
+
+    let latestBlogsBlock = '';
+    for (const feed of latestBlogs) {
+        const cache_content = JSON.parse(feed.content);
+        let top_items_list = '';
+        if (cache_content?.top_items) {
+            top_items_list += '';
+            for (const item of cache_content.top_items.slice(0, 3)) {
+                top_items_list += `<li><a class="no-underline hover-underline" href="/items/${item.item_sqid}">${item.title}</a></li>`;
+            }
+        }
+        latestBlogsBlock += `
+                <div class="blog-summary fancy-gradient-bg box-grid">
+                    <h3>
+                    <a class="no-color no-underline util-mr-05" href="/blogs/${feed.feed_sqid}">${feed.title}</a>
+                    <small>
+                        <a class="tag-label no-color" href="${feed.url}">WEB↗</a>
+                        <a class="tag-label no-color" href="${feed.rss_url}">RSS↗</a>
+                    </small>
+                    </h3>
+                    <ul>
+                        ${top_items_list}
+                    </ul>
+                </div>`;
+    }
+
+    const newBlogsBlock = `
+    <h3>Newly added blogs (<a href="/blogs">view all</a>) </h3>
+    <div class="container-grid util-mb-3">
+    ${latestBlogsBlock}
+    </div>`;
+
+    let inner = `${renderMySubsections('my')}`;
     if (results.length) {
-        for (const item of results) {
+        for (const [index, item] of results.entries()) {
             const title = item.favorite_id ? `★ ${item.title}` : item.title;
-            list += renderItemShort(
+            inner += renderItemShort(
                 item.item_sqid,
                 title,
                 item.url,
@@ -248,24 +292,82 @@ export const handleMy = async (c: Context) => {
                 item.pub_date,
                 item.description,
             );
+            if (index === 9 && page === 1) inner += newBlogsBlock;
         }
-        if (results.length > items_per_page) list += `<p><a href="?p=${page + 1}">More</a></p>`;
+        if (results.length < 10) inner += newBlogsBlock;
+        if (results.length > items_per_page) inner += `<p><a href="?p=${page + 1}">More</a></p>`;
     } else {
-        if (page === 1) {
-            list += `Your home is empty :-( <br>Subscribe to some <strong><a href="/blogs">blogs</a></strong> or follow some <strong><a href="/users">users</a></strong>.`;
+        const randomBlogs = await c.env.DB.prepare(`
+            SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, items_top_cache.content from feeds
+            LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
+            WHERE feeds.type = 'blog'
+            ORDER BY RANDOM()
+            LIMIT 8`).all();
+
+        let randomBlogsBlock = '';
+        for (const feed of randomBlogs.results) {
+            const cache_content = JSON.parse(feed.content);
+            let top_items_list = '';
+            if (cache_content?.top_items) {
+                top_items_list += '';
+                for (const item of cache_content.top_items) {
+                    top_items_list += `<li><a class="no-underline hover-underline" href="/items/${item.item_sqid}">${item.title}</a></li>`;
+                }
+            }
+            randomBlogsBlock += `
+                <div class="blog-summary fancy-gradient-bg box-grid">
+                    <h3>
+                        <a class="no-color no-underline util-mr-05" href="/blogs/${feed.feed_sqid}">${feed.title}</a>
+                        <small>
+                            <a class="tag-label no-color" href="${feed.url}">WEB↗</a>
+                            <a class="tag-label no-color" href="${feed.rss_url}">RSS↗</a>
+                        </small>
+                    </h3>
+
+                    <div class="util-mt-1">
+                        <span id="subscription-${feed.feed_sqid}">
+                            <button hx-post="/feeds/${feed.feed_sqid}/subscribe"
+                                class="button subscribe"
+                                hx-trigger="click"
+                                hx-target="#subscription-${feed.feed_sqid}"
+                                hx-swap="outerHTML">
+                            <span class="subscribed-text">subscribe</span>
+                            <span class="unsubscribe-text">unsubscribe</span>
+                            </button>
+                        </span>
+                    </div>
+                    <ul>
+                        ${top_items_list}
+                    </ul>
+                </div>`;
         }
+
+        inner += `
+        <p class="util-mb-2">
+        Your home is empty ☹️ <br>Subscribe to some <strong><a href="/blogs">blogs</a></strong> or follow some <strong><a href="/users">users</a></strong>. Here are some cool blogs to get you started:
+        </p>
+
+        <div class="container-grid util-mb-1">
+        ${randomBlogsBlock}
+        </div>
+        <a class="box-grid box-aftergrid-element no-underline no-color" href="/blogs">
+            BROWSE ALL BLOGS →
+        </a>
+        `;
     }
 
     return c.html(
         renderHTML(
             'My feed | minifeed',
-            raw(list),
+            raw(inner),
             c.get('USER_LOGGED_IN'),
             'my',
             '',
             '',
             false,
-            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
+            c.get('USER_IS_ADMIN')
+                ? `${meta0.duration}+${meta1.duration} ms., ${meta0.rows_read}+${meta1.rows_read} rows read`
+                : '',
         ),
     );
 };
@@ -291,13 +393,13 @@ export const handleMySubscriptions = async (c: Context) => {
         .bind(user_id, user_id, items_per_page + 1, offset)
         .all();
 
-    let list = ` ${renderMySubsections('subscriptions')}
-    <div class="main">
+    let inner = ` ${renderMySubsections('subscriptions')}
+
     `;
     if (results.length) {
         for (const item of results) {
             const title = item.favorite_id ? `★ ${item.title}` : item.title;
-            list += renderItemShort(
+            inner += renderItemShort(
                 item.item_sqid,
                 title,
                 item.url,
@@ -307,17 +409,70 @@ export const handleMySubscriptions = async (c: Context) => {
                 item.description,
             );
         }
-        if (results.length > items_per_page) list += `<p><a href="?p=${page + 1}">More</a></p></div>`;
+        if (results.length > items_per_page) inner += `<p><a href="?p=${page + 1}">More</a></p></div>`;
     } else {
-        if (page === 1) {
-            list += `Your have no subscriptions :-( <br>Subscribe to some <strong><a href="/blogs">blogs</a></strong>.`;
+        const randomBlogs = await c.env.DB.prepare(`
+            SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, items_top_cache.content from feeds
+            LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
+            WHERE feeds.type = 'blog'
+            ORDER BY RANDOM()
+            LIMIT 8`).all();
+
+        let randomBlogsBlock = '';
+        for (const feed of randomBlogs.results) {
+            const cache_content = JSON.parse(feed.content);
+            let top_items_list = '';
+            if (cache_content?.top_items) {
+                top_items_list += '';
+                for (const item of cache_content.top_items) {
+                    top_items_list += `<li><a class="no-underline hover-underline" href="/items/${item.item_sqid}">${item.title}</a></li>`;
+                }
+            }
+            randomBlogsBlock += `
+                <div class="blog-summary fancy-gradient-bg box-grid">
+                    <h3>
+                        <a class="no-color no-underline util-mr-05" href="/blogs/${feed.feed_sqid}">${feed.title}</a>
+                        <small>
+                            <a class="tag-label no-color" href="${feed.url}">WEB↗</a>
+                            <a class="tag-label no-color" href="${feed.rss_url}">RSS↗</a>
+                        </small>
+                    </h3>
+
+                    <div class="util-mt-1">
+                        <span id="subscription-${feed.feed_sqid}">
+                            <button hx-post="/feeds/${feed.feed_sqid}/subscribe"
+                                class="button subscribe"
+                                hx-trigger="click"
+                                hx-target="#subscription-${feed.feed_sqid}"
+                                hx-swap="outerHTML">
+                            <span class="subscribed-text">subscribe</span>
+                            <span class="unsubscribe-text">unsubscribe</span>
+                            </button>
+                        </span>
+                    </div>
+                    <ul>
+                        ${top_items_list}
+                    </ul>
+                </div>`;
         }
-        list += '</div>';
+
+        inner += `
+        <p class="util-mb-2">
+        Your have no subscriptions ☹️ <br>Subscribe to some <strong><a href="/blogs">blogs</a></strong>. Here are some cool blogs to get you started:
+        </p>
+
+        <div class="container-grid util-mb-1">
+        ${randomBlogsBlock}
+        </div>
+        <a class="box-grid box-aftergrid-element no-underline no-color" href="/blogs">
+            BROWSE ALL BLOGS →
+        </a>
+        `;
     }
     return c.html(
         renderHTML(
-            'My subscriptions',
-            raw(list),
+            'Subscriptions | minifeed',
+            raw(inner),
             c.get('USER_LOGGED_IN'),
             'my',
             '',
@@ -376,7 +531,7 @@ export const handleMyFriendfeed = async (c: Context) => {
 
     return c.html(
         renderHTML(
-            'My friendfeed',
+            'Friendfeed | minifeed',
             raw(list),
             c.get('USERNAME'),
             'my',
@@ -426,15 +581,13 @@ export const handleMyFavorites = async (c: Context) => {
         }
         if (results.length > itemsPerPage) list += `<p><a href="?p=${page + 1}">More</a></p>`;
     } else {
-        if (page === 1) {
-            list += `You haven't added anything to favorites yet :-(`;
-        }
+        list += `You haven't added anything to favorites yet.`;
     }
     list += '</div>';
 
     return c.html(
         renderHTML(
-            'My favorites',
+            'Favorites | minifeed',
             raw(list),
             c.get('USERNAME'),
             'my',
@@ -551,7 +704,7 @@ export const handleItemsSingle = async (c: Context) => {
             class="button"
             hx-target="#lists_section"
             hx-swap="outerHTML">
-            ⛬ add to list
+            ⛬ list
             </button>
         </span>
         `;
@@ -603,7 +756,7 @@ export const handleItemsSingle = async (c: Context) => {
             </span>`;
         }
     } else {
-        lists_block = `<span id="favorite"> <button class="button" title="Log in to add to list" disabled>⛬ add to list</button> </span>`;
+        lists_block = `<span id="favorite"> <button class="button" title="Log in to add to list" disabled>⛬ list</button> </span>`;
         favoriteBlock = `<span id="favorite"> <button class="button" title="Log in to favorite" disabled> ☆ favorite </button> </span>`;
         subscriptionBlock = `<span id="subscription"> <button class="button" disabled title="Login to subscribe"> <span>subscribe</span> </button> </span>`;
     }
@@ -642,11 +795,14 @@ export const handleItemsSingle = async (c: Context) => {
     let list = `
     <h1 style="margin-bottom: 0.25em;">${item.item_title} </h1>
 
-    <div style="margin-bottom:1.25em;">from ${item.type} <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time> | <a href="${item.item_url}" target="_blank">↗ original</a></div>
+    <div class="item-metadata">
+        from ${item.type} <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time> | <a href="${item.item_url}" target="_blank">↗&nbsp;original</a>
+    </div>
     <div class="item-actions">
         <div style="display: flex; gap: 0.25em;">
         ${favoriteBlock}
         ${lists_block}
+        <a class="button" href="${item.item_url}" target="_blank">↗ original</a>
         </div>
         <div>
         ${subscriptionBlock}

@@ -5,6 +5,8 @@ export const changelog = `
 
     <h3>0.7.1 (01.12.2024)</h3>
     <ul>
+        <li>New section in Blogs: <a href="/blogs/by/subscribed">subscribed</a>.</li>
+        <li>Show blogs and posts on <a href="/welcome">welcome page</a>; show new blogs on user homepage</li>
         <li>Scraping speed improvements.</li>
     </ul>
 
