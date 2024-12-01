@@ -5,7 +5,7 @@
         "Liberation Mono", monospace;
 
     --color-text: #000;
-    --color-link: rgb(0, 0, 238);
+    --color-link: #0000ee;
     --color-green: #05620f;
     --color-red: #620529;
 
@@ -13,6 +13,7 @@
     --color-border: #cecece;
     --color-bg: hsla(50, 25%, 96%);
     --color-highlight: #ebebe8;
+    --color-blockquote-border: #bf0000;
 
     --color-bg-button: #FAFBFC;
     --color-bg-button-disabled: #959da5;
@@ -110,6 +111,15 @@ nav.subsections a:first-child {
     border-left: none;
 }
 
+nav.subsections a.disabled {
+    cursor: default;
+    color: var(--color-gray) !important;
+}
+
+nav.subsections a.disabled:hover {
+    background-color: unset;
+}
+
 img,
 video,
 iframe {
@@ -124,7 +134,6 @@ pre {
 code,
 pre {
     overflow: auto;
-    text-wrap: scroll;
     background-color: var(--color-highlight);
 }
 
@@ -145,7 +154,7 @@ figure {
 }
 
 blockquote {
-    border-left: 2px solid #bf0000;
+    border-left: 2px solid var(--color-blockquote-border);
     padding-left: 1em;
     margin-left: 1em;
     font-style: italic;
@@ -196,7 +205,7 @@ a.button {
     font-weight: 500;
     line-height: 20px;
     list-style: none;
-    padding: 6px 16px;
+    padding: 6px 11px;
     position: relative;
     text-decoration: none;
     touch-action: manipulation;
@@ -238,11 +247,11 @@ a.button {
     background-color: var(--color-green);
     color: white;
     box-shadow: none;
-    min-width: 9em;
+    min-width: 8em;
 }
 
 .button.subscribe {
-    min-width: 9em;
+    min-width: 8em;
 }
 
 .button.subscribe .unsubscribe-text,
@@ -277,7 +286,6 @@ textarea {
     min-height: 1em;
     border: unset;
     outline-color: rgb(84 105 212 / 0.5);
-    background-color: --var(color-bg);
     box-shadow: rgba(0, 0, 0, 0) 0px 0px 0px 0px,
         rgba(0, 0, 0, 0) 0px 0px 0px 0px,
         rgba(0, 0, 0, 0) 0px 0px 0px 0px,
@@ -348,12 +356,20 @@ a.no-color {
     margin-right: 0.5em;
 }
 
+.util-mt-1 {
+    margin-top: 1em;
+}
+
 .util-mb-1 {
     margin-bottom: 1em;
 }
 
 .util-mb-2 {
     margin-bottom: 2em;
+}
+
+.util-mb-3 {
+    margin-bottom: 3em;
 }
 
 /* BLOG */
@@ -381,9 +397,9 @@ a.no-color {
     margin-bottom: 0.1em;
 }
 
-
-
-
+.item-metadata {
+    margin-bottom: 1.25em;
+}
 
 .related-items {
     border: 1px solid var(--color-text);
@@ -487,7 +503,7 @@ a.box-aftergrid-element:hover {
 @media (max-width: 550px) {
     header .logo {
         display: block;
-        margin-bottom: 0.65em;
+        margin-bottom: 1em;
     }
 
     nav.subsections {
@@ -497,16 +513,31 @@ a.box-aftergrid-element:hover {
     nav.subsections a:last-child {
         border-right: none;
     }
+
+    h1 {
+        font-size: 1.5em;
+    }
+
+    .item-metadata {
+        font-size: small;
+    }
 }
 
 @media (max-width: 750px) {
     .container-grid {
         grid-template-columns: repeat(1, 1fr);
     }
+
+    body {
+        padding: 0.75em;
+    }
+
+    .button,
+    a.button {
+        font-size: small;
+        padding: 5px 9px;
+    }
 }
-
-
-
 
 /* ADMIN CONTROLS */
 .admin-control#hidden {
