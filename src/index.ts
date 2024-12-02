@@ -102,7 +102,7 @@ const handleNotFound = (c: Context) => {
 };
 
 const handleError = (err: Error, c: Context) => {
-    return c.html(renderHTML('Error | minifeed', raw(`<div class="flash">${err}.</div>`), c.get('USER_LOGGED_IN')));
+    return c.html(renderHTML('Error | minifeed', raw(`<div class="flash">${err}</div>`), c.get('USER_LOGGED_IN')));
 };
 
 app.notFound(handleNotFound);

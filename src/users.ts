@@ -6,7 +6,9 @@ import { feedIdToSqid } from './utils';
 
 export const handleUsers = async (c: Context) => {
     const username = c.get('USERNAME');
-    const { results } = await c.env.DB.prepare('SELECT * from users ORDER BY created ASC').run();
+    const { results } = await c.env.DB.prepare(
+        'SELECT * from users WHERE users.email_verified = 1 ORDER BY created ASC ',
+    ).run();
 
     let inner = '';
     if (!c.get('USER_LOGGED_IN')) {

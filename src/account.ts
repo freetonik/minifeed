@@ -16,7 +16,7 @@ export const handleMyAccount = async (c: Context) => {
 
     const resend_verification_link_form = !user.email_verified
         ? `<form action="/account/resend_verification_link" method="post">
-             <input type="submit" value="Resend verification link">
+             <input type="submit" class="button" value="Resend email verification link">
            </form>`
         : '';
 
@@ -133,12 +133,12 @@ export const handleLogin = async (c: Context) => {
             <h2 style="margin-top:0;">Log in</h2>
             <form action="/login" method="POST">
                 <div style="margin-bottom:1em;">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" required />
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required />
                 </div>
 
                 <div style="margin-bottom:2em;">
-                <label for="pass">Password (8 characters minimum)</label>
+                <label for="pass">Password</label>
                 <input type="password" id="pass" name="password" minlength="8" required />
                 </div>
 
@@ -174,7 +174,7 @@ export const handleResetPassword = async (c: Context) => {
                             <input type="password" id="password" name="password" minlength="8" required />
                             <input type="text" id="reset_code" name="reset_code" required value="${code}" readonly="readonly" hidden  />
                         </div>
-                        <input type="submit" value="Set password">
+                        <input class="button" type="submit" value="Set password">
                     </form>
                 </div>
             </div>`;
@@ -189,7 +189,7 @@ export const handleResetPassword = async (c: Context) => {
                     <label for="email">Email:</label>
                     <input type="email" id="email" name="email" required />
                 </div>
-                <input type="submit" value="Reset password">
+                <input class="button" type="submit" value="Reset password">
             </form>
             </div>
         </div>
@@ -306,17 +306,17 @@ export const handleSignup = async (c: Context) => {
 
 export const handleLoginPOST = async (c: Context) => {
     const body = await c.req.parseBody();
-    const username = body.username.toString();
+    const email = body.email.toString();
     const attempted_password = body.password.toString();
 
-    if (!username || !attempted_password) {
-        throw new Error('Username and password are required');
+    if (!email || !attempted_password) {
+        throw new Error('Email and password are required');
     }
 
-    const user = await c.env.DB.prepare('SELECT * FROM users WHERE users.username = ?').bind(username).first();
+    const user = await c.env.DB.prepare('SELECT * FROM users WHERE users.email = ?').bind(email).first();
     if (!user) {
         // though user may not exist, we should not leak this information
-        throw new Error('Wrong username or password');
+        throw new Error('Wrong email or password.');
     }
 
     const verified = await verifyPassword(user.password_hash, user.password_salt, attempted_password);
@@ -327,7 +327,7 @@ export const handleLoginPOST = async (c: Context) => {
             throw new Error('Something went horribly wrong.');
         }
     }
-    throw new Error('Wrong username or password');
+    throw new Error('Wrong email or password');
 };
 
 export const handleSignupPOST = async (c: Context) => {
