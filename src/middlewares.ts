@@ -1,8 +1,9 @@
 import type { Context } from 'hono';
 import { getCookie } from 'hono/cookie';
+const Stripe = require('stripe');
 
 // Set user_id and username in context if user is logged in
-export async function authCheckMiddleware(c: Context, next) {
+export async function authCheckMiddleware(c: Context, next: () => Promise<void>) {
     const sessionKey = getCookie(c, 'minifeed_session');
     if (sessionKey) {
         const kv_value = await c.env.SESSIONS_KV.get(sessionKey);
@@ -27,26 +28,26 @@ export async function authCheckMiddleware(c: Context, next) {
 }
 
 // User must be logged in
-export async function authRequiredMiddleware(c: Context, next: () => any) {
+export async function authRequiredMiddleware(c: Context, next: () => Promise<void>) {
     if (!c.get('USER_ID')) return c.redirect('/login');
     await next();
 }
 
 // User must be logged in and be admin
-export async function adminRequiredMiddleware(c: Context, next: () => any) {
-    if (!c.get('USER_IS_ADMIN')) {
-        return c.notFound();
-    }
+export async function adminRequiredMiddleware(c: Context, next: () => Promise<void>) {
+    if (!c.get('USER_IS_ADMIN')) return c.notFound();
+
     await next();
 }
 
-export async function subdomainMiddleware(c: Context, next: () => any) {
-    const host = c.req.raw.headers.get('host');
-    if (host) {
-        const subdomain = host.split('.')[0];
-        c.set('SUBDOMAIN', subdomain);
-    } else {
-        throw new Error('Host header is missing');
-    }
+export const stripeMiddleware = async (c: Context, next: () => Promise<void>) => {
+    const stripeKey = c.env.STRIPE_API_KEY;
+
+    const stripe = new Stripe(stripeKey, {
+        maxNetworkRetries: 3,
+        timeout: 30 * 1000,
+    });
+    c.set('stripe', stripe);
+
     await next();
-}
+};

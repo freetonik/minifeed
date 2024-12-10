@@ -243,7 +243,8 @@ a.button {
     outline: 1px transparent;
 }
 
-.button.subscribed {
+.button.subscribed,
+.button.success {
     background-color: var(--color-green);
     color: white;
     box-shadow: none;
@@ -499,6 +500,7 @@ a.box-aftergrid-element {
 a.box-aftergrid-element:hover {
     background-color: antiquewhite;
 }
+
 
 @media (max-width: 550px) {
     header .logo {

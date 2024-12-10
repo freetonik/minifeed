@@ -17,6 +17,7 @@
         "robots-parser": "^3.0.1",
         "rss-url-finder": "^0.0.5-1",
         "sqids": "^0.3.0",
+        "stripe": "^17.4.0",
         "typesense": "^1.7.2"
     },
     "devDependencies": {

@@ -1,0 +1,11 @@
+-- Migration number: 0017 	 2024-12-10T16:01:28.712Z
+
+CREATE TABLE IF NOT EXISTS user_subscriptions (
+    user_id INTEGER PRIMARY KEY,
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    tier INTEGER NOT NULL,
+    expires TIMESTAMP NOT NULL,
+    customer_id TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);

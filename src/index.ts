@@ -72,7 +72,7 @@ import {
     regenerateRelatedCacheForItem,
 } from './items';
 import { handleLists, handleListsSingle, handleListsSingleDeletePOST } from './lists';
-import { adminRequiredMiddleware, authCheckMiddleware, authRequiredMiddleware } from './middlewares';
+import { adminRequiredMiddleware, authCheckMiddleware, authRequiredMiddleware, stripeMiddleware } from './middlewares';
 import {
     enqueueGenerateInitialRelatedCacheForItems,
     enqueueRegenerateRelatedCacheForAllItems,
@@ -82,6 +82,13 @@ import {
 } from './queue';
 import { scrapeItem } from './scrape';
 import { updateFeedIndex, updateFeedItemsIndex, updateItemIndex } from './search';
+import {
+    handleBillingCancel,
+    handleBillingSuccess,
+    handleStripeCreateCheckoutSessionPOST,
+    handleStripeCustomerPortalPOST,
+    handleStripeWebhook,
+} from './stripe';
 import { handleUsers, handleUsersFollowPOST, handleUsersSingle, handleUsersUnfollowPOST } from './users';
 
 // ————————————————————————————————————————————————————————————————>>>>
@@ -130,6 +137,13 @@ app.get('/account', authRequiredMiddleware, handleMyAccount);
 app.post('/account/resend_verification_link', handleResentVerificationEmailPOST);
 
 app.get('/verify_email', handleVerifyEmail);
+
+// STRIPE
+app.post('/account/billing/create-checkout-session', stripeMiddleware, handleStripeCreateCheckoutSessionPOST);
+app.post('/account/billing/customer-portal', stripeMiddleware, handleStripeCustomerPortalPOST);
+app.get('/account/billing/success', handleBillingSuccess);
+app.get('/account/billing/cancel', handleBillingCancel);
+app.post('/account/billing/webhook', stripeMiddleware, handleStripeWebhook);
 
 // ADMIN ROUTES
 // all routes below this line require admin privileges

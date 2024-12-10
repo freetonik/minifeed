@@ -115,3 +115,8 @@ export type ArticleInfo = {
     description: string;
     published: string;
 };
+
+export enum SubscriptionTier {
+    FREE = 0,
+    PRO = 1,
+}

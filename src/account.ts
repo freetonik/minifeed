@@ -4,13 +4,15 @@ import { raw } from 'hono/html';
 import type { Bindings } from './bindings';
 import { sendEmail } from './email';
 import { renderHTML } from './htmltools';
+import { SubscriptionTier } from './interface';
 
 export const handleMyAccount = async (c: Context) => {
     const user_id = c.get('USER_ID');
     const user = await c.env.DB.prepare(`
-            SELECT created, username, email_verified, status, email
+            SELECT users.created, username, email_verified, status, email, tier, expires
             FROM users
-            WHERE user_id = ?`)
+            LEFT JOIN user_subscriptions on users.user_id = user_subscriptions.user_id
+            WHERE users.user_id = ?`)
         .bind(user_id)
         .first();
 
@@ -23,7 +25,38 @@ export const handleMyAccount = async (c: Context) => {
     const verified = user.email_verified ? 'yes' : `no ${resend_verification_link_form}`;
     const email = user.email ? user.email : 'no';
     const username = user.username;
-    const status = user.status;
+    const hasSubscription = user.tier === SubscriptionTier.PRO;
+    const date_format_opts: Intl.DateTimeFormatOptions = {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    };
+
+    let subscriptionBlock = '';
+    if (hasSubscription) {
+        const status = user.tier === SubscriptionTier.PRO ? 'Paid' : 'Free';
+        const subscriptionExpires = user.expires
+            ? new Date(user.expires).toLocaleString('en-UK', date_format_opts)
+            : 'N/A';
+        subscriptionBlock = `
+        Subscription status: ${status}<br>
+        Subscription expires: ${subscriptionExpires}
+
+        <p>
+        <form method="POST" action="/account/billing/customer-portal"> <button class="button" type="submit">Manage billing</button> </form></p>
+        `;
+    } else {
+        subscriptionBlock = `
+        <div class="borderbox fancy-gradient-bg">
+            <strong>
+                Subscribe to access premium features. $25/year.
+            </strong>
+            <form class="util-mt-1" action="/account/billing/create-checkout-session" method="POST">
+                <button class="button success" type="submit" id="checkout-button">⚡ Subscribe</button>
+            </form>
+        </div>
+    `;
+    }
 
     let list_of_lists = '';
     const lists = await c.env.DB.prepare(
@@ -47,7 +80,7 @@ export const handleMyAccount = async (c: Context) => {
     <p>
         Username: ${username}<br>
         Profile: <a href="/users/${username}">${username}</a><br>
-        Account status: ${status}<br>
+
     </p>
     <p>
         Email: ${email}<br>
