@@ -330,7 +330,11 @@ export const handleFeedsDelete = async (c: Context) => {
             try {
                 await c.env.VECTORIZE.deleteByIds(chunk);
             } catch (e) {
-                console.log(`Error deleting items from vectorize: ${e}`);
+                console.log({
+                    message: `Error deleting items from vectorize: ${e}`,
+                    itemId: chunk,
+                    feedId: feedId,
+                });
             }
         }
     }
@@ -565,7 +569,11 @@ export async function addItemsToFeed(
         try {
             link = extractItemUrl(item, feedRSSUrl);
         } catch (e) {
-            console.log(`Error extracting item URL: ${e}`);
+            console.log({
+                message: `Error extracting item URL ${e}`,
+                feedId,
+                feedRSSUrl,
+            });
             continue;
         }
 
@@ -621,7 +629,11 @@ export async function addItemsToFeed(
             const item_id = result.meta.last_row_id;
             const item_sqid = itemIdToSqid(item_id);
 
-            console.log(`Item: ${item_id} added to feed ${feedId}`);
+            console.log({
+                message: 'Item added to feed',
+                itemId: item_id,
+                feedId: feedId,
+            });
 
             await env.DB.prepare('UPDATE items SET item_sqid = ? WHERE item_id = ?').bind(item_sqid, item_id).run();
             console.log(`Item: ${item_id} set sqid ${item_sqid}`);

@@ -249,7 +249,10 @@ export const regenerateRelatedCacheForItemMOCK = async (env: Bindings, itemId: n
             url: i.url as string,
         });
     }
-    console.log(`Regenerated cache for item ${itemId}`);
+    console.log({
+        message: 'Regenerated related cache for item',
+        itemId,
+    });
     await env.DB.prepare(
         'REPLACE INTO items_related_cache (item_id, content, created) values (?, ?, CURRENT_TIMESTAMP)',
     )

@@ -46,7 +46,10 @@ export const handleBillingCancel = async (c: Context) => {
 async function fulfillCheckout(c: Context, sessionId: string) {
     const stripe = c.get('stripe');
 
-    console.log(`Fulfilling Checkout Session ${sessionId}`);
+    console.log({
+        message: 'Fulfilling Checkout Session',
+        sessionId,
+    });
 
     const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId, {
         expand: ['line_items'],
@@ -56,13 +59,14 @@ async function fulfillCheckout(c: Context, sessionId: string) {
     const userId = checkoutSession.metadata.user_id;
     const customerId = checkoutSession.customer;
 
-    console.log(`Checkout Session ${sessionId} fulfilled successfully for user ${userId} with email ${customerEmail}`);
-
     if (checkoutSession.payment_status !== 'unpaid') {
         await upgradeUser(c, userId, customerId, SubscriptionTier.PRO, 12);
-        console.log(
-            `Checkout Session ${sessionId} fulfilled successfully for user ${userId} with email ${customerEmail}`,
-        );
+        console.log({
+            message: 'Checkout Session fulfilled successfully',
+            sessionId,
+            userId,
+            userEmail: customerEmail,
+        });
     }
 }
 

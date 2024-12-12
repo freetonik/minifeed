@@ -18,7 +18,10 @@ export async function upsertSingleDocument(env: Bindings, document: ItemSearchDo
     };
 
     try {
-        console.log(`Upserting document index: ${document.id} - ${document.title}`);
+        console.log({
+            message: `Upserting document index (${document.title})`,
+            itemId: document.id,
+        });
         const response = await fetch(reqUrl, init);
         return await gatherResponse(response);
     } catch (e) {
@@ -141,7 +144,10 @@ export async function updateFeedIndex(env: Bindings, feedId: number) {
     try {
         feedUrlHost = new URL(feed.url).host;
     } catch (e) {
-        console.log(`Error while getting host from feed url: ${feed.url}`);
+        console.log({
+            message: `Error parsing URL: ${e}`,
+            feedId: feed.feed_id,
+        });
         return;
     }
     const feedContent = `${feed.title}. ${feedDescription}${feed.url} ${feedUrlHost} ${feed.rss_url}`;
