@@ -528,7 +528,7 @@ export async function updateFeed(env: Bindings, feedId: number) {
 
         for (const item of newItemsToBeAdded) {
             await env.ADD_UPDATE_ITEM_WORKFLOW.create({
-                params: { item, feedId, feedRSSUrl },
+                params: { item, feedId },
             });
         }
         return;
