@@ -20,7 +20,7 @@ export async function upsertSingleDocument(env: Bindings, document: ItemSearchDo
     try {
         console.log(`Upserting document index: ${document.id} - ${document.title}`);
         const response = await fetch(reqUrl, init);
-        await gatherResponse(response);
+        return await gatherResponse(response);
     } catch (e) {
         console.log({
             message: `Error while upserting document: ${e}`,
@@ -122,7 +122,7 @@ export async function updateItemIndex(env: Bindings, itemId: number, textContent
         feed_title: item.feed_title,
     };
 
-    await upsertSingleDocument(env, searchDocument);
+    return await upsertSingleDocument(env, searchDocument);
 }
 
 export async function updateFeedIndex(env: Bindings, feedId: number) {

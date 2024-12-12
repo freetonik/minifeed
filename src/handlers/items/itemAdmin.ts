@@ -119,10 +119,16 @@ export const handleItemsIndexing = async (c: Context) => {
 export const regenerateRelatedCacheForItem = async (env: Bindings, itemId: number) => {
     if (env.ENVIRONMENT === 'dev') {
         await regenerateRelatedCacheForItemMOCK(env, itemId);
-        return;
+        return true;
     }
     const vectors = await env.VECTORIZE.getByIds([`${itemId}`]);
-    if (!vectors.length) return;
+    if (!vectors.length) {
+        console.log({
+            message: 'Unable to generate related cache: item not found in vector store',
+            itemId,
+        });
+        return false;
+    }
 
     const item = await env.DB.prepare(
         `SELECT items.item_id, feeds.title as feed_title
@@ -133,9 +139,15 @@ export const regenerateRelatedCacheForItem = async (env: Bindings, itemId: numbe
         .bind(itemId)
         .first();
 
-    if (!item) throw new Error(`Item with id ${itemId} not found`);
+    if (!item) {
+        console.log({
+            message: 'Unable to generate related cache: item not found in database',
+            itemId,
+        });
+        return false;
+    }
 
-    const cache_content: { relatedFromOtherBlogs: RelatedItemCached[]; relatedFromThisBlog: RelatedItemCached[] } = {
+    const cacheContent: { relatedFromOtherBlogs: RelatedItemCached[]; relatedFromThisBlog: RelatedItemCached[] } = {
         relatedFromOtherBlogs: [],
         relatedFromThisBlog: [],
     };
@@ -151,18 +163,19 @@ export const regenerateRelatedCacheForItem = async (env: Bindings, itemId: numbe
         if (match.id === `${itemId}`) continue; // skip current item itself
         relatedIDsOtherBlog.push(match.id);
     }
+
     const queryBindPlaceholders = relatedIDsOtherBlog.map(() => '?').join(','); // Generate '?,?,...,?'
     const relatedItemsOtherBlog = await env.DB.prepare(
         `SELECT item_id, item_sqid, items.title, feeds.title as feed_title, items.feed_id, feeds.feed_sqid, items.url
         FROM items
-        JOIN  feeds ON items.feed_id = feeds.feed_id
+        JOIN feeds ON items.feed_id = feeds.feed_id
         WHERE item_id IN (${queryBindPlaceholders})`,
     )
         .bind(...relatedIDsOtherBlog)
         .all();
 
     for (const i of relatedItemsOtherBlog.results) {
-        cache_content.relatedFromOtherBlogs.push({
+        cacheContent.relatedFromOtherBlogs.push({
             title: i.title as string,
             item_id: i.item_id as number,
             item_sqid: i.item_sqid as string,
@@ -172,12 +185,18 @@ export const regenerateRelatedCacheForItem = async (env: Bindings, itemId: numbe
             url: i.url as string,
         });
     }
-    console.log(`Regenerated cache for item ${itemId}`);
+
     await env.DB.prepare(
-        'REPLACE INTO items_related_cache (item_id, content, created) values (?, ?, CURRENT_TIMESTAMP)',
+        'INSERT OR REPLACE INTO items_related_cache (item_id, content, created) values (?, ?, CURRENT_TIMESTAMP)',
     )
-        .bind(itemId, JSON.stringify(cache_content))
+        .bind(itemId, JSON.stringify(cacheContent))
         .run();
+
+    console.log({
+        message: 'Regenerated cache for item',
+        itemId,
+    });
+    return true;
 };
 
 export const regenerateRelatedCacheForItemMOCK = async (env: Bindings, itemId: number) => {

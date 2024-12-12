@@ -41,6 +41,7 @@ export const addVectorToDb = async (
     const upserted = await env.VECTORIZE.upsert(vectors);
     if (upserted) {
         await env.DB.prepare('REPLACE INTO items_vector_relation (item_id, vectorized) VALUES (?,?)').bind(id, 1).run();
+        return upserted;
     }
 };
 
@@ -77,7 +78,7 @@ export const vectorizeAndStoreItem = async (env: Bindings, item_id: number) => {
     }
 
     const embeddings: EmbeddingResponse = await vectorize_text(env, `${contentBlock}`);
-    await addVectorToDb(
+    return await addVectorToDb(
         env,
         item.item_id,
         embeddings,

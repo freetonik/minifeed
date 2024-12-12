@@ -144,15 +144,14 @@ export class AddOrUpdateItemWorkflow extends WorkflowEntrypoint<Bindings, Params
         await step.do('index item', standardRetryPolicy, async () => {
             // if scraping succeeded, use the scraped content
             if (textContent) {
-                await updateItemIndex(this.env, itemInfo.itemId, textContent);
-            } else {
-                await updateItemIndex(this.env, itemInfo.itemId);
+                return await updateItemIndex(this.env, itemInfo.itemId, textContent);
             }
+            return await updateItemIndex(this.env, itemInfo.itemId);
         });
 
         // STEP 6: Vectorize item
         await step.do('vectorize item', async () => {
-            await vectorizeAndStoreItem(this.env, itemInfo.itemId);
+            return await vectorizeAndStoreItem(this.env, itemInfo.itemId);
         });
 
         // STEP 7: Regenerate related cache
