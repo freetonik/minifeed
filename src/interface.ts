@@ -91,7 +91,6 @@ export type ItemSearchResultHighlightEntity = {
 };
 
 // SEARCH DOCUMENT
-
 export type ItemSearchDocument = {
     id: string;
     title: string;
@@ -105,8 +104,19 @@ export type ItemSearchDocument = {
     feed_title: string;
 };
 
-// SCRAPING
+export type FeedSearchDocument = {
+    id: string;
+    title: string;
+    type: string;
+    content: string;
+    feed_id: number;
+    // non-searchable fields
+    feed_sqid: string;
+    url: string;
+    rss_url: string;
+};
 
+// SCRAPING
 export type ArticleInfo = {
     url: string;
     title: string;
@@ -116,6 +126,7 @@ export type ArticleInfo = {
     published: string;
 };
 
+// SUBSCRIPTIONS (billing)
 export enum SubscriptionTier {
     FREE = 0,
     PRO = 1,

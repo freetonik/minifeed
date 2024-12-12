@@ -1,17 +1,22 @@
 import type { Context } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { raw } from 'hono/html';
-import type { Bindings } from './bindings';
-import { sendEmail } from './email';
-import { renderHTML } from './htmltools';
-import { SubscriptionTier } from './interface';
+import { sendEmail } from '../../email';
+import { renderHTML } from '../../htmltools';
+import { SubscriptionTier } from '../../interface';
+import type { Bindings } from './../../bindings';
 
 export const handleMyAccount = async (c: Context) => {
     const user_id = c.get('USER_ID');
     const user = await c.env.DB.prepare(`
-            SELECT users.created, username, email_verified, status, email, tier, expires
+            SELECT
+            users.created, username, email_verified, status, email,
+            tier, expires,
+            user_preferences.prefers_full_blog_post, user_preferences.default_homepage_subsection
+
             FROM users
             LEFT JOIN user_subscriptions on users.user_id = user_subscriptions.user_id
+            LEFT JOIN user_preferences on users.user_id = user_preferences.user_id
             WHERE users.user_id = ?`)
         .bind(user_id)
         .first();
@@ -58,6 +63,30 @@ export const handleMyAccount = async (c: Context) => {
     `;
     }
 
+    const prefersFullBlogPost = user.prefers_full_blog_post !== null ? user.prefers_full_blog_post : true;
+    const preferencesBlock = `
+    <div class="preferences-container borderbox" id="preferences">
+        <form action="/account/preferences" method="POST" id="preferences-form">
+            <div class="form-section util-mb-1">
+                <h4 class="util-mt-0">Blog posts view</h4>
+
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="prefers-full-blog-post" name="blog-post-view" value="prefers-full-blog-post" ${prefersFullBlogPost ? 'checked' : ''}>
+                        <label for="prefers-full-blog-post">Show blog posts in full (when available)</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="prefers-short-blog-post" name="blog-post-view" value="prefers-short-blog-post" ${!prefersFullBlogPost ? 'checked' : ''}>
+                        <label for="prefers-short-blog-post">Show excerpts only</label>
+                    </div>
+                </div>
+            </div>
+
+            <button class="button" type="submit">Save Preferences</button>
+        </form>
+    </div>
+
+`;
     let list_of_lists = '';
     const lists = await c.env.DB.prepare(
         `SELECT *
@@ -82,13 +111,16 @@ export const handleMyAccount = async (c: Context) => {
         Profile: <a href="/users/${username}">${username}</a><br>
 
     </p>
+
     <p>
         Email: ${email}<br>
         Email verified: ${verified}<br>
     </p>
+    ${preferencesBlock}
+
     ${list_of_lists}
-    <p style="margin-top:2em;">
-        <a class="button" href="/logout">Log out</a>
+    <p style="margin-top:2em; text-align:right;">
+        <a class="button button-small" href="/logout">Log out</a>
     </p>`;
 
     return c.html(renderHTML('My account | minifeed', raw(list), username, ''));
@@ -123,6 +155,50 @@ export const handleVerifyEmail = async (c: Context) => {
         : `<div class="flash flash-blue">You can now <a href="/login">log in</a>.</div>`;
 
     return c.html(renderHTML('Email verification | minifeed', raw(message_flash), username, ''));
+};
+
+export const handleMyAccountPreferencesPOST = async (c: Context) => {
+    const body = await c.req.parseBody();
+
+    let prefersFullBlogPost = 1;
+    // let defaultHomepageSubsection = 'all';
+
+    switch (body['blog-post-view']) {
+        case 'prefers-full-blog-post':
+            prefersFullBlogPost = 1;
+            break;
+        case 'prefers-short-blog-post':
+            prefersFullBlogPost = 0;
+            break;
+        default:
+            throw new Error('Invalid blog post view preference');
+    }
+
+    // switch (body['default-section']) {
+    //     case 'all':
+    //         defaultHomepageSubsection = 'all';
+    //         break;
+    //     case 'subscriptions':
+    //         defaultHomepageSubsection = 'subscriptions';
+    //         break;
+    //     case 'favorites':
+    //         defaultHomepageSubsection = 'favorites';
+    //         break;
+    //     case 'friendfeed':
+    //         defaultHomepageSubsection = 'friendfeed';
+    //         break;
+    //     default:
+    //         throw new Error('Invalid default section preference');
+    // }
+
+    await c.env.DB.prepare(
+        `INSERT OR REPLACE INTO user_preferences (user_id, prefers_full_blog_post)
+        VALUES (?, ?)`,
+    )
+        .bind(c.get('USER_ID'), prefersFullBlogPost)
+        .run();
+
+    return c.redirect('/account#preferences');
 };
 
 export const handleResentVerificationEmailPOST = async (c: Context) => {
@@ -399,6 +475,8 @@ export const handleSignupPOST = async (c: Context) => {
             await c.env.DB.prepare('SELECT users.user_id FROM users WHERE username = ?').bind(username).first()
         ).user_id;
 
+        await c.env.DB.prepare('INSERT INTO user_preferences (user_id) values (?)').bind(userId).run();
+
         const email_verification_code = randomHash(32);
         await c.env.DB.prepare('INSERT INTO email_verifications (user_id, verification_code) values (?, ?)')
             .bind(userId, email_verification_code)
@@ -421,7 +499,7 @@ const send_email_verification_link = async (
 
     const emailBody = `Welcome to minifeed, ${username}!<br><br>Please, verify your email by clicking on <strong><a href="${emailVerificationLink}">this link</a></strong>.`;
 
-    await sendEmail(env, email, 'no-reply@minifeed.net', 'Welcome to minifeed', emailBody);
+    await sendEmail(env, email, 'Welcome to minifeed', emailBody);
 };
 
 const send_password_reset_link = async (env: Bindings, email: string, password_reset_code: string) => {
@@ -429,7 +507,7 @@ const send_password_reset_link = async (env: Bindings, email: string, password_r
 
     const emailBody = `You have requested to reset your password for your minifeed account. If you did not request it, please ignore this email. Otherwise, please click on <strong><a href="${passwordResetLink}">this link</a></strong> to reset your password.`;
 
-    await sendEmail(env, email, 'no-reply@minifeed.net', 'Password reset request', emailBody);
+    await sendEmail(env, email, 'Password reset request', emailBody);
 };
 
 const createSessionSetCookieAndRedirect = async (

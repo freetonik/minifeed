@@ -3,20 +3,8 @@ import { Hono } from 'hono';
 import { raw } from 'hono/html';
 import { about } from './about';
 import {
-    handleLogin,
-    handleLoginPOST,
-    handleLogout,
-    handleMyAccount,
-    handleResentVerificationEmailPOST,
-    handleResetPassword,
-    handleResetPasswordPOST,
-    handleSetPasswordPOST,
-    handleSignup,
-    handleSignupPOST,
-    handleVerifyEmail,
-} from './account';
-import {
     handleAdmin,
+    handleAdminItemsWithoutRelatedCache,
     handleAdminItemsWithoutSqid,
     handleAdminUnindexedItems,
     handleAdminUnvectorizedItems,
@@ -44,42 +32,51 @@ import {
     regenerateTopItemsCacheForFeed,
     updateFeed,
 } from './feeds';
-import { handleFavicon } from './handlers/handleFavicon';
-import { handleOpensearchXML } from './handlers/search/handleOpensearchXML';
-import { handleSearch } from './handlers/search/handleSearch';
-import { renderHTML } from './htmltools';
-import type { MFQueueMessage } from './interface';
 import {
-    handleGlobal,
-    handleHomeForGuest,
+    handleLogin,
+    handleLoginPOST,
+    handleLogout,
+    handleMyAccount,
+    handleMyAccountPreferencesPOST,
+    handleResentVerificationEmailPOST,
+    handleResetPassword,
+    handleResetPasswordPOST,
+    handleSetPasswordPOST,
+    handleSignup,
+    handleSignupPOST,
+    handleVerifyEmail,
+} from './handlers/account/handleMyAccount';
+import { handleFavicon } from './handlers/handleFavicon';
+import { handleGlobal } from './handlers/items/global';
+import { handleHomeForGuest } from './handlers/items/homeGuest';
+import { handleItemsSingle } from './handlers/items/item';
+import {
     handleItemsAddItemByUrlPOST,
     handleItemsAddItembyUrl,
-    handleItemsAddToFavorites,
     handleItemsDelete,
     handleItemsIndexing,
-    handleItemsLists,
+    handleItemsScraping,
+    regenerateRelatedCacheForItem,
+} from './handlers/items/itemAdmin';
+import { handleItemsAddToFavorites, handleItemsRemoveFromFavorites } from './handlers/items/itemFavorites';
+import {
     handleItemsListsAddPOST,
     handleItemsListsNewForm,
     handleItemsListsNewPOST,
     handleItemsListsRemovePOST,
-    handleItemsRemoveFromFavorites,
-    handleItemsScraping,
-    handleItemsSingle,
-    handleMy,
-    handleMyFavorites,
-    handleMyFriendfeed,
-    handleMySubscriptions,
-    regenerateRelatedCacheForItem,
-} from './items';
+} from './handlers/items/itemListActions';
+import { handleItemsLists } from './handlers/items/itemListPartial';
+import { handleMy } from './handlers/items/my';
+import { handleMyFavorites } from './handlers/items/myFavorites';
+import { handleMyFriendfeed } from './handlers/items/myFriendfeed';
+import { handleMySubscriptions } from './handlers/items/mySubscriptions';
+import { handleOpensearchXML } from './handlers/search/handleOpensearchXML';
+import { handleSearch } from './handlers/search/handleSearch';
+import { renderHTML } from './htmltools';
+import type { MFQueueMessage } from './interface';
 import { handleLists, handleListsSingle, handleListsSingleDeletePOST } from './lists';
 import { adminRequiredMiddleware, authCheckMiddleware, authRequiredMiddleware, stripeMiddleware } from './middlewares';
-import {
-    enqueueGenerateInitialRelatedCacheForItems,
-    enqueueRegenerateRelatedCacheForAllItems,
-    enqueueScrapeAllItemsOfFeed,
-    enqueueUpdateAllFeeds,
-    enqueueVectorizeStoreAllItems,
-} from './queue';
+import { enqueueRegenerateRelatedCacheForAllItems, enqueueScrapeAllItemsOfFeed, enqueueUpdateAllFeeds } from './queue';
 import { scrapeItem } from './scrape';
 import { updateFeedIndex, updateFeedItemsIndex, updateItemIndex } from './search';
 import {
@@ -90,6 +87,7 @@ import {
     handleStripeWebhook,
 } from './stripe';
 import { handleUsers, handleUsersFollowPOST, handleUsersSingle, handleUsersUnfollowPOST } from './users';
+import { AddOrUpdateItemWorkflow } from './workflows/addItemWorkflow';
 
 // ————————————————————————————————————————————————————————————————>>>>
 
@@ -134,6 +132,7 @@ app.get('/subscriptions', authRequiredMiddleware, handleMySubscriptions);
 app.get('/friendfeed', authRequiredMiddleware, handleMyFriendfeed);
 app.get('/favorites', authRequiredMiddleware, handleMyFavorites);
 app.get('/account', authRequiredMiddleware, handleMyAccount);
+app.post('/account/preferences', authRequiredMiddleware, handleMyAccountPreferencesPOST);
 app.post('/account/resend_verification_link', handleResentVerificationEmailPOST);
 
 app.get('/verify_email', handleVerifyEmail);
@@ -152,6 +151,7 @@ app.get('/admin', handleAdmin);
 app.get('/admin/unvectorized_items', handleAdminUnvectorizedItems);
 app.get('/admin/unindexed_items', handleAdminUnindexedItems);
 app.get('/admin/items_without_sqid', handleAdminItemsWithoutSqid);
+app.get('/admin/items_without_related_cache', handleAdminItemsWithoutRelatedCache);
 app.get('/admin/vectorize', handleVectorize);
 app.get('/admin/generate_related', handleGenerateRelated);
 
@@ -352,12 +352,7 @@ export default {
         switch (event.cron) {
             case '*/30 * * * *':
                 // Every 30 minutes
-                // update feeds
                 await enqueueUpdateAllFeeds(env);
-                // vectorize
-                await enqueueVectorizeStoreAllItems(env);
-                // generate related items cache
-                await enqueueGenerateInitialRelatedCacheForItems(env);
                 break;
             case '0 0 * * *':
                 // Every midnight
@@ -366,3 +361,5 @@ export default {
         }
     },
 };
+
+export { AddOrUpdateItemWorkflow };

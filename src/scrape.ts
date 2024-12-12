@@ -1,11 +1,11 @@
-import type { Bindings } from './bindings';
-
 import { Readability } from '@mozilla/readability';
 import { parseHTML } from 'linkedom';
+import type { Bindings } from './bindings';
 import type { ArticleInfo } from './interface';
 import { enqueueItemIndex } from './queue';
 import { updateItemIndex } from './search';
 
+// TODO: deprecate
 export async function scrapeItem(env: Bindings, itemId: number) {
     // TODO: probably should not couple indexing with scraping
     const item = await env.DB.prepare('SELECT url, description FROM items WHERE item_id = ?').bind(itemId).first();

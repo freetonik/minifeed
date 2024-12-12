@@ -201,11 +201,11 @@ a.button {
     cursor: pointer;
     display: inline-block;
     font-family: var(--font-sans);
-    font-size: 14px;
+    font-size: .875em;
     font-weight: 500;
-    line-height: 20px;
+    line-height: 1.5em;
+    padding: 0.4em 0.7em;
     list-style: none;
-    padding: 6px 11px;
     position: relative;
     text-decoration: none;
     touch-action: manipulation;
@@ -215,6 +215,13 @@ a.button {
     white-space: nowrap;
     word-wrap: break-word;
     -webkit-user-select: none;
+}
+
+a.button-small,
+.button-small {
+    font-size: .75em;
+    line-height: 1.5em;
+    padding: 0.4em 0.5em;
 }
 
 .button:hover {
@@ -357,6 +364,10 @@ a.no-color {
     margin-right: 0.5em;
 }
 
+.util-mt-0 {
+    margin-top: 0;
+}
+
 .util-mt-1 {
     margin-top: 1em;
 }
@@ -371,6 +382,29 @@ a.no-color {
 
 .util-mb-3 {
     margin-bottom: 3em;
+}
+
+:target {
+    animation: highlight 1s ease-in-out;
+}
+
+/* Highlight animation */
+@keyframes highlight {
+    0% {
+        background-color: var(--color-highlight);
+    }
+
+    20% {
+        background-color: #fff3cd;
+    }
+
+    80% {
+        background-color: #fff3cd;
+    }
+
+    100% {
+        background-color: var(--color-highlight);
+    }
 }
 
 /* BLOG */
@@ -501,6 +535,15 @@ a.box-aftergrid-element:hover {
     background-color: antiquewhite;
 }
 
+/* USER PREFERENCES */
+
+.preferences-container {
+    background-color: var(--color-highlight);
+}
+
+.preferences-container label {
+    display: inline-block;
+}
 
 @media (max-width: 550px) {
     header .logo {

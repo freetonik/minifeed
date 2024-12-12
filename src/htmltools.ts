@@ -243,12 +243,18 @@ export const renderGlobalSubsections = (active = 'newest') => {
 export const renderBlogsSubsections = (active = 'newest', userLoggedIn = true) => {
     return `
     <nav class="subsections">
-        <a href="/blogs" class="no-color no-underline ${active === 'newest' ? 'active bold' : ''}">newest</a>
-        <a href="/blogs/by/oldest" class="no-color no-underline ${active === 'oldest' ? 'active bold' : ''}">oldest</a>
-        <a href="/blogs/by/alphabetical" class="no-color no-underline ${active === 'alphabetical' ? 'active bold' : ''}">alphabetical</a>
+        <a href="/blogs" class="no-color no-underline ${active === 'newest' ? 'active bold' : ''}">new</a>
+        <a href="/blogs/by/oldest" class="no-color no-underline ${active === 'oldest' ? 'active bold' : ''}">old</a>
+        <a href="/blogs/by/alphabetical" class="no-color no-underline ${active === 'alphabetical' ? 'active bold' : ''}">a→z</a>
         <a href="/blogs/by/random" class="no-color no-underline ${active === 'random' ? 'active bold' : ''}">random</a>
         <a ${userLoggedIn ? 'href="/blogs/by/subscribed"' : ''} class="no-color no-underline ${active === 'subscribed' ? 'active bold' : ''}
         ${!userLoggedIn ? 'disabled' : ''} ">subscribed</a>
     </nav>
     `;
 };
+
+export const guestFlash = `<div class="flash">
+    <strong>Minifeed</strong> is a curated blog reader and search engine.
+    We collect humans-written blogs to make them discoverable and searchable.
+    Sign up to subscribe to blogs, follow people, save favorites, and create lists.
+    </div>`;

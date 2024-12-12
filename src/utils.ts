@@ -3,6 +3,7 @@ import { decode } from 'html-entities';
 import robotsParser from 'robots-parser';
 import { getRssUrlsFromHtmlBody } from 'rss-url-finder';
 import Sqids from 'sqids';
+import type { MFFeedEntry } from './interface';
 
 const idToSqid = (id: number, length: number): string => {
     const sqids = new Sqids({
@@ -31,7 +32,7 @@ export const itemIdToSqid = (itemId: number): string => idToSqid(itemId, 10);
 export const itemSqidToId = (itemSqid: string): number => sqidToId(itemSqid, 10);
 
 export async function getRSSLinkFromUrl(url: string) {
-    let req;
+    let req: Response;
     try {
         req = await fetch(url);
     } catch (err) {
@@ -70,7 +71,7 @@ export async function getFeedIdByRSSUrl(c: Context, rssUrl: string) {
  * @param val - The input value.
  * @returns The text value of the input.
  */
-export const getText = (val) => {
+export const getText = (val: any) => {
     const txt = isObject(val) ? val._text || val['#text'] || val._cdata || val.$t : val;
     return txt ? decode(String(txt).trim()) : '';
 };
@@ -190,7 +191,7 @@ export const stripTagsSynchronously = (s: string | undefined) => {
         .trim();
 };
 
-export const extractItemUrl = (item: any, feedRSSUrl: string) => {
+export const extractItemUrl = (item: MFFeedEntry, feedRSSUrl: string) => {
     if (!item.link && !item.id) throw new Error('Cannot extract item URL: missing link, guid, or id');
 
     let link = item.link || item.id;
@@ -205,6 +206,30 @@ export const extractItemUrl = (item: any, feedRSSUrl: string) => {
     }
 
     return link;
+};
+
+export const getItemPubDate = (item: MFFeedEntry): Date => {
+    // published date was parsed OK
+    if (item.published) {
+        // if item.published is in future, set it to current date
+        if (new Date(item.published) > new Date()) return new Date();
+        return new Date(item.published);
+    }
+    // if date was not properly parsed, try to parse it (expects 'pubdate' to be retrieved by feed_extractor's extractRSS function)
+    if (item.pubdate) {
+        const dateFromPubdate = new Date(item.pubdate);
+        // if date is in future, set it to current date
+        if (dateFromPubdate > new Date()) {
+            return new Date();
+        }
+        // if date is older than unix epoch start date, set it to current date
+        if (dateFromPubdate < new Date('1970-01-01')) {
+            return new Date();
+        }
+        return dateFromPubdate;
+    }
+    // if no date was found, set it to current date
+    return new Date();
 };
 
 // This is used e.g. for preparing plaintext description and for vectorization
@@ -338,7 +363,9 @@ export const sanitizeHTML = async (contentBlock: string): Promise<string> => {
                     'onwaiting',
                     'onwheel',
                 ];
-                dangerousAttributes.forEach((attr) => element.removeAttribute(attr));
+                for (const attr of dangerousAttributes) {
+                    element.removeAttribute(attr);
+                }
 
                 // Sanitize href attributes
                 if (element.tagName === 'a' && element.getAttribute('href')) {

@@ -3,9 +3,8 @@ import type { Context } from 'hono';
 import { raw } from 'hono/html';
 import type { Bindings } from './bindings';
 import { extractRSS, validateFeedData } from './feed_extractor';
-import { renderAddFeedForm, renderBlogsSubsections, renderHTML, renderItemShort } from './htmltools';
+import { guestFlash, renderAddFeedForm, renderBlogsSubsections, renderHTML, renderItemShort } from './htmltools';
 import type { FeedRow, ItemRow, MFFeedEntry } from './interface';
-import { guestFlash } from './items';
 import {
     enqueueFeedUpdate,
     enqueueIndexAllItemsOfFeed,
@@ -34,7 +33,6 @@ import {
 export const handleBlogs = async (c: Context) => {
     const user_id = c.get('USER_ID') || -1;
     const userLoggedIn = c.get('USER_LOGGED_IN');
-    console.log('user logged in', userLoggedIn);
 
     const listingType = c.req.param('listingType') || 'newest';
 
@@ -351,12 +349,13 @@ export const handleBlogsNew = async (c: Context) => {
 export const handleBlogsNewPOST = async (c: Context) => {
     const body = await c.req.parseBody();
     const url = body.url.toString();
-    let rssUrl: string;
+    let rssUrl: string | undefined;
     try {
         const verified = !!c.get('USER_IS_ADMIN');
         rssUrl = await addFeed(c.env, url, verified); // MAIN MEAT!
-    } catch (e: any) {
-        return c.html(renderHTML('Add new blog', renderAddFeedForm(url, e.toString()), c.get('USERNAME'), 'blogs'));
+    } catch (e: unknown) {
+        const errorMessage = (e as Error).toString();
+        return c.html(renderHTML('Add new blog', renderAddFeedForm(url, errorMessage), c.get('USERNAME'), 'blogs'));
     }
 
     // Redirect
@@ -479,49 +478,70 @@ async function addFeed(env: Bindings, url: string, verified = false) {
 
 export async function updateFeed(env: Bindings, feedId: number) {
     // get RSS url of feed
-    const { results: feeds } = await env.DB.prepare('SELECT rss_url, description FROM feeds WHERE feed_id = ?')
-        .bind(feedId)
-        .all();
+    const feed = await env.DB.prepare('SELECT rss_url, description FROM feeds WHERE feed_id = ?').bind(feedId).first();
+    if (!feed) return;
 
-    const RSSUrl = String(feeds[0].rss_url);
-    const currentDescription = String(feeds[0].description);
-    console.log(`Updating feed ${feedId} (${RSSUrl})`);
+    const feedRSSUrl = String(feed.rss_url);
+    const currentDescription = String(feed.description);
+    console.log({
+        message: 'Updating feed',
+        feedId,
+        feedRSSUrl,
+    });
 
-    const r: FeedData = await extractRSS(RSSUrl); // fetch RSS content
+    const r: FeedData = await extractRSS(feedRSSUrl); // fetch RSS content
 
     if (r.description && r.description.length > 7) {
-        const feedDescription = await stripTags(r.description);
-        if (!feedDescription.includes('<img') && feedDescription !== currentDescription) {
-            await env.DB.prepare('UPDATE feeds SET description = ? WHERE feed_id = ?')
-                .bind(feedDescription, feedId)
-                .run();
-            console.log(`Feed ${feedId} description updated`);
+        const desc = await stripTags(r.description);
+        if (!desc.includes('<img') && desc !== currentDescription) {
+            await env.DB.prepare('UPDATE feeds SET description = ? WHERE feed_id = ?').bind(desc, feedId).run();
+            console.log({
+                message: 'Updated feed description',
+                feedId,
+                feedRSSUrl,
+            });
         }
         // this may be the first time we are setting the description, so we need to update the index
         await enqueueIndexFeed(env, feedId);
     }
 
     // get URLs of existing items from DB
-    const { results: existingItems } = await env.DB.prepare('SELECT url FROM items WHERE feed_id = ?')
-        .bind(feedId)
-        .all();
-    const existingUrls = existingItems.map((obj) => obj.url);
+    const existingItems = await env.DB.prepare('SELECT url FROM items WHERE feed_id = ?').bind(feedId).all();
+    const existingUrls = existingItems.results.map((obj) => obj.url);
 
     // if remote RSS entries exist
     if (r.entries) {
-        const newItemsToBeAdded = r.entries.filter((entry) => !existingUrls.includes(extractItemUrl(entry, RSSUrl))); // filter out existing ones and add them to Db
-        if (newItemsToBeAdded.length) {
-            await addItemsToFeed(env, newItemsToBeAdded, feedId);
-            await regenerateTopItemsCacheForFeed(env, feedId);
-        }
-        console.log(
-            `Updated feed ${feedId} (${RSSUrl}), fetched items: ${r.entries.length}, of which new items added: ${newItemsToBeAdded.length}`,
+        const newItemsToBeAdded = r.entries.filter(
+            (entry) => !existingUrls.includes(extractItemUrl(entry as MFFeedEntry, feedRSSUrl)),
         );
+        console.log({
+            message: `Updating feed, fetched ${r.entries.length} items, of which new items added: ${newItemsToBeAdded.length}`,
+            feedId,
+            feedRSSUrl,
+        });
+
+        // OLD CODE
+        // if (newItemsToBeAdded.length) {
+        //     await addItemsToFeed(env, newItemsToBeAdded, feedId);
+        //     await regenerateTopItemsCacheForFeed(env, feedId);
+        // }
+
+        for (const item of newItemsToBeAdded) {
+            await env.ADD_UPDATE_ITEM_WORKFLOW.create({
+                params: { item, feedId, feedRSSUrl },
+            });
+        }
         return;
     }
-    console.log(`Updated feed ${feedId} (${RSSUrl}), no items fetched`);
+
+    console.log({
+        message: 'Updating feed, no items fetched',
+        feedId,
+        feedRSSUrl,
+    });
 }
 
+// TODO: deprecate
 export async function addItemsToFeed(
     env: Bindings,
     items: Array<MFFeedEntry>,

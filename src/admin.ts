@@ -83,7 +83,10 @@ export const handleAdmin = async (c: Context) => {
         </tr>
         <tr>
             <td>Related missing</td>
-            <td>${items_vector_relation_count.results[0]['COUNT(item_id)'] - items_related_cache_count.results[0]['COUNT(item_id)']}</td>
+            <td>${items_vector_relation_count.results[0]['COUNT(item_id)'] - items_related_cache_count.results[0]['COUNT(item_id)']}
+            <a href="/admin/items_without_related_cache">[list]</a>
+            </td>
+
         </tr>
 
         <tr> <td></td> <td></td> </tr>
@@ -110,19 +113,19 @@ export const handleAdmin = async (c: Context) => {
 
         <p>
         <button hx-post="/admin/feeds/${feed.feed_sqid}/delete"
-        hx-confirm="Sure?"
-        hx-trigger="click"
-        hx-target="#delete-indicator-${feed.feed_sqid}"
-        hx-swap="outerHTML">
-        delete
+            hx-confirm="Sure?"
+            hx-trigger="click"
+            hx-target="#delete-indicator-${feed.feed_sqid}"
+            hx-swap="outerHTML">
+            delete
         </button>
 
         <button hx-post="/admin/feeds/${feed.feed_sqid}/update"
-        hx-confirm="Sure?"
-        hx-trigger="click"
-        hx-target="#update-indicator-${feed.feed_sqid}"
-        hx-swap="outerHTML">
-        update
+            hx-confirm="Sure?"
+            hx-trigger="click"
+            hx-target="#update-indicator-${feed.feed_sqid}"
+            hx-swap="outerHTML">
+            update (fetch new from RSS)
         </button>
 
         <button hx-post="/admin/feeds/${feed.feed_sqid}/scrape"
@@ -263,7 +266,7 @@ export const handleAdminUnindexedItems = async (c: Context) => {
     const inner = `
         <h2>All items: ${allDBItems.length}</h2>
 
-        <h2>Indexed items: ${allIndexedItems.length} / Missing from index: ${allDBItems.length - allIndexedItems.length}</h2>
+        <h2>Indexed items: ${allIndexedItems?.length} / Missing from index: ${allDBItems.length - allIndexedItems.length}</h2>
 
         <h2>Orphan indexed items (in index, but not in DB): ${orphanIndexedItems.length}</h2>
         ${JSON.stringify(orphanIndexedItems)}
@@ -276,14 +279,13 @@ export const handleAdminUnindexedItems = async (c: Context) => {
 };
 
 export const handleAdminItemsWithoutSqid = async (c: Context) => {
-    let list = '<ol>';
-
     const items_without_sqid = await c.env.DB.prepare(`
         SELECT item_id, item_sqid, items.title, feed_sqid, feeds.title as feed_title
         FROM Items
         JOIN feeds on items.feed_id = feeds.feed_id
         WHERE item_sqid=0`).all();
 
+    let list = '<ol>';
     for (const item of items_without_sqid.results) {
         list += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
             <br>
@@ -298,7 +300,30 @@ export const handleAdminItemsWithoutSqid = async (c: Context) => {
     return c.html(renderHTML('admin | minifeed', raw(list), c.get('USERNAME'), ''));
 };
 
-async function processJsonlStream(response) {
+export const handleAdminItemsWithoutRelatedCache = async (c: Context) => {
+    const items = await c.env.DB.prepare(`
+        SELECT items.item_sqid, items_vector_relation.item_id from items_vector_relation
+        LEFT JOIN items_related_cache on items_vector_relation.item_id = items_related_cache.item_id
+        JOIN items on items.item_id = items_vector_relation.item_id
+        WHERE items_related_cache.item_id IS NULL `).all();
+
+    let list = '<ol>';
+    for (const item of items.results) {
+        list += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
+                <br>
+                <code>${item.item_id}</code> | <code>${item.item_sqid}</code>
+                <br>
+                <a href="/blogs/${item.feed_sqid}">${item.feed_title}</a>
+                <br><br>
+                </li>`;
+    }
+    list += '</ol>';
+
+    return c.html(renderHTML('admin | minifeed', raw(list), c.get('USERNAME'), ''));
+};
+
+async function processJsonlStream(response: Response) {
+    if (!response.body) return;
     const decoder = new TextDecoderStream();
     const reader = response.body.pipeThrough(decoder).getReader();
 
@@ -332,7 +357,7 @@ async function processJsonlStream(response) {
     return items;
 }
 
-function findObjsUniqueToListOne(list1, list2) {
+function findObjsUniqueToListOne(list1: any, list2: any) {
     const list2Ids = new Set(list2.map((obj) => obj.id));
 
     return list1.filter((obj) => !list2Ids.has(obj.id));

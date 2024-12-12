@@ -10,13 +10,13 @@ export async function handleSearch(c: Context) {
     const scope = c.req.query('scope') || 'all';
 
     // if query only contains spaces
-    if (!q || q.trim().length === 0) return returnError(c, 'Search query cannot be empty', q || '');
+    if (!q || q.trim().length === 0) return renderSearchError(c, 'Search query cannot be empty', q || '');
     // if query is over 50 characters
-    if (q.length > 50) return returnError(c, 'Search query cannot be longer than 50 characters', q);
+    if (q.length > 50) return renderSearchError(c, 'Search query cannot be longer than 50 characters', q);
     // if query is does not contain any letters
-    if (!q.match(/[a-zA-Z]/)) return returnError(c, 'Search query must contain at least one letter', q);
+    if (!q.match(/[a-zA-Z]/)) return renderSearchError(c, 'Search query must contain at least one letter', q);
     // scope exists, but wrong
-    if (scope !== 'all' && scope !== 'blogs' && scope !== 'posts') return returnError(c, 'Wrong scope', q);
+    if (scope !== 'all' && scope !== 'blogs' && scope !== 'posts') return renderSearchError(c, 'Wrong scope', q);
 
     const itemsPerPage = 30;
     const page = Number(c.req.query('p')) || 1;
@@ -113,7 +113,7 @@ export async function handleSearch(c: Context) {
     return c.html(renderHTML(`${q} | minifeed`, raw(inner), c.get('USERNAME'), 'search', q));
 }
 
-function returnError(c: Context, description: string, q: string) {
+function renderSearchError(c: Context, description: string, q: string) {
     return c.html(
         renderHTML(
             'Search | minifeed',

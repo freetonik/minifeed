@@ -1,7 +1,6 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
-import { renderHTML, renderItemShort } from './htmltools';
-import { guestFlash } from './items';
+import { guestFlash, renderHTML, renderItemShort } from './htmltools';
 import { itemSqidToId } from './utils';
 
 export const handleLists = async (c: Context) => {

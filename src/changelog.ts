@@ -1,7 +1,12 @@
-export const version = '0.7.1';
+export const version = '0.8.0';
 
 export const changelog = `
     <h2>Changelog</h2>
+
+    <h3>0.8.0 (11.12.2024)</h3>
+    <ul>
+        <li>New feature: you can now choose whether to show full post content (when available), or just a summary.</li>
+    </ul>
 
     <h3>0.7.1 (01.12.2024)</h3>
     <ul>

@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import type { Bindings } from './bindings';
+import { regenerateRelatedCacheForItemMOCK } from './handlers/items/itemAdmin';
 import type { ItemRow } from './interface';
-import { regenerateRelatedCacheForItemMOCK } from './items';
 import { enqueueRegenerateItemRelatedCache, enqueueVectorizeStoreItem } from './queue';
 import { stripNonLinguisticElements, stripTags } from './utils';
 
@@ -22,7 +22,7 @@ export const summarizeText = async (env: Bindings, text: string) => {
     return response;
 };
 
-export const add_vector_to_db = async (
+export const addVectorToDb = async (
     env: Bindings,
     id: number,
     embeddings: EmbeddingResponse,
@@ -45,6 +45,10 @@ export const add_vector_to_db = async (
 };
 
 export const vectorizeAndStoreItem = async (env: Bindings, item_id: number) => {
+    if (env.ENVIRONMENT === 'dev') {
+        console.log('DEV MODE: Skipping vectorizeAndStoreItem');
+        return;
+    }
     // if item is already in vector store, skip
     const vectors = await env.VECTORIZE.getByIds([`${item_id}`]);
     if (vectors.length) return;
@@ -73,7 +77,7 @@ export const vectorizeAndStoreItem = async (env: Bindings, item_id: number) => {
     }
 
     const embeddings: EmbeddingResponse = await vectorize_text(env, `${contentBlock}`);
-    await add_vector_to_db(
+    await addVectorToDb(
         env,
         item.item_id,
         embeddings,

@@ -1,10 +1,12 @@
 import type { Bindings } from './bindings';
-import type { FeedRow, ItemSearchDocument } from './interface';
+import type { FeedRow, FeedSearchDocument, ItemSearchDocument } from './interface';
 import { collapseWhitespace, gatherResponse, stripASCIIFormatting, stripTags } from './utils';
 
 ////////////////////////////////
 // SEARCH INDEX MANAGEMENT /////
-export const upsertSingleDocument = async (env: Bindings, document: ItemSearchDocument) => {
+
+export async function upsertSingleDocument(env: Bindings, document: ItemSearchDocument) {
+    const reqUrl = `https://${env.TYPESENSE_CLUSTER}:443/collections/${env.TYPESENSE_ITEMS_COLLECTION}/documents/import?action=upsert`;
     const json = JSON.stringify(document);
     const init = {
         body: json,
@@ -17,17 +19,18 @@ export const upsertSingleDocument = async (env: Bindings, document: ItemSearchDo
 
     try {
         console.log(`Upserting document index: ${document.id} - ${document.title}`);
-        const response = await fetch(
-            `https://${env.TYPESENSE_CLUSTER}:443/collections/${env.TYPESENSE_ITEMS_COLLECTION}/documents/import?action=upsert`,
-            init,
-        );
+        const response = await fetch(reqUrl, init);
         await gatherResponse(response);
     } catch (e) {
-        console.log(`Error while upserting document: ${e}`);
+        console.log({
+            message: `Error while upserting document: ${e}`,
+            itemId: document.id,
+        });
     }
-};
+}
 
-export const upsertSingleFeed = async (env: Bindings, document: object) => {
+export async function upsertSingleFeed(env: Bindings, document: FeedSearchDocument) {
+    const reqUrl = `https://${env.TYPESENSE_CLUSTER}:443/collections/${env.TYPESENSE_FEEDS_COLLECTION}/documents/import?action=upsert`;
     const json = JSON.stringify(document);
     const init = {
         body: json,
@@ -38,17 +41,17 @@ export const upsertSingleFeed = async (env: Bindings, document: object) => {
         },
     };
     try {
-        const response = await fetch(
-            `https://${env.TYPESENSE_CLUSTER}:443/collections/${env.TYPESENSE_FEEDS_COLLECTION}/documents/import?action=upsert`,
-            init,
-        );
+        const response = await fetch(reqUrl, init);
         await gatherResponse(response);
     } catch (e) {
-        console.log(`Error while upserting feed: ${e}`);
+        console.log({
+            message: `Error upserting feed: ${e}`,
+            feedId: document.id,
+        });
     }
-};
+}
 
-export const deleteFeedFromIndex = async (env: Bindings, feedId: number) => {
+export async function deleteFeedFromIndex(env: Bindings, feedId: number) {
     const init = {
         method: 'DELETE',
         headers: {
@@ -63,9 +66,12 @@ export const deleteFeedFromIndex = async (env: Bindings, feedId: number) => {
         );
         return await gatherResponse(response);
     } catch (e) {
-        console.log(`Error while deleting feed from index: ${e}`);
+        console.log({
+            message: `Error deleting feed from index: ${e}`,
+            feedId,
+        });
     }
-};
+}
 
 // Upserts the search index for a single item
 export async function updateItemIndex(env: Bindings, itemId: number, textContent?: string) {
@@ -140,7 +146,7 @@ export async function updateFeedIndex(env: Bindings, feedId: number) {
     }
     const feedContent = `${feed.title}. ${feedDescription}${feed.url} ${feedUrlHost} ${feed.rss_url}`;
 
-    const searchDocument = {
+    const searchDocument: FeedSearchDocument = {
         // we provide explicit id so it will be used as id in the typesense index
         id: feed.feed_id.toString(),
         // searchable fields
@@ -153,7 +159,10 @@ export async function updateFeedIndex(env: Bindings, feedId: number) {
         url: feed.url,
         rss_url: feed.rss_url,
     };
-    console.log(`Upserting feed: ${feedId.toString()} - ${feed.title}`);
+    console.log({
+        message: `Upserting feed: ${feed.title}`,
+        feedId: feed.feed_id,
+    });
     await upsertSingleFeed(env, searchDocument);
 }
 

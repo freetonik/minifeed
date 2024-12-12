@@ -141,4 +141,6 @@ export async function enqueueRegenerateRelatedCacheForAllItems(env: Bindings) {
             item_id: item.item_id,
         });
     }
+
+    console.log('Done enqueuing regenerate related cache for all items');
 }

@@ -1,10 +1,9 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
-import { renderHTML, renderItemShort } from './htmltools';
-import { guestFlash } from './items';
+import { guestFlash, renderHTML, renderItemShort } from './htmltools';
 import { feedIdToSqid } from './utils';
 
-export const handleUsers = async (c: Context) => {
+export async function handleUsers(c: Context) {
     const username = c.get('USERNAME');
     const { results } = await c.env.DB.prepare(
         'SELECT * from users WHERE users.email_verified = 1 ORDER BY created ASC ',
@@ -20,9 +19,9 @@ export const handleUsers = async (c: Context) => {
         else inner += `<div><a href="/users/${user.username}">${user.username}</a></div>`;
     }
     return c.html(renderHTML('Users', raw(inner), c.get('USERNAME'), 'users'));
-};
+}
 
-export const handleUsersSingle = async (c: Context) => {
+export async function handleUsersSingle(c: Context) {
     const userId = c.get('USER_ID') || '0';
     const currentUsername = c.get('USERNAME');
 
@@ -151,56 +150,58 @@ export const handleUsersSingle = async (c: Context) => {
     inner = top_block + inner;
 
     return c.html(renderHTML(`${username} | minifeed`, raw(inner), c.get('USERNAME'), 'users'));
-};
+}
 
-export const handleUsersFollowPOST = async (c: any) => {
-    if (!c.get('USER_ID')) return c.html('');
+export async function handleUsersFollowPOST(c: Context) {
     const userId = c.get('USER_ID');
+    if (!userId) return c.html('');
     const username = c.req.param('username');
 
-    const { results } = await c.env.DB.prepare(`SELECT users.user_id FROM users WHERE users.username = ?`)
+    const targetUser = await c.env.DB.prepare('SELECT users.user_id FROM users WHERE users.username = ?')
         .bind(username)
-        .all();
-    const userIdToFollow = results[0]['user_id'];
+        .first();
+    const userIdToFollow = targetUser.user_id;
 
-    let result;
     try {
-        result = await c.env.DB.prepare('INSERT INTO followings (follower_user_id, followed_user_id) values (?, ?)')
+        const result = await c.env.DB.prepare(
+            'INSERT INTO followings (follower_user_id, followed_user_id) values (?, ?)',
+        )
             .bind(userId, userIdToFollow)
             .run();
+        if (result.success) {
+            c.status(201);
+            return c.html(`
+                <span id="follow">
+                    <button class="button" hx-post="/users/${username}/unfollow"
+                        hx-trigger="click"
+                        hx-target="#follow"
+                        hx-swap="outerHTML">
+                        unfollow
+                    </button>
+                </span>
+                `);
+        }
     } catch (err) {
         c.status(400);
         return c.body('bad request');
     }
-    if (result.success) {
-        c.status(201);
-        return c.html(`
-        <span id="follow">
-        <button class="button" hx-post="/users/${username}/unfollow"
-        hx-trigger="click"
-        hx-target="#follow"
-        hx-swap="outerHTML">
-        unfollow
-        </button>
-        </span>
-        `);
-    }
+
     return c.html(`
     <span id="subscription">
     "Error"
     </span>
     `);
-};
+}
 
-export const handleUsersUnfollowPOST = async (c: any) => {
-    if (!c.get('USER_ID')) return c.html('');
+export async function handleUsersUnfollowPOST(c: Context) {
     const userId = c.get('USER_ID');
+    if (!userId) return c.html('');
     const username = c.req.param('username');
 
-    const { results } = await c.env.DB.prepare(`SELECT users.user_id FROM users WHERE users.username = ?`)
+    const targetUser = await c.env.DB.prepare('SELECT users.user_id FROM users WHERE users.username = ?')
         .bind(username)
-        .all();
-    const userIdToUnfollow = results[0]['user_id'];
+        .first();
+    const userIdToUnfollow = targetUser.user_id;
 
     try {
         await c.env.DB.prepare('DELETE FROM followings WHERE follower_user_id = ? AND followed_user_id = ?')
@@ -213,12 +214,12 @@ export const handleUsersUnfollowPOST = async (c: any) => {
     c.status(201);
     return c.html(`
         <span id="follow">
-        <button class="button" hx-post="/users/${username}/follow"
-        hx-trigger="click"
-        hx-target="#follow"
-        hx-swap="outerHTML">
-        follow
-        </button>
+            <button class="button" hx-post="/users/${username}/follow"
+                hx-trigger="click"
+                hx-target="#follow"
+                hx-swap="outerHTML">
+                follow
+            </button>
         </span>
     `);
-};
+}

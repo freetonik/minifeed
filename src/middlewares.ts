@@ -36,18 +36,15 @@ export async function authRequiredMiddleware(c: Context, next: () => Promise<voi
 // User must be logged in and be admin
 export async function adminRequiredMiddleware(c: Context, next: () => Promise<void>) {
     if (!c.get('USER_IS_ADMIN')) return c.notFound();
-
     await next();
 }
 
 export const stripeMiddleware = async (c: Context, next: () => Promise<void>) => {
     const stripeKey = c.env.STRIPE_API_KEY;
-
     const stripe = new Stripe(stripeKey, {
         maxNetworkRetries: 3,
         timeout: 30 * 1000,
     });
     c.set('stripe', stripe);
-
     await next();
 };
