@@ -26,8 +26,8 @@ export const handleAdmin = async (c: Context) => {
     const duplicatesByURL = await c.env.DB.prepare(`
         SELECT COUNT(item_id)
         FROM Items
-        WHERE item_sqid IN (
-            SELECT url
+        WHERE items.url IN (
+            SELECT items.url
             FROM Items
             GROUP BY url
             HAVING COUNT(*) > 1
@@ -36,8 +36,8 @@ export const handleAdmin = async (c: Context) => {
     const duplicatesByTitle = await c.env.DB.prepare(`
             SELECT COUNT(item_id)
             FROM Items
-            WHERE item_sqid IN (
-                SELECT title
+            WHERE items.title IN (
+                SELECT items.title
                 FROM Items
                 GROUP BY title
                 HAVING COUNT(*) > 1
@@ -128,7 +128,7 @@ export const handleAdmin = async (c: Context) => {
         </tr>
 
         <tr>
-            <td>Duplicates by URL</td>
+            <td>Duplicates by Title</td>
             <td>${duplicatesByTitle.results[0]['COUNT(item_id)']}
             <a href="/admin/duplicates">[duplicates]</a>
             </td>
@@ -249,34 +249,37 @@ export const handleAdmin = async (c: Context) => {
 
 export const handleDuplicateItems = async (c: Context) => {
     const duplicatesByURL = await c.env.DB.prepare(`
-        SELECT item_id, item_sqid, items.title, feed_sqid, feeds.title as feed_title
+        SELECT item_id, item_sqid, items.title, feed_sqid, feeds.title as feed_title, items.pub_date
         FROM Items
         JOIN feeds on items.feed_id = feeds.feed_id
-        WHERE item_sqid IN (
-            SELECT url
+        WHERE items.url IN (
+            SELECT items.url
             FROM Items
             GROUP BY url
             HAVING COUNT(*) > 1
-        )`).all();
+        )
+        ORDER BY items.url`).all();
 
     const duplicatesByTitle = await c.env.DB.prepare(`
-            SELECT item_id, item_sqid, items.title, feed_sqid, feeds.title as feed_title
+            SELECT item_id, item_sqid, items.title, feed_sqid, feeds.title as feed_title, items.pub_date
             FROM Items
             JOIN feeds on items.feed_id = feeds.feed_id
-            WHERE item_sqid IN (
-                SELECT title
+            WHERE items.title IN (
+                SELECT items.title
                 FROM Items
                 GROUP BY title
                 HAVING COUNT(*) > 1
-            )`).all();
+            )
+            ORDER BY items.title`).all();
 
     let list = `<h2>Duplicates by URL: ${duplicatesByURL.results.length}</h2><ol>`;
     for (const item of duplicatesByURL.results) {
         list += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
             <br>
-            <code>${item.item_id}</code> | <code>${item.item_sqid}</code>
-            <br>
             <a href="/blogs/${item.feed_sqid}">${item.feed_title}</a>
+            <br>
+            <code>${item.pub_date}</code> <br>
+            <code>${item.item_id}</code> → <code>${item.item_sqid}</code>
             <br><br>
             </li>`;
     }
@@ -286,9 +289,10 @@ export const handleDuplicateItems = async (c: Context) => {
     for (const item of duplicatesByTitle.results) {
         list += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
             <br>
-            <code>${item.item_id}</code> | <code>${item.item_sqid}</code>
-            <br>
             <a href="/blogs/${item.feed_sqid}">${item.feed_title}</a>
+            <br>
+            <code>${item.pub_date}</code> <br>
+            <code>${item.item_id}</code> → <code>${item.item_sqid}</code>
             <br><br>
             </li>`;
     }
