@@ -23,6 +23,26 @@ export const handleAdmin = async (c: Context) => {
         WHERE items_vector_relation.vectorized is null`,
     ).all();
 
+    const duplicatesByURL = await c.env.DB.prepare(`
+        SELECT COUNT(item_id)
+        FROM Items
+        WHERE item_sqid IN (
+            SELECT url
+            FROM Items
+            GROUP BY url
+            HAVING COUNT(*) > 1
+        )`).all();
+
+    const duplicatesByTitle = await c.env.DB.prepare(`
+            SELECT COUNT(item_id)
+            FROM Items
+            WHERE item_sqid IN (
+                SELECT title
+                FROM Items
+                GROUP BY title
+                HAVING COUNT(*) > 1
+            )`).all();
+
     list += `
     <style>
         table {
@@ -97,7 +117,25 @@ export const handleAdmin = async (c: Context) => {
             <a href="/admin/items_without_sqid">[list]</a>
             </td>
         </tr>
+
+        <tr> <td></td> <td></td> </tr>
+
+        <tr>
+            <td>Duplicates by URL</td>
+            <td>${duplicatesByURL.results[0]['COUNT(item_id)']}
+            <a href="/admin/duplicates">[duplicates]</a>
+            </td>
+        </tr>
+
+        <tr>
+            <td>Duplicates by URL</td>
+            <td>${duplicatesByTitle.results[0]['COUNT(item_id)']}
+            <a href="/admin/duplicates">[duplicates]</a>
+            </td>
+        </tr>
+
     </table>
+
     `;
 
     for (const feed of feeds.results) {
@@ -205,6 +243,56 @@ export const handleAdmin = async (c: Context) => {
         <span id="rebuild-cache-indicator-global"></span>
     </div>
     `;
+
+    return c.html(renderHTML('admin | minifeed', raw(list), c.get('USERNAME'), ''));
+};
+
+export const handleDuplicateItems = async (c: Context) => {
+    const duplicatesByURL = await c.env.DB.prepare(`
+        SELECT item_id, item_sqid, items.title, feed_sqid, feeds.title as feed_title
+        FROM Items
+        JOIN feeds on items.feed_id = feeds.feed_id
+        WHERE item_sqid IN (
+            SELECT url
+            FROM Items
+            GROUP BY url
+            HAVING COUNT(*) > 1
+        )`).all();
+
+    const duplicatesByTitle = await c.env.DB.prepare(`
+            SELECT item_id, item_sqid, items.title, feed_sqid, feeds.title as feed_title
+            FROM Items
+            JOIN feeds on items.feed_id = feeds.feed_id
+            WHERE item_sqid IN (
+                SELECT title
+                FROM Items
+                GROUP BY title
+                HAVING COUNT(*) > 1
+            )`).all();
+
+    let list = `<h2>Duplicates by URL: ${duplicatesByURL.results.length}</h2><ol>`;
+    for (const item of duplicatesByURL.results) {
+        list += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
+            <br>
+            <code>${item.item_id}</code> | <code>${item.item_sqid}</code>
+            <br>
+            <a href="/blogs/${item.feed_sqid}">${item.feed_title}</a>
+            <br><br>
+            </li>`;
+    }
+    list += '</ol>';
+
+    list += `<h2>Duplicates by title: ${duplicatesByTitle.results.length}</h2><ol>`;
+    for (const item of duplicatesByTitle.results) {
+        list += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
+            <br>
+            <code>${item.item_id}</code> | <code>${item.item_sqid}</code>
+            <br>
+            <a href="/blogs/${item.feed_sqid}">${item.feed_title}</a>
+            <br><br>
+            </li>`;
+    }
+    list += '</ol>';
 
     return c.html(renderHTML('admin | minifeed', raw(list), c.get('USERNAME'), ''));
 };

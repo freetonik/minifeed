@@ -8,6 +8,7 @@ import {
     handleAdminItemsWithoutSqid,
     handleAdminUnindexedItems,
     handleAdminUnvectorizedItems,
+    handleDuplicateItems,
 } from './admin';
 import { handleGenerateRelated, handleVectorize, vectorizeAndStoreItem } from './ai';
 import type { Bindings } from './bindings';
@@ -153,6 +154,7 @@ app.get('/admin/items_without_sqid', handleAdminItemsWithoutSqid);
 app.get('/admin/items_without_related_cache', handleAdminItemsWithoutRelatedCache);
 app.get('/admin/vectorize', handleVectorize);
 app.get('/admin/generate_related', handleGenerateRelated);
+app.get('/admin/duplicates', handleDuplicateItems);
 
 app.post('/admin/feeds/:feed_sqid/delete', handleFeedsDelete);
 app.post('/admin/feeds/:feed_sqid/update', handleFeedsUpdate);
