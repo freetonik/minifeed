@@ -257,27 +257,21 @@ export async function handleItemsSingle(c: Context) {
         </table>
 
         <p>
-        <button hx-post="/admin/items/${item_sqid}/scrape"
+        <button hx-post="/admin/items/${item_sqid}/refresh"
             hx-trigger="click"
-            hx-target="#scrape-indicator"
+            hx-target="#refresh-indicator"
             hx-swap="outerHTML">
-            scrape
+            update (scrape, index, vectorize, gen.related)
         </button>
-        <span id="scrape-indicator"></span>
+        <span id="refresh-indicator"></span>
 
-        <button hx-post="/admin/items/${item_sqid}/index"
-            hx-trigger="click"
-            hx-target="#index-indicator"
-            hx-swap="outerHTML">
-            re-index
-        </button>
-        <span id="index-indicator"></span>
+
 
         <button hx-post="/admin/items/${item_sqid}/delete"
             hx-trigger="click"
             hx-target="#delete-indicator"
             hx-swap="outerHTML">
-            delete
+            ❌ delete
         </button>
         <span id="delete-indicator"></span>
         </p>

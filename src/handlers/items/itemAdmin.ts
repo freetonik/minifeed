@@ -3,7 +3,7 @@ import type { Bindings } from '../../bindings';
 import { addItemsToFeed, regenerateTopItemsCacheForFeed } from '../../feeds';
 import { renderAddItemByURLForm, renderHTML } from '../../htmltools';
 import type { RelatedItemCached } from '../../interface';
-import { enqueueItemIndex, enqueueItemScrape, enqueueVectorizeStoreItem } from '../../queue';
+import { enqueueVectorizeStoreItem } from '../../queue';
 import { scrapeURLIntoObject } from '../../scrape';
 import { updateItemIndex } from '../../search';
 import { feedSqidToId, itemIdToSqid, itemSqidToId } from '../../utils';
@@ -104,16 +104,13 @@ export const handleItemsAddItemByUrlPOST = async (c: Context) => {
     return c.redirect(`/blogs/${feedSqid}`);
 };
 
-export const handleItemsScraping = async (c: Context) => {
+export const handleItemRefresh = async (c: Context) => {
     const itemSqid = c.req.param('item_sqid');
-    await enqueueItemScrape(c.env, itemSqidToId(itemSqid));
-    return c.html('Scrape queued...');
-};
-
-export const handleItemsIndexing = async (c: Context) => {
-    const itemSqid = c.req.param('item_sqid');
-    await enqueueItemIndex(c.env, itemSqidToId(itemSqid));
-    return c.html('Indexing queued...');
+    const itemId = itemSqidToId(itemSqid);
+    const wf = await c.env.ADD_UPDATE_ITEM_WORKFLOW.create({ params: { itemId } });
+    return c.html(`
+        <a href="https://dash.cloudflare.com/${c.env.CF_ACCOUNT_ID}/workers/workflows/add-item-workflow/instance/${wf.id}">WORKFLOW STARTED</a>
+        `);
 };
 
 export const regenerateRelatedCacheForItem = async (env: Bindings, itemId: number) => {

@@ -51,11 +51,10 @@ import { handleGlobal } from './handlers/items/global';
 import { handleHomeForGuest } from './handlers/items/homeGuest';
 import { handleItemsSingle } from './handlers/items/item';
 import {
+    handleItemRefresh,
     handleItemsAddItemByUrlPOST,
     handleItemsAddItembyUrl,
     handleItemsDelete,
-    handleItemsIndexing,
-    handleItemsScraping,
     regenerateRelatedCacheForItem,
 } from './handlers/items/itemAdmin';
 import { handleItemsAddToFavorites, handleItemsRemoveFromFavorites } from './handlers/items/itemFavorites';
@@ -171,8 +170,7 @@ app.get('/admin/blogs/new', handleBlogsNew);
 app.post('/admin/blogs/new', handleBlogsNewPOST);
 
 app.post('/admin/items/:item_sqid/delete', handleItemsDelete);
-app.post('/admin/items/:item_sqid/scrape', handleItemsScraping);
-app.post('/admin/items/:item_sqid/index', handleItemsIndexing);
+app.post('/admin/items/:item_sqid/refresh', handleItemRefresh);
 
 // NORMAL ROUTES
 app.get('/search', handleSearch);
