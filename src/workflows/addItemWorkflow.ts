@@ -154,6 +154,8 @@ export class AddOrUpdateItemWorkflow extends WorkflowEntrypoint<Bindings, Params
             return await vectorizeAndStoreItem(this.env, itemInfo.itemId);
         });
 
+        await step.sleep('wait on something', '1 minute');
+
         // STEP 7: Regenerate related cache
         await step.do('regenerate related cache for item', async () => {
             await regenerateRelatedCacheForItem(this.env, itemInfo.itemId);
