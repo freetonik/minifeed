@@ -424,3 +424,9 @@ export async function getRobots(url: string) {
         console.error(`Error fetching robots.txt from ${robotsUrl.toString()}`);
     }
 }
+
+export function findObjsUniqueToListOne(list1: any, list2: any) {
+    const list2Ids = new Set(list2.map((obj) => obj.id));
+
+    return list1.filter((obj) => !list2Ids.has(obj.id));
+}

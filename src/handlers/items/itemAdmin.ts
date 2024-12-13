@@ -1,8 +1,9 @@
 import type { Context } from 'hono';
 import type { Bindings } from '../../bindings';
-import { addItemsToFeed, regenerateTopItemsCacheForFeed } from '../../feeds';
+import { addItemsToFeed } from '../../feeds';
 import { renderAddItemByURLForm, renderHTML } from '../../htmltools';
 import type { RelatedItemCached } from '../../interface';
+import { deleteItem } from '../../items';
 import { enqueueVectorizeStoreItem } from '../../queue';
 import { scrapeURLIntoObject } from '../../scrape';
 import { updateItemIndex } from '../../search';
@@ -25,16 +26,9 @@ export const handleItemsDelete = async (c: Context) => {
     const itemSqid = c.req.param('item_sqid');
     const itemId = itemSqidToId(itemSqid);
 
-    const itemToBeDeleted = await c.env.DB.prepare('SELECT * FROM items WHERE item_id = ?').bind(itemId).first();
-    const feedId = itemToBeDeleted.feed_id;
-
-    const dbDeleteResults = await c.env.DB.prepare('DELETE FROM items WHERE item_id = ?').bind(itemId).run();
-    if (dbDeleteResults.success) {
-        if (c.env.ENVIRONMENT !== 'dev') await c.env.VECTORIZE.deleteByIds([`${itemId}`]);
-        await regenerateTopItemsCacheForFeed(c.env, feedId);
-        return c.html('Item deleted. Delete it from the index yourself dude');
-    }
-    return c.html('ERROR while deleting item from DB');
+    const deleted = await deleteItem(c, itemId);
+    if (deleted) return c.html('Item deleted');
+    return c.html('ERROR!');
 };
 
 export const handleItemsAddItemByUrlPOST = async (c: Context) => {

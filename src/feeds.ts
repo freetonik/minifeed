@@ -450,7 +450,7 @@ async function addFeed(env: Bindings, url: string, verified = false) {
     const siteUrl = url === RSSUrl ? attemptedSiteUrl : url;
     const verified_as_int = verified ? 1 : 0;
     let feedTitle = r.title;
-    if (!feedTitle || feedTitle.length === 0) {
+    if (!feedTitle || feedTitle.trim().length === 0) {
         const siteUrlHost = new URL(siteUrl).host;
         feedTitle = `${siteUrlHost}`;
     }

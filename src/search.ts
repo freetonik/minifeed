@@ -76,6 +76,27 @@ export async function deleteFeedFromIndex(env: Bindings, feedId: number) {
     }
 }
 
+export async function deleteItemFromIndex(env: Bindings, itemId: number) {
+    const init = {
+        method: 'DELETE',
+        headers: {
+            'X-TYPESENSE-API-KEY': env.TYPESENSE_API_KEY,
+        },
+    };
+    try {
+        const response = await fetch(
+            `https://${env.TYPESENSE_CLUSTER}:443/collections/${env.TYPESENSE_ITEMS_COLLECTION}/documents/${itemId}`,
+            init,
+        );
+        return await gatherResponse(response);
+    } catch (e) {
+        console.log({
+            message: `Error deleting item from index: ${e}`,
+            itemId,
+        });
+    }
+}
+
 // Upserts the search index for a single item
 export async function updateItemIndex(env: Bindings, itemId: number, textContent?: string) {
     type ItemsFeedsRowPartial = {
