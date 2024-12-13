@@ -1,7 +1,9 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
+import type { Bindings } from './bindings';
 import { renderHTML } from './htmltools';
 import { getCollection } from './search';
+import { findObjsUniqueToListOne } from './utils';
 
 export const handleAdmin = async (c: Context) => {
     let list = '';
@@ -272,9 +274,11 @@ export const handleDuplicateItems = async (c: Context) => {
             )
             ORDER BY items.title`).all();
 
-    let list = `<h2>Duplicates by URL: ${duplicatesByURL.results.length}</h2><ol>`;
+    let inner = `<details class="borderbox">
+    <summary>Duplicates by URL: ${duplicatesByURL.results.length}</summary>
+    <ol>`;
     for (const item of duplicatesByURL.results) {
-        list += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
+        inner += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
             <br>
             <a href="/blogs/${item.feed_sqid}">${item.feed_title}</a>
             <br>
@@ -283,11 +287,14 @@ export const handleDuplicateItems = async (c: Context) => {
             <br><br>
             </li>`;
     }
-    list += '</ol>';
+    inner += '</ol></details>';
 
-    list += `<h2>Duplicates by title: ${duplicatesByTitle.results.length}</h2><ol>`;
+    inner += `
+    <details class="borderbox">
+    <summary>Duplicates by title: ${duplicatesByTitle.results.length}</summary>
+    <ol>`;
     for (const item of duplicatesByTitle.results) {
-        list += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
+        inner += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
             <br>
             <a href="/blogs/${item.feed_sqid}">${item.feed_title}</a>
             <br>
@@ -296,9 +303,54 @@ export const handleDuplicateItems = async (c: Context) => {
             <br><br>
             </li>`;
     }
-    list += '</ol>';
+    inner += '</ol></details><hr>';
 
-    return c.html(renderHTML('admin | minifeed', raw(list), c.get('USERNAME'), ''));
+    inner += '<h1>DUPLICATES (URL) PER FEED</h1>';
+
+    const allFeedIds = await c.env.DB.prepare('SELECT feed_id FROM feeds').all();
+    for (const feedId of allFeedIds.results) {
+        const duplicatesPerFeed = await getDupicatesURLPerFeed(c.env, feedId.feed_id);
+        if (duplicatesPerFeed.length > 0) {
+            inner += `<div class="borderbox"><h2>Duplicates in feed ${feedId.feed_id}: ${duplicatesPerFeed.length}</h2><ol>`;
+            let previusTitle = '';
+            for (const item of duplicatesPerFeed) {
+                if (previusTitle && previusTitle !== item.title) {
+                    inner += '<hr><br>';
+                }
+                inner += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
+                    <br><code>${item.pub_date}</code><br>
+                    <code>${item.url}</code></li>
+                    `;
+
+                previusTitle = item.title as string;
+            }
+            inner += '</ol></div>';
+        }
+    }
+
+    inner += '<h1>DUPLICATES (TITLE) PER FEED</h1>';
+
+    for (const feedId of allFeedIds.results) {
+        const duplicatesPerFeed = await getDupicatesTitlePerFeed(c.env, feedId.feed_id);
+        if (duplicatesPerFeed.length > 0) {
+            inner += `<div class="borderbox"><h2>Duplicates in feed ${feedId.feed_id}: ${duplicatesPerFeed.length}</h2><ol>`;
+            let previusURL = '';
+            for (const item of duplicatesPerFeed) {
+                if (previusURL && previusURL !== item.url) {
+                    inner += '<hr><br>';
+                }
+                inner += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
+                    <br><code>${item.pub_date}</code><br>
+                    <code>${item.url}</code></li>
+                    `;
+
+                previusURL = item.url as string;
+            }
+            inner += '</ol></div>';
+        }
+    }
+
+    return c.html(renderHTML('admin | minifeed', raw(inner), c.get('USERNAME'), ''));
 };
 
 export const handleAdminUnvectorizedItems = async (c: Context) => {
@@ -449,8 +501,36 @@ async function processJsonlStream(response: Response) {
     return items;
 }
 
-function findObjsUniqueToListOne(list1: any, list2: any) {
-    const list2Ids = new Set(list2.map((obj) => obj.id));
+async function getDupicatesURLPerFeed(env: Bindings, feedId: number) {
+    const duplicatesByURL = await env.DB.prepare(`
+        SELECT item_id, item_sqid, items.title, url, pub_date
+        FROM Items
+        WHERE items.url IN (
+            SELECT items.url
+            FROM Items
+            WHERE feed_id = ?
+            GROUP BY url
+            HAVING COUNT(*) > 1
+        )
+            ORDER BY items.url`)
+        .bind(feedId)
+        .all();
+    return duplicatesByURL.results;
+}
 
-    return list1.filter((obj) => !list2Ids.has(obj.id));
+async function getDupicatesTitlePerFeed(env: Bindings, feedId: number) {
+    const duplicatesByURL = await env.DB.prepare(`
+        SELECT item_id, item_sqid, items.title, url, pub_date
+        FROM Items
+        WHERE items.title IN (
+            SELECT items.title
+            FROM Items
+            WHERE feed_id = ?
+            GROUP BY title
+            HAVING COUNT(*) > 1
+        )
+            ORDER BY items.title`)
+        .bind(feedId)
+        .all();
+    return duplicatesByURL.results;
 }
