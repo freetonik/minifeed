@@ -9,17 +9,11 @@ export async function enqueueFeedUpdate(env: Bindings, feed_id: number) {
     });
 }
 
+// usually triggered by CRON
 export async function enqueueUpdateAllFeeds(env: Bindings) {
-    // usually triggered by CRON
-    type FeedsRowPartial = {
-        feed_id: number;
-        rss_url: string;
-    };
-    const { results: feeds } = await env.DB.prepare(
-        "SELECT feed_id, rss_url FROM feeds WHERE type = 'blog'",
-    ).all<FeedsRowPartial>();
+    const { results: feeds } = await env.DB.prepare("SELECT feed_id, rss_url FROM feeds WHERE type = 'blog'").all();
     for (const feed of feeds) {
-        await enqueueFeedUpdate(env, feed.feed_id);
+        await enqueueFeedUpdate(env, feed.feed_id as number);
     }
 }
 

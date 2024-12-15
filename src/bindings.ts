@@ -19,5 +19,6 @@ export type Bindings = {
     VECTORIZE: Vectorize;
     AI: Ai;
 
-    ADD_UPDATE_ITEM_WORKFLOW: Workflow;
+    ADD_ITEM_WORKFLOW: Workflow;
+    UPDATE_ITEM_WORKFLOW: Workflow;
 };

@@ -56,9 +56,12 @@ enabled = true
 binding = "AI" # available in your Worker on env.AI
 
 [[workflows]]
-# name of your workflow
 name = "add-item-workflow"
-# binding name env.MY_WORKFLOW
-binding = "ADD_UPDATE_ITEM_WORKFLOW"
-# this is class that extends the Workflow class in src/index.ts
-class_name = "AddOrUpdateItemWorkflow"
+binding = "ADD_ITEM_WORKFLOW"
+class_name = "AddItemWorkflow"
+
+[[workflows]]
+name = "update-item-workflow"
+binding = "UPDATE_ITEM_WORKFLOW"
+class_name = "UpdateItemWorkflow"
+

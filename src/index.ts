@@ -6,8 +6,11 @@ import {
     handleAdmin,
     handleAdminItemsWithoutRelatedCache,
     handleAdminItemsWithoutSqid,
+    handleAdminUnindexedFeeds,
     handleAdminUnindexedItems,
     handleAdminUnvectorizedItems,
+    handleDeleteDuplicatesByTitle,
+    handleDeleteDuplicatesByUrl,
     handleDuplicateItems,
 } from './admin';
 import { handleGenerateRelated, handleVectorize, vectorizeAndStoreItem } from './ai';
@@ -87,7 +90,8 @@ import {
     handleStripeWebhook,
 } from './stripe';
 import { handleUsers, handleUsersFollowPOST, handleUsersSingle, handleUsersUnfollowPOST } from './users';
-import { AddOrUpdateItemWorkflow } from './workflows/addItemWorkflow';
+import { AddItemWorkflow } from './workflows/addItemWorkflow';
+import { UpdateItemWorkflow } from './workflows/updateItemWorkflow';
 
 // ————————————————————————————————————————————————————————————————>>>>
 
@@ -150,6 +154,8 @@ app.use('/admin/*', adminRequiredMiddleware);
 app.get('/admin', handleAdmin);
 app.get('/admin/unvectorized_items', handleAdminUnvectorizedItems);
 app.get('/admin/unindexed_items', handleAdminUnindexedItems);
+app.get('/admin/unindexed_feeds', handleAdminUnindexedFeeds);
+
 app.get('/admin/items_without_sqid', handleAdminItemsWithoutSqid);
 app.get('/admin/items_without_related_cache', handleAdminItemsWithoutRelatedCache);
 app.get('/admin/vectorize', handleVectorize);
@@ -157,6 +163,8 @@ app.get('/admin/generate_related', handleGenerateRelated);
 app.get('/admin/duplicates', handleDuplicateItems);
 
 app.post('/admin/feeds/:feed_sqid/delete', handleFeedsDelete);
+app.post('/admin/feeds/:feed_sqid/delete_duplicates_by_title', handleDeleteDuplicatesByTitle);
+app.post('/admin/feeds/:feed_sqid/delete_duplicates_by_url', handleDeleteDuplicatesByUrl);
 app.post('/admin/feeds/:feed_sqid/update', handleFeedsUpdate);
 app.post('/admin/feeds/:feed_sqid/scrape', handleFeedsScrape);
 app.post('/admin/feeds/:feed_sqid/index', handleFeedsIndexing);
@@ -362,4 +370,4 @@ export default {
     },
 };
 
-export { AddOrUpdateItemWorkflow };
+export { AddItemWorkflow, UpdateItemWorkflow };

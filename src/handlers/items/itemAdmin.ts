@@ -26,7 +26,7 @@ export const handleItemsDelete = async (c: Context) => {
     const itemSqid = c.req.param('item_sqid');
     const itemId = itemSqidToId(itemSqid);
 
-    const deleted = await deleteItem(c, itemId);
+    const deleted = await deleteItem(c.env, itemId);
     if (deleted) return c.html('Item deleted');
     return c.html('ERROR!');
 };
@@ -101,9 +101,9 @@ export const handleItemsAddItemByUrlPOST = async (c: Context) => {
 export const handleItemRefresh = async (c: Context) => {
     const itemSqid = c.req.param('item_sqid');
     const itemId = itemSqidToId(itemSqid);
-    const wf = await c.env.ADD_UPDATE_ITEM_WORKFLOW.create({ params: { itemId } });
+    const wf = await c.env.UPDATE_ITEM_WORKFLOW.create({ params: { itemId } });
     return c.html(`
-        <a href="https://dash.cloudflare.com/${c.env.CF_ACCOUNT_ID}/workers/workflows/add-item-workflow/instance/${wf.id}">WORKFLOW STARTED</a>
+        <a href="https://dash.cloudflare.com/${c.env.CF_ACCOUNT_ID}/workers/workflows/update-item-workflow/instance/${wf.id}">WORKFLOW STARTED</a>
         `);
 };
 
@@ -122,7 +122,7 @@ export const regenerateRelatedCacheForItem = async (env: Bindings, itemId: numbe
     }
 
     const item = await env.DB.prepare(
-        `SELECT items.item_id, feeds.title as feed_title
+        `SELECT items.item_id, feeds.title as feed_title, items.feed_id
         FROM items
         JOIN feeds ON items.feed_id = feeds.feed_id
         WHERE item_id = ?`,
@@ -145,15 +145,12 @@ export const regenerateRelatedCacheForItem = async (env: Bindings, itemId: numbe
 
     // Processing items from other blogs
     const matchesOtherBlogs = await env.VECTORIZE.query(vectors[0].values, {
-        topK: 11,
+        topK: 10,
         filter: { feed_id: { $ne: `${item.feed_id}` } },
     });
 
     const relatedIDsOtherBlog: Array<string> = [];
-    for (const match of matchesOtherBlogs.matches) {
-        if (match.id === `${itemId}`) continue; // skip current item itself
-        relatedIDsOtherBlog.push(match.id);
-    }
+    for (const match of matchesOtherBlogs.matches) relatedIDsOtherBlog.push(match.id);
 
     const queryBindPlaceholders = relatedIDsOtherBlog.map(() => '?').join(','); // Generate '?,?,...,?'
     const relatedItemsOtherBlog = await env.DB.prepare(
@@ -167,6 +164,38 @@ export const regenerateRelatedCacheForItem = async (env: Bindings, itemId: numbe
 
     for (const i of relatedItemsOtherBlog.results) {
         cacheContent.relatedFromOtherBlogs.push({
+            title: i.title as string,
+            item_id: i.item_id as number,
+            item_sqid: i.item_sqid as string,
+            feed_title: i.feed_title as string,
+            feed_id: i.feed_id as number,
+            feed_sqid: i.feed_sqid as string,
+            url: i.url as string,
+        });
+    }
+
+    // Processing items from this blog
+    const matchesThisBlogs = await env.VECTORIZE.query(vectors[0].values, {
+        topK: 6,
+        filter: { feed_id: { $eq: `${item.feed_id}` } },
+    });
+    const relatedIDsThisBlog: Array<string> = [];
+    for (const match of matchesThisBlogs.matches) {
+        if (match.id === `${itemId}`) continue; // skip current item itself
+        relatedIDsThisBlog.push(match.id);
+    }
+    const queryBindPlaceholders2 = relatedIDsThisBlog.map(() => '?').join(','); // Generate '?,?,...,?'
+    const relatedItemsThisBlog = await env.DB.prepare(
+        `SELECT item_id, item_sqid, items.title, feeds.title as feed_title, items.feed_id, feeds.feed_sqid, items.url
+        FROM items
+        JOIN feeds ON items.feed_id = feeds.feed_id
+        WHERE item_id IN (${queryBindPlaceholders2})`,
+    )
+        .bind(...relatedIDsThisBlog)
+        .all();
+
+    for (const i of relatedItemsThisBlog.results) {
+        cacheContent.relatedFromThisBlog.push({
             title: i.title as string,
             item_id: i.item_id as number,
             item_sqid: i.item_sqid as string,

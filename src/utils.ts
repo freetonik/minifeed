@@ -205,6 +205,10 @@ export const extractItemUrl = (item: MFFeedEntry, feedRSSUrl: string) => {
         throw new Error('Cannot extract item URL: localhost is used as the URL');
     }
 
+    if (feedRSSUrl.startsWith('https') && !link.startsWith('https')) {
+        throw new Error('Feed is HTTPS but item URL is not');
+    }
+
     return link;
 };
 

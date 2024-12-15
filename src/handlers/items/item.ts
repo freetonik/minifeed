@@ -192,10 +192,15 @@ export async function handleItemsSingle(c: Context) {
     if (item.related_content) {
         const related_content = JSON.parse(item.related_content);
         const related_from_other_blogs = related_content.relatedFromOtherBlogs;
+        const related_from_this_blog = related_content.relatedFromThisBlog;
 
         related_block += `<div class="related-items">`;
-        if (related_from_other_blogs?.length) related_block += '<h4>Related</h4><div class="items fancy-gradient-bg">';
+        if (related_from_other_blogs?.length || related_from_this_blog?.length)
+            related_block += '<h4>Related</h4><div class="items fancy-gradient-bg">';
         for (const i of related_from_other_blogs) {
+            related_block += renderItemShort(i.item_sqid, i.title, i.url, i.feed_title, i.feed_sqid);
+        }
+        for (const i of related_from_this_blog) {
             related_block += renderItemShort(i.item_sqid, i.title, i.url, i.feed_title, i.feed_sqid);
         }
         related_block += '</div></div>';

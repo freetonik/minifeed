@@ -2,8 +2,9 @@ import type { Context } from 'hono';
 import { raw } from 'hono/html';
 import type { Bindings } from './bindings';
 import { renderHTML } from './htmltools';
+import { deleteItem } from './items';
 import { getCollection } from './search';
-import { findObjsUniqueToListOne } from './utils';
+import { feedSqidToId, findObjsUniqueToListOne } from './utils';
 
 export const handleAdmin = async (c: Context) => {
     let list = '';
@@ -12,7 +13,8 @@ export const handleAdmin = async (c: Context) => {
     ).all();
     const feed_count = await c.env.DB.prepare('SELECT COUNT(feed_id) FROM feeds').all();
     const all_items_count = await c.env.DB.prepare('SELECT COUNT(item_id) FROM Items').all();
-    const items_collection = await getCollection(c.env);
+    const itemsSearchCollection = await getCollection(c.env);
+    const feedsSearchCollection = await getCollection(c.env, c.env.TYPESENSE_FEEDS_COLLECTION);
     const items_related_cache_count = await c.env.DB.prepare('SELECT COUNT(item_id) FROM items_related_cache').all();
     const items_vector_relation_count = await c.env.DB.prepare(
         'SELECT COUNT(item_id) FROM items_vector_relation',
@@ -75,13 +77,27 @@ export const handleAdmin = async (c: Context) => {
         <tr> <td></td> <td></td> </tr>
 
         <tr>
+            <td>Indexed feeds</td>
+            <td>${feedsSearchCollection.num_documents}</td>
+        </tr>
+        <tr>
+            <td>Unindexed feeds</td>
+            <td>
+                ${feed_count.results[0]['COUNT(feed_id)'] - feedsSearchCollection.num_documents}
+                <a href="/admin/unindexed_feeds">[list]</a>
+            </td>
+        </tr>
+
+        <tr> <td></td> <td></td> </tr>
+
+        <tr>
             <td>Indexed items</td>
-            <td>${items_collection.num_documents}</td>
+            <td>${itemsSearchCollection.num_documents}</td>
         </tr>
         <tr>
             <td>Unindexed items</td>
             <td>
-                ${all_items_count.results[0]['COUNT(item_id)'] - items_collection.num_documents}
+                ${all_items_count.results[0]['COUNT(item_id)'] - itemsSearchCollection.num_documents}
                 <a href="/admin/unindexed_items">[list]</a>
             </td>
         </tr>
@@ -305,47 +321,65 @@ export const handleDuplicateItems = async (c: Context) => {
     }
     inner += '</ol></details><hr>';
 
+    // ==========================================
     inner += '<h1>DUPLICATES (URL) PER FEED</h1>';
-
-    const allFeedIds = await c.env.DB.prepare('SELECT feed_id FROM feeds').all();
-    for (const feedId of allFeedIds.results) {
-        const duplicatesPerFeed = await getDupicatesURLPerFeed(c.env, feedId.feed_id);
-        if (duplicatesPerFeed.length > 0) {
-            inner += `<div class="borderbox"><h2>Duplicates in feed ${feedId.feed_id}: ${duplicatesPerFeed.length}</h2><ol>`;
-            let previusTitle = '';
-            for (const item of duplicatesPerFeed) {
-                if (previusTitle && previusTitle !== item.title) {
-                    inner += '<hr><br>';
+    const allFeeds = await c.env.DB.prepare('SELECT feed_id, feed_sqid FROM feeds').all();
+    console.log(allFeeds);
+    for (const feed of allFeeds.results) {
+        const dups = await getDupicatesPerFeedByProp(c.env, feed.feed_id, 'url');
+        if (dups.length > 0) {
+            inner += `<div class="borderbox">
+            <h2>Duplicates by URL in feed ${feed.feed_id}: ${dups.length}</h2>
+            <button hx-post="/admin/feeds/${feed.feed_sqid}/delete_duplicates_by_url"
+                hx-confirm="Sure?"
+                hx-trigger="click"
+                hx-target="#delete-by-url-indicator-${feed.feed_sqid}"
+                hx-swap="outerHTML">
+                delete duplicates by url
+            </button>
+            <span id="delete-by-url-indicator-${feed.feed_sqid}"></span>
+            <ol>`;
+            for (const group of groupObjectsByProperty(dups, 'url')) {
+                for (const item of group) {
+                    inner += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
+                            <br><code>${item.pub_date}</code><br>
+                            <code>${item.url}</code></li> `;
                 }
-                inner += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
-                    <br><code>${item.pub_date}</code><br>
-                    <code>${item.url}</code></li>
-                    `;
-
-                previusTitle = item.title as string;
+                inner += '<hr><br>';
             }
+
             inner += '</ol></div>';
         }
     }
 
     inner += '<h1>DUPLICATES (TITLE) PER FEED</h1>';
 
-    for (const feedId of allFeedIds.results) {
-        const duplicatesPerFeed = await getDupicatesTitlePerFeed(c.env, feedId.feed_id);
-        if (duplicatesPerFeed.length > 0) {
-            inner += `<div class="borderbox"><h2>Duplicates in feed ${feedId.feed_id}: ${duplicatesPerFeed.length}</h2><ol>`;
-            let previusURL = '';
-            for (const item of duplicatesPerFeed) {
-                if (previusURL && previusURL !== item.url) {
-                    inner += '<hr><br>';
-                }
-                inner += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
-                    <br><code>${item.pub_date}</code><br>
-                    <code>${item.url}</code></li>
-                    `;
+    for (const feed of allFeeds.results) {
+        const dups = await getDupicatesPerFeedByProp(c.env, feed.feed_id, 'title');
+        if (dups.length > 0) {
+            inner += `
+            <div class="borderbox">
+            <h2>Duplicates by title in feed ${feed.feed_id}: ${dups.length}</h2>
+            <button hx-post="/admin/feeds/${feed.feed_sqid}/delete_duplicates_by_title"
+                hx-confirm="Sure?"
+                hx-trigger="click"
+                hx-target="#delete-by-title-indicator-${feed.feed_sqid}"
+                hx-swap="outerHTML">
+                delete duplicates by title
+            </button>
+            <span id="delete-by-title-indicator-${feed.feed_sqid}"></span>
 
-                previusURL = item.url as string;
+
+            <ol>`;
+            for (const group of groupObjectsByProperty(dups, 'title')) {
+                for (const item of group) {
+                    inner += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
+                            <br><code>${item.pub_date}</code><br>
+                            <code>${item.url}</code></li> `;
+                }
+                inner += '<hr><br>';
             }
+
             inner += '</ol></div>';
         }
     }
@@ -417,6 +451,44 @@ export const handleAdminUnindexedItems = async (c: Context) => {
 
         <h2>Unindexed items (in DB, but not in index): ${unIndexedItems.length}</h2>
         ${JSON.stringify(unIndexedItems)}
+    `;
+
+    return c.html(renderHTML('admin | minifeed', raw(inner), c.get('USERNAME'), ''));
+};
+
+export const handleAdminUnindexedFeeds = async (c: Context) => {
+    const allFeedIdsEntries = await c.env.DB.prepare('SELECT feed_id, feed_sqid FROM feeds ').all();
+    const allDBFeeds = [];
+    for (const feed of allFeedIdsEntries.results) {
+        allDBFeeds.push({
+            feed_id: feed.feed_id,
+            feed_sqid: feed.feed_sqid,
+            id: String(feed.feed_id),
+        });
+    }
+
+    const response = await fetch(
+        `https://${c.env.TYPESENSE_CLUSTER}:443/collections/${c.env.TYPESENSE_FEEDS_COLLECTION}/documents/export?exclude_fields=content,title,type,rss_url,url`,
+        {
+            method: 'GET',
+            headers: { 'X-TYPESENSE-API-KEY': c.env.TYPESENSE_API_KEY },
+        },
+    );
+
+    const allIndexedFeeds = await processJsonlStream(response);
+    const orphanIndexedFeeds = findObjsUniqueToListOne(allIndexedFeeds, allDBFeeds);
+    const unIndexedFeeds = findObjsUniqueToListOne(allDBFeeds, allIndexedFeeds);
+
+    const inner = `
+        <h2>All feeds: ${allDBFeeds.length}</h2>
+
+        <h2>Indexed feeds: ${allIndexedFeeds?.length} / Missing from index: ${allDBFeeds.length - allIndexedFeeds.length}</h2>
+
+        <h2>Orphan indexed feeds (in index, but not in DB): ${orphanIndexedFeeds.length}</h2>
+        ${JSON.stringify(orphanIndexedFeeds)}
+
+        <h2>Unindexed items (in DB, but not in index): ${unIndexedFeeds.length}</h2>
+        ${JSON.stringify(unIndexedFeeds)}
     `;
 
     return c.html(renderHTML('admin | minifeed', raw(inner), c.get('USERNAME'), ''));
@@ -501,36 +573,62 @@ async function processJsonlStream(response: Response) {
     return items;
 }
 
-async function getDupicatesURLPerFeed(env: Bindings, feedId: number) {
-    const duplicatesByURL = await env.DB.prepare(`
+async function getDupicatesPerFeedByProp(env: Bindings, feedId: number, prop: string, orderBy = 'pub_date DESC') {
+    const dups = await env.DB.prepare(`
         SELECT item_id, item_sqid, items.title, url, pub_date
         FROM Items
-        WHERE items.url IN (
-            SELECT items.url
+        WHERE items.${prop} IN (
+            SELECT items.${prop}
             FROM Items
             WHERE feed_id = ?
-            GROUP BY url
+            GROUP BY ${prop}
             HAVING COUNT(*) > 1
         )
-            ORDER BY items.url`)
+            ORDER BY items.${prop}, ${orderBy}`)
         .bind(feedId)
         .all();
-    return duplicatesByURL.results;
+    return dups.results;
 }
 
-async function getDupicatesTitlePerFeed(env: Bindings, feedId: number) {
-    const duplicatesByURL = await env.DB.prepare(`
-        SELECT item_id, item_sqid, items.title, url, pub_date
-        FROM Items
-        WHERE items.title IN (
-            SELECT items.title
-            FROM Items
-            WHERE feed_id = ?
-            GROUP BY title
-            HAVING COUNT(*) > 1
-        )
-            ORDER BY items.title`)
-        .bind(feedId)
-        .all();
-    return duplicatesByURL.results;
+export async function handleDeleteDuplicatesByTitle(c: Context) {
+    const feedId: number = feedSqidToId(c.req.param('feed_sqid'));
+    const deletedItems = await deleteDuplicatesInFeedByProperty(c.env, feedId, 'title');
+    return c.json({ deletedItems });
+}
+
+export async function handleDeleteDuplicatesByUrl(c: Context) {
+    const feedId: number = feedSqidToId(c.req.param('feed_sqid'));
+    const deletedItems = await deleteDuplicatesInFeedByProperty(c.env, feedId, 'url');
+    return c.json({ deletedItems });
+}
+
+async function deleteDuplicatesInFeedByProperty(
+    env: Bindings,
+    feedId: number,
+    prop: string,
+    orderBy = 'pub_date DESC',
+) {
+    const duplicates = await getDupicatesPerFeedByProp(env, feedId, prop, orderBy);
+    const groupedByProp = groupObjectsByProperty(duplicates, prop);
+    const deletedItems = [];
+    for (const group of groupedByProp) {
+        // from SQL query we know that items are sorted by pub_date, newest first
+        // we keep the newest and delete the rest
+        const keepItem = group.shift();
+        for (const item of group) {
+            await deleteItem(env, item.item_id);
+            deletedItems.push(item);
+        }
+    }
+    return deletedItems;
+}
+
+function groupObjectsByProperty(objects: Array<any>, prop: string): Array<any> {
+    return Object.values(
+        objects.reduce((acc, item) => {
+            acc[item[prop]] = acc[item[prop]] || [];
+            acc[item[prop]].push(item);
+            return acc;
+        }, {}),
+    );
 }

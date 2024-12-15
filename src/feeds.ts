@@ -428,6 +428,9 @@ export async function handleFeedsGlobalCacheRebuild(c: Context) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // FEED FUNCTIONS (NOT ROUTE HANDLERS)
 
+// todo
+async function checkFeedExists(env: Bindings, url: string) {}
+
 async function addFeed(env: Bindings, url: string, verified = false) {
     let r: FeedData;
     let RSSUrl: string = url;
@@ -531,7 +534,7 @@ export async function updateFeed(env: Bindings, feedId: number) {
         // }
 
         for (const item of newItemsToBeAdded) {
-            await env.ADD_UPDATE_ITEM_WORKFLOW.create({
+            await env.ADD_ITEM_WORKFLOW.create({
                 params: { item, feedId },
             });
         }
@@ -670,4 +673,6 @@ export async function regenerateTopItemsCacheForFeed(env: Bindings, feedId: numb
     await env.DB.prepare('REPLACE INTO items_top_cache (feed_id, content) values (?, ?)')
         .bind(feedId, JSON.stringify(cache_content))
         .run();
+
+    return true;
 }

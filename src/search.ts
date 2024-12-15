@@ -204,7 +204,9 @@ export async function updateFeedItemsIndex(env: Bindings, feed_id: number) {
     for (const item of items) await updateItemIndex(env, item.item_id);
 }
 
-export async function getCollection(env: Bindings) {
+export async function getCollection(env: Bindings, collection?: string) {
+    let collectionName = env.TYPESENSE_ITEMS_COLLECTION;
+    if (collection) collectionName = collection;
     const init = {
         method: 'GET',
         headers: {
@@ -213,10 +215,7 @@ export async function getCollection(env: Bindings) {
     };
 
     try {
-        const response = await fetch(
-            `https://${env.TYPESENSE_CLUSTER}:443/collections/${env.TYPESENSE_ITEMS_COLLECTION}`,
-            init,
-        );
+        const response = await fetch(`https://${env.TYPESENSE_CLUSTER}:443/collections/${collectionName}`, init);
         const results = await gatherResponse(response);
         return JSON.parse(results);
     } catch (e) {
