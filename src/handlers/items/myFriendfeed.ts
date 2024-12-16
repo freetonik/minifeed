@@ -56,7 +56,6 @@ export const handleMyFriendfeed = async (c: Context) => {
             'my',
             '',
             '',
-            false,
             c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
         ),
     );

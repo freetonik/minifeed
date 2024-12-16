@@ -174,7 +174,6 @@ export const handleMy = async (c: Context) => {
             'my',
             '',
             '',
-            false,
             c.get('USER_IS_ADMIN')
                 ? `${meta0.duration}+${meta1.duration} ms., ${meta0.rows_read}+${meta1.rows_read} rows read`
                 : '',

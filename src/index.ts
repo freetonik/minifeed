@@ -17,25 +17,7 @@ import { handleGenerateRelated, handleVectorize, vectorizeAndStoreItem } from '.
 import type { Bindings } from './bindings';
 import { changelog } from './changelog';
 import { handleFeedback, handleSuggestBlog } from './feedback';
-import {
-    handleBlogs,
-    handleBlogsNew,
-    handleBlogsNewPOST,
-    handleBlogsSingle,
-    handleFeedsCacheRebuild,
-    handleFeedsDelete,
-    handleFeedsGlobalCacheRebuild,
-    handleFeedsGlobalIndex,
-    handleFeedsIndexing,
-    handleFeedsItemsGlobalIndex,
-    handleFeedsItemsIndexing,
-    handleFeedsScrape,
-    handleFeedsSubscribe,
-    handleFeedsUnsubscribe,
-    handleFeedsUpdate,
-    regenerateTopItemsCacheForFeed,
-    updateFeed,
-} from './feeds';
+import { regenerateTopItemsCacheForFeed, updateFeed } from './feeds';
 import {
     handleLogin,
     handleLoginPOST,
@@ -50,16 +32,34 @@ import {
     handleSignupPOST,
     handleVerifyEmail,
 } from './handlers/account/handleMyAccount';
+import { handleBlog } from './handlers/feeds/blog';
+import { handleBlogs } from './handlers/feeds/blogs';
+import {
+    handleBlogsNew,
+    handleBlogsNewPOST,
+    handleFeedsCacheRebuild,
+    handleFeedsDelete,
+    handleFeedsGlobalCacheRebuild,
+    handleFeedsGlobalIndex,
+    handleFeedsIndexing,
+    handleFeedsItemsGlobalIndex,
+    handleFeedsItemsIndexing,
+    handleFeedsScrape,
+    handleFeedsUpdate,
+} from './handlers/feeds/feedAdmin';
+import { handleFeedsSubscribe, handleFeedsUnsubscribe } from './handlers/feeds/feedSubscribePartial';
 import { handleFavicon } from './handlers/handleFavicon';
 import { handleGlobal } from './handlers/items/global';
 import { handleHomeForGuest } from './handlers/items/homeGuest';
-import { handleItemsSingle } from './handlers/items/item';
+import { handleItem } from './handlers/items/item';
 import {
     handleItemRefresh,
     handleItemsAddItemByUrlPOST,
     handleItemsAddItembyUrl,
     handleItemsDelete,
+    handleRegenerateRelatedItemsNew,
     regenerateRelatedCacheForItem,
+    regenerateRelatedCacheForItemNEW,
 } from './handlers/items/itemAdmin';
 import { handleItemsAddToFavorites, handleItemsRemoveFromFavorites } from './handlers/items/itemFavorites';
 import {
@@ -181,6 +181,7 @@ app.post('/admin/blogs/new', handleBlogsNewPOST);
 
 app.post('/admin/items/:item_sqid/delete', handleItemsDelete);
 app.post('/admin/items/:item_sqid/refresh', handleItemRefresh);
+app.post('/admin/items/:item_sqid/regen-related-items', handleRegenerateRelatedItemsNew);
 
 // NORMAL ROUTES
 app.get('/search', handleSearch);
@@ -199,14 +200,14 @@ app.get('/signup', handleSignup);
 app.post('/signup', handleSignupPOST);
 app.get('/logout', authRequiredMiddleware, handleLogout);
 
-app.get('/blogs/:feed_sqid', handleBlogsSingle);
+app.get('/blogs/:feed_sqid', handleBlog);
 app.get('/blogs', handleBlogs);
 app.get('/blogs/by/:listingType?', handleBlogs);
 
 app.post('/feeds/:feed_sqid/subscribe', authRequiredMiddleware, handleFeedsSubscribe);
 app.post('/feeds/:feed_sqid/unsubscribe', authRequiredMiddleware, handleFeedsUnsubscribe);
 
-app.get('/items/:item_sqid', handleItemsSingle);
+app.get('/items/:item_sqid', handleItem);
 app.get('/items/:item_sqid/lists', authRequiredMiddleware, handleItemsLists);
 app.get('/items/:item_sqid/lists/new', authRequiredMiddleware, handleItemsListsNewForm);
 app.post('/items/:item_sqid/lists', authRequiredMiddleware, handleItemsListsNewPOST);
@@ -330,15 +331,11 @@ export default {
                     break;
 
                 case 'item_update_related_cache':
-                    if (message.body.item_id) {
-                        try {
-                            await regenerateRelatedCacheForItem(env, message.body.item_id);
-                        } catch (e: unknown) {
-                            console.log(
-                                `Error regenerating related items cache for item ${message.body.item_id}: ${e instanceof Error ? e.message : String(e)}`,
-                            );
-                        }
-                    }
+                    if (message.body.item_id) await regenerateRelatedCacheForItem(env, message.body.item_id);
+                    break;
+
+                case 'item_update_related_cache_new':
+                    if (message.body.item_id) await regenerateRelatedCacheForItemNEW(env, message.body.item_id);
                     break;
 
                 case 'item_vectorize_store':

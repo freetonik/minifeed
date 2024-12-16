@@ -7,6 +7,7 @@ import { deleteItem } from '../../items';
 import { enqueueVectorizeStoreItem } from '../../queue';
 import { scrapeURLIntoObject } from '../../scrape';
 import { updateItemIndex } from '../../search';
+import { dbGetItem } from '../../sqlutils';
 import { feedSqidToId, itemIdToSqid, itemSqidToId } from '../../utils';
 
 export const handleItemsAddItembyUrl = async (c: Context) => {
@@ -106,6 +107,15 @@ export const handleItemRefresh = async (c: Context) => {
         <a href="https://dash.cloudflare.com/${c.env.CF_ACCOUNT_ID}/workers/workflows/update-item-workflow/instance/${wf.id}">WORKFLOW STARTED</a>
         `);
 };
+
+export async function handleRegenerateRelatedItemsNew(c: Context) {
+    const itemSqid = c.req.param('item_sqid');
+    await c.env.FEED_UPDATE_QUEUE.send({
+        type: 'item_update_related_cache_new',
+        item_id: itemSqidToId(itemSqid),
+    });
+    return c.html('Regenerating related items with new way...');
+}
 
 export const regenerateRelatedCacheForItem = async (env: Bindings, itemId: number) => {
     if (env.ENVIRONMENT === 'dev') {
@@ -281,4 +291,35 @@ export const regenerateRelatedCacheForItemMOCK = async (env: Bindings, itemId: n
     )
         .bind(itemId, JSON.stringify(cache_content))
         .run();
+};
+
+export const regenerateRelatedCacheForItemNEW = async (env: Bindings, itemId: number) => {
+    const item = await dbGetItem(env, itemId);
+    const relatedItemIds = [];
+
+    if (env.ENVIRONMENT === 'dev') {
+        const randomItems = await env.DB.prepare('SELECT item_id FROM items ORDER BY RANDOM() LIMIT 10').all();
+        relatedItemIds.push(...randomItems.results.map((i: any) => i.item_id));
+    } else {
+        const matchesOtherBlogs = await env.VECTORIZE.queryById(`${itemId}`, {
+            topK: 10,
+            filter: { feed_id: { $ne: `${item?.feed_id}` } },
+        });
+        for (const match of matchesOtherBlogs.matches) relatedItemIds.push(match.id);
+    }
+
+    // delete existing related items first
+    await env.DB.prepare('DELETE FROM related_items WHERE item_id = ?').bind(itemId).run();
+    // insert new related items
+    const stmt = env.DB.prepare('INSERT INTO related_items (item_id, related_item_id) values (?, ?)');
+    const binds: D1PreparedStatement[] = [];
+    for (const relateItemId of relatedItemIds) {
+        binds.push(stmt.bind(itemId, relateItemId));
+    }
+    await env.DB.batch(binds);
+    console.log({
+        message: 'Regenerated cache for item',
+        itemId,
+    });
+    return true;
 };

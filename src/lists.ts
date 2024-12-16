@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
-import { guestFlash, renderHTML, renderItemShort } from './htmltools';
+import { renderGuestFlash, renderHTML, renderItemShort } from './htmltools';
 import { itemSqidToId } from './utils';
 
 export const handleLists = async (c: Context) => {
@@ -14,13 +14,13 @@ export const handleLists = async (c: Context) => {
 
     let inner = '';
     if (!c.get('USER_LOGGED_IN')) {
-        inner += guestFlash;
+        inner += renderGuestFlash;
     }
     for (const list of lists.results) {
         inner += `<div class="borderbox" style="margin-bottom: 1em;"><a href="/lists/${list.list_sqid}">${list.title}</a> (list by @${list.username})</div>`;
     }
 
-    return c.html(renderHTML('Lists | minifeed', raw(inner), c.get('USERNAME'), 'lists', '', '', false));
+    return c.html(renderHTML('Lists | minifeed', raw(inner), c.get('USERNAME'), 'lists'));
 };
 
 export const handleListsSingle = async (c: Context) => {
@@ -59,9 +59,7 @@ export const handleListsSingle = async (c: Context) => {
         </p>`;
     }
 
-    return c.html(
-        renderHTML(`${listEntry.title} list | minifeed`, raw(inner), c.get('USER_LOGGED_IN'), 'lists', '', '', false),
-    );
+    return c.html(renderHTML(`${listEntry.title} list | minifeed`, raw(inner), c.get('USER_LOGGED_IN'), 'lists'));
 };
 
 export const handleListsSingleDeletePOST = async (c: Context) => {

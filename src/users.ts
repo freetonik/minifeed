@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
-import { guestFlash, renderHTML, renderItemShort } from './htmltools';
+import { renderGuestFlash, renderHTML, renderItemShort } from './htmltools';
 import { feedIdToSqid } from './utils';
 
 export async function handleUsers(c: Context) {
@@ -11,7 +11,7 @@ export async function handleUsers(c: Context) {
 
     let inner = '';
     if (!c.get('USER_LOGGED_IN')) {
-        inner += guestFlash;
+        inner += renderGuestFlash;
     }
     for (const user of results) {
         if (user.username === username)

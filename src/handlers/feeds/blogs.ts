@@ -1,0 +1,102 @@
+import type { Context } from 'hono';
+import { raw } from 'hono/html';
+import { renderBlogsSubsections, renderGuestFlash, renderHTML } from '../../htmltools';
+
+export const handleBlogs = async (c: Context) => {
+    const userId = c.get('USER_ID') || -1;
+    const userLoggedIn = c.get('USER_LOGGED_IN');
+
+    const listingType = c.req.param('listingType') || 'newest';
+
+    let ordering = 'feeds.created DESC';
+    let filtering = '';
+
+    if (listingType === 'random') ordering = 'RANDOM()';
+    else if (listingType === 'newest') ordering = 'feeds.created DESC';
+    else if (listingType === 'oldest') ordering = 'feeds.created ASC';
+    else if (listingType === 'alphabetical') ordering = 'feeds.title';
+    else if (listingType === 'subscribed') {
+        if (!userLoggedIn) return c.redirect('/blogs');
+        filtering = 'AND subscriptions.subscription_id IS NOT NULL';
+        ordering = 'subscriptions.subscription_id DESC';
+    } else return c.notFound();
+
+    const { results, meta } = await c.env.DB.prepare(`
+        SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, subscriptions.subscription_id, items_top_cache.content
+        FROM feeds
+        LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
+        LEFT JOIN subscriptions on feeds.feed_id = subscriptions.feed_id AND subscriptions.user_id = ?
+        WHERE feeds.type = 'blog' ${filtering}
+        ORDER BY ${ordering}`)
+        .bind(userId)
+        .run();
+
+    let inner = '';
+    if (!userLoggedIn) inner += renderGuestFlash;
+    inner += renderBlogsSubsections(listingType, userLoggedIn);
+
+    for (const feed of results) {
+        const subscriptionAction = feed.subscription_id ? 'unsubscribe' : 'subscribe';
+        const subscriptionButtonText = feed.subscription_id ? 'subscribed' : 'subscribe';
+        const feedDescriptionBlock = feed.description ? `<p>${feed.description}</p>` : '';
+
+        const subscriptionBlock = userLoggedIn
+            ? `<div><span id="subscription-${feed.feed_sqid}">
+            <button hx-post="/feeds/${feed.feed_sqid}/${subscriptionAction}"
+            class="button ${subscriptionButtonText}"
+            hx-trigger="click"
+            hx-target="#subscription-${feed.feed_sqid}"
+            hx-swap="outerHTML">
+            <span class="subscribed-text">${subscriptionButtonText}</span>
+            <span class="unsubscribe-text">unsubscribe</span>
+            </button>
+        </span></div>`
+            : `<div><span id="subscription">
+            <button class="button"disabled title="Login to subscribe">
+            <span>${subscriptionButtonText}</span>
+            </button>
+        </span></div>`;
+
+        const relatedCache = JSON.parse(feed.content);
+        console.log(relatedCache);
+
+        let topItems = '';
+        if (relatedCache?.top_items) {
+            topItems += '<ul>';
+            for (const item of relatedCache.top_items)
+                topItems += `<li><a href="/items/${item.item_sqid}">${item.title}</a></li>`;
+
+            if (relatedCache.items_count > relatedCache.top_items.length)
+                topItems += `<li><i>and <a href="/blogs/${feed.feed_sqid}">more...</a></i></li></ul>`;
+        }
+
+        inner += `
+        <div class="blog-summary fancy-gradient-bg">
+          <h2>
+            <a class="no-color no-underline" href="/blogs/${feed.feed_sqid}">${feed.title}</a>
+          </h2>
+          <p class="urls">
+            <a class="util-mr-05" href="${feed.url}">${feed.url}</a>
+            <small>
+                <a class="tag-label no-color" href="${feed.rss_url}">RSS↗</a>
+            </small>
+          </p>
+          ${feedDescriptionBlock}
+          ${subscriptionBlock}
+          ${topItems}
+        </div>`;
+    } // iterate over feeds
+
+    inner += `<div style="margin-top:2em;text-align:center;"><a class="button" href="/suggest">+ suggest a blog</a></div>`;
+    return c.html(
+        renderHTML(
+            'Blogs | minifeed',
+            raw(inner),
+            userLoggedIn,
+            'blogs',
+            '',
+            '',
+            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
+        ),
+    );
+};

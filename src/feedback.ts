@@ -8,7 +8,7 @@ export async function handleFeedback(c: Context) {
     <p style="text-align:center;">Please leave your feedback below. We appreciate your input!</p>
     <script data-letterbirduser="minifeed" src="https://letterbird.co/embed/v1.js"></script>
     `;
-    return c.html(renderHTML('Feedback | minifeed', raw(feedbackForm), c.get('USERNAME'), 'feedback'));
+    return c.html(renderHTML('Feedback | minifeed', raw(feedbackForm), c.get('USER_LOGGED_IN'), 'feedback'));
 }
 
 export async function handleSuggestBlog(c: Context) {
@@ -17,5 +17,5 @@ export async function handleSuggestBlog(c: Context) {
     <p style="text-align:center;">Know some good blogs written by real humans? Send us the links!</p>
     <script data-letterbirduser="minifeed" src="https://letterbird.co/embed/v1.js"></script>
     `;
-    return c.html(renderHTML('Suggest a blog | minifeed', raw(suggestBlogForm), c.get('USERNAME'), 'feedback'));
+    return c.html(renderHTML('Suggest a blog | minifeed', raw(suggestBlogForm), c.get('USER_LOGGED_IN'), 'feedback'));
 }

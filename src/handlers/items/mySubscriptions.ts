@@ -107,7 +107,6 @@ export const handleMySubscriptions = async (c: Context) => {
             'my',
             '',
             '',
-            false,
             c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
         ),
     );

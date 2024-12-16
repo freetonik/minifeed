@@ -5,20 +5,18 @@ import type { FeedSearchResult, ItemSearchResult } from './interface';
 export const renderHTML = (
     title: string,
     inner: string,
-    user_logged_in = false,
+    loggedIn = false,
     active = 'all',
     searchQuery = '',
     canonicalUrl = '',
-    prefix_root_url = false,
-    debug_info = '',
+    debugInfo = '',
 ) => {
-    const root_url = prefix_root_url ? 'https://minifeed.net' : '';
     const canonicalUrlBlock = canonicalUrl ? raw(`<link rel="canonical" href="${canonicalUrl}" />`) : '';
 
-    const userBlock = user_logged_in
-        ? raw(`<a href="${root_url}/account">account</a>`)
+    const userBlock = loggedIn
+        ? raw(`<a href="/account">account</a>`)
         : raw(
-              `<span><a href="${root_url}/login" class="bold">Log&nbsp;in</a> | <a class="bold" href="${root_url}/signup">Sign&nbsp;up</a></span>`,
+              `<span><a href="/login" class="bold">Log&nbsp;in</a> | <a class="bold" href="/signup">Sign&nbsp;up</a></span>`,
           );
 
     return html`
@@ -42,18 +40,18 @@ export const renderHTML = (
 
     <body>
     <header>
-        <form action="${root_url}/search" method="GET" style="width:100%;margin-bottom:1.25em;">
+        <form action="/search" method="GET" style="width:100%;margin-bottom:1.25em;">
             <input class="search-input"
             type="text" name="q" placeholder="search..." minlength="2" autocomplete="off" value="${searchQuery}">
         </form>
         <nav aria-label="Site navigation">
             <div>
-                <a href="${root_url}/" class="logo"><span>⬤</span> <span class="bold" style="margin-left: 0.2em;margin-right:1.5em;">minifeed</span></a>
-                <a href="${root_url}/" class="${active === 'my' && user_logged_in ? 'chapter bold active' : 'chapter'}">My feed</a>
-                <a href="${root_url}/global" class="${active === 'global' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Global</a>
-                <a href="${root_url}/blogs" class="${active === 'blogs' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Blogs</a>
-                <a href="${root_url}/lists" class="${active === 'lists' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Lists</a>
-                <a href="${root_url}/users" class="${active === 'users' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Users</a>
+                <a href="/" class="logo"><span>⬤</span> <span class="bold" style="margin-left: 0.2em;margin-right:1.5em;">minifeed</span></a>
+                <a href="/" class="${active === 'my' && loggedIn ? 'chapter bold active' : 'chapter'}">My feed</a>
+                <a href="/global" class="${active === 'global' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Global</a>
+                <a href="/blogs" class="${active === 'blogs' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Blogs</a>
+                <a href="/lists" class="${active === 'lists' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Lists</a>
+                <a href="/users" class="${active === 'users' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Users</a>
             </div>
             ${userBlock}
         </nav>
@@ -62,12 +60,12 @@ export const renderHTML = (
     <footer>
         <p>
             Minifeed.net ::
-            <a href="${root_url}/about">about</a> /
-            <a href="${root_url}/about/changelog">changelog</a> /
+            <a href="/about">about</a> /
+            <a href="/about/changelog">changelog</a> /
             <a href="https://status.minifeed.net/">status</a> /
-            <a href="${root_url}/feedback">feedback</a>
+            <a href="/feedback">feedback</a>
         </p>
-        <p> ${debug_info} </p>
+        <p> ${debugInfo} </p>
     </footer>
     </body>
     </html>`;
@@ -253,7 +251,7 @@ export const renderBlogsSubsections = (active = 'newest', userLoggedIn = true) =
     `;
 };
 
-export const guestFlash = `<div class="flash">
+export const renderGuestFlash = `<div class="flash">
     <strong>Minifeed</strong> is a curated blog reader and search engine.
     We collect humans-written blogs to make them discoverable and searchable.
     Sign up to subscribe to blogs, follow people, save favorites, and create lists.

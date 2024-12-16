@@ -39,7 +39,7 @@ export async function extractRSS(RSSUrl: string): Promise<FeedData> {
     });
 }
 
-export interface feedValidationResult {
+interface feedValidationResult {
     validated: boolean;
     messages: string[];
 }

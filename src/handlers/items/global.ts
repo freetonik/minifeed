@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
-import { guestFlash, renderGlobalSubsections, renderHTML, renderItemShort } from '../../htmltools';
+import { renderGlobalSubsections, renderGuestFlash, renderHTML, renderItemShort } from '../../htmltools';
 
 export const handleGlobal = async (c: Context) => {
     const userId = c.get('USER_ID') || -1;
@@ -28,7 +28,7 @@ export const handleGlobal = async (c: Context) => {
 
     let list = '';
     if (!c.get('USER_LOGGED_IN')) {
-        list += guestFlash;
+        list += renderGuestFlash;
     }
 
     if (!results.length) list += '<p><i>Nothing exists on minifeed yet...</i></p>';
@@ -78,7 +78,6 @@ export const handleGlobal = async (c: Context) => {
             'global',
             '',
             '',
-            false,
             c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
         ),
     );

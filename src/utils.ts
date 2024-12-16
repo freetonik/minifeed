@@ -434,3 +434,13 @@ export function findObjsUniqueToListOne(list1: any, list2: any) {
 
     return list1.filter((obj) => !list2Ids.has(obj.id));
 }
+
+export function groupObjectsByProperty(objects: Array<any>, prop: string): Array<any> {
+    return Object.values(
+        objects.reduce((acc, item) => {
+            acc[item[prop]] = acc[item[prop]] || [];
+            acc[item[prop]].push(item);
+            return acc;
+        }, {}),
+    );
+}

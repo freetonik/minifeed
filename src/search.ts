@@ -7,9 +7,8 @@ import { collapseWhitespace, gatherResponse, stripASCIIFormatting, stripTags } f
 
 export async function upsertSingleDocument(env: Bindings, document: ItemSearchDocument) {
     const reqUrl = `https://${env.TYPESENSE_CLUSTER}:443/collections/${env.TYPESENSE_ITEMS_COLLECTION}/documents/import?action=upsert`;
-    const json = JSON.stringify(document);
     const init = {
-        body: json,
+        body: JSON.stringify(document),
         method: 'POST',
         headers: {
             'X-TYPESENSE-API-KEY': env.TYPESENSE_API_KEY,
@@ -34,9 +33,8 @@ export async function upsertSingleDocument(env: Bindings, document: ItemSearchDo
 
 export async function upsertSingleFeed(env: Bindings, document: FeedSearchDocument) {
     const reqUrl = `https://${env.TYPESENSE_CLUSTER}:443/collections/${env.TYPESENSE_FEEDS_COLLECTION}/documents/import?action=upsert`;
-    const json = JSON.stringify(document);
     const init = {
-        body: json,
+        body: JSON.stringify(document),
         method: 'POST',
         headers: {
             'X-TYPESENSE-API-KEY': env.TYPESENSE_API_KEY,
@@ -195,13 +193,8 @@ export async function updateFeedIndex(env: Bindings, feedId: number) {
 
 // at some point we need to use bulk indexing, but it needs to be controllable with up to 40 documents per request
 export async function updateFeedItemsIndex(env: Bindings, feed_id: number) {
-    type ItemsRowPartial = {
-        item_id: number;
-    };
-    const { results: items } = await env.DB.prepare('SELECT item_id FROM items WHERE feed_id = ?')
-        .bind(feed_id)
-        .all<ItemsRowPartial>();
-    for (const item of items) await updateItemIndex(env, item.item_id);
+    const { results: items } = await env.DB.prepare('SELECT item_id FROM items WHERE feed_id = ?').bind(feed_id).all();
+    for (const item of items) await updateItemIndex(env, item.item_id as number);
 }
 
 export async function getCollection(env: Bindings, collection?: string) {
@@ -214,11 +207,7 @@ export async function getCollection(env: Bindings, collection?: string) {
         },
     };
 
-    try {
-        const response = await fetch(`https://${env.TYPESENSE_CLUSTER}:443/collections/${collectionName}`, init);
-        const results = await gatherResponse(response);
-        return JSON.parse(results);
-    } catch (e) {
-        console.log(`Error while getting collection: ${e}`);
-    }
+    const response = await fetch(`https://${env.TYPESENSE_CLUSTER}:443/collections/${collectionName}`, init);
+    const results = await gatherResponse(response);
+    return JSON.parse(results);
 }

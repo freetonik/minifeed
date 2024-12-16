@@ -261,7 +261,7 @@ export const handleLogin = async (c: Context) => {
     </div>
 
     `;
-    return c.html(renderHTML('Login or create account | minifeed', raw(list), false, '', ''));
+    return c.html(renderHTML('Login or create account | minifeed', raw(list), false));
 };
 
 export const handleResetPassword = async (c: Context) => {
@@ -305,7 +305,7 @@ export const handleResetPassword = async (c: Context) => {
         `;
     }
 
-    return c.html(renderHTML('Reset password | minifeed', raw(inner), false, '', ''));
+    return c.html(renderHTML('Reset password | minifeed', raw(inner), false));
 };
 
 export const handleResetPasswordPOST = async (c: Context) => {
@@ -335,7 +335,6 @@ export const handleResetPasswordPOST = async (c: Context) => {
                 If the email address you entered is associated with an account, you will receive an email with a link to reset your password.
             </div>`),
             false,
-            '',
         ),
     );
 };
@@ -374,7 +373,7 @@ export const handleSetPasswordPOST = async (c: Context) => {
         `<div class="flash flash-blue">Password reset successfully. <a href="/login">Log in now</a>.</div>`,
     );
 
-    return c.html(renderHTML('Reset password | minifeed', inner, false, '', ''));
+    return c.html(renderHTML('Reset password | minifeed', inner, false));
 };
 
 export const handleSignup = async (c: Context) => {
@@ -410,7 +409,7 @@ export const handleSignup = async (c: Context) => {
     </form>
     </div>
     `;
-    return c.html(renderHTML('Login or create account | minifeed', raw(inner), false, '', ''));
+    return c.html(renderHTML('Login or create account | minifeed', raw(inner), false));
 };
 
 export const handleLoginPOST = async (c: Context) => {
@@ -536,7 +535,6 @@ const createSessionSetCookieAndRedirect = async (
                     Great! You are now registered and logged in. Check your email for a verification link. Go browse some <a href="/blogs">blogs</a>, <a href="/lists">lists</a>, and <a href="/users">users</a> to subscribe to.
                 </div>`),
                 true,
-                '',
             ),
         );
     }

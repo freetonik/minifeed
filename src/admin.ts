@@ -4,7 +4,7 @@ import type { Bindings } from './bindings';
 import { renderHTML } from './htmltools';
 import { deleteItem } from './items';
 import { getCollection } from './search';
-import { feedSqidToId, findObjsUniqueToListOne } from './utils';
+import { feedSqidToId, findObjsUniqueToListOne, groupObjectsByProperty } from './utils';
 
 export const handleAdmin = async (c: Context) => {
     let list = '';
@@ -262,7 +262,7 @@ export const handleAdmin = async (c: Context) => {
     </div>
     `;
 
-    return c.html(renderHTML('admin | minifeed', raw(list), c.get('USERNAME'), ''));
+    return c.html(renderHTML('admin | minifeed', raw(list), true));
 };
 
 export const handleDuplicateItems = async (c: Context) => {
@@ -384,7 +384,7 @@ export const handleDuplicateItems = async (c: Context) => {
         }
     }
 
-    return c.html(renderHTML('admin | minifeed', raw(inner), c.get('USERNAME'), ''));
+    return c.html(renderHTML('admin | minifeed', raw(inner), true));
 };
 
 export const handleAdminUnvectorizedItems = async (c: Context) => {
@@ -412,7 +412,7 @@ export const handleAdminUnvectorizedItems = async (c: Context) => {
     }
     list += '</ol>';
 
-    return c.html(renderHTML('admin | minifeed', raw(list), c.get('USERNAME'), ''));
+    return c.html(renderHTML('admin | minifeed', raw(list), true));
 };
 
 export const handleAdminUnindexedItems = async (c: Context) => {
@@ -453,7 +453,7 @@ export const handleAdminUnindexedItems = async (c: Context) => {
         ${JSON.stringify(unIndexedItems)}
     `;
 
-    return c.html(renderHTML('admin | minifeed', raw(inner), c.get('USERNAME'), ''));
+    return c.html(renderHTML('admin | minifeed', raw(inner), true));
 };
 
 export const handleAdminUnindexedFeeds = async (c: Context) => {
@@ -489,9 +489,12 @@ export const handleAdminUnindexedFeeds = async (c: Context) => {
 
         <h2>Unindexed items (in DB, but not in index): ${unIndexedFeeds.length}</h2>
         ${JSON.stringify(unIndexedFeeds)}
+        <form action="/admin/unindexed_feeds/index" method="post">
+            <button>Re-index feeds</button>
+        </form>
     `;
 
-    return c.html(renderHTML('admin | minifeed', raw(inner), c.get('USERNAME'), ''));
+    return c.html(renderHTML('admin | minifeed', raw(inner), true));
 };
 
 export const handleAdminItemsWithoutSqid = async (c: Context) => {
@@ -513,7 +516,7 @@ export const handleAdminItemsWithoutSqid = async (c: Context) => {
     }
     list += '</ol>';
 
-    return c.html(renderHTML('admin | minifeed', raw(list), c.get('USERNAME'), ''));
+    return c.html(renderHTML('admin | minifeed', raw(list), true));
 };
 
 export const handleAdminItemsWithoutRelatedCache = async (c: Context) => {
@@ -535,7 +538,7 @@ export const handleAdminItemsWithoutRelatedCache = async (c: Context) => {
     }
     list += '</ol>';
 
-    return c.html(renderHTML('admin | minifeed', raw(list), c.get('USERNAME'), ''));
+    return c.html(renderHTML('admin | minifeed', raw(list), true));
 };
 
 async function processJsonlStream(response: Response) {
@@ -621,14 +624,4 @@ async function deleteDuplicatesInFeedByProperty(
         }
     }
     return deletedItems;
-}
-
-function groupObjectsByProperty(objects: Array<any>, prop: string): Array<any> {
-    return Object.values(
-        objects.reduce((acc, item) => {
-            acc[item[prop]] = acc[item[prop]] || [];
-            acc[item[prop]].push(item);
-            return acc;
-        }, {}),
-    );
 }

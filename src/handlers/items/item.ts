@@ -3,10 +3,10 @@ import { raw } from 'hono/html';
 import { renderHTML, renderItemShort } from '../../htmltools';
 import { absolutifyImageUrls, getRootUrl, itemSqidToId, sanitizeHTML } from '../../utils';
 
-export async function handleItemsSingle(c: Context) {
+export async function handleItem(c: Context) {
     const item_sqid = c.req.param('item_sqid');
-    const item_id: number = itemSqidToId(item_sqid);
-    const user_id = c.get('USER_ID') || -1;
+    const itemId: number = itemSqidToId(item_sqid);
+    const userId = c.get('USER_ID') || -1;
     const user_logged_in = c.get('USER_LOGGED_IN');
 
     const batch = await c.env.DB.batch([
@@ -17,7 +17,7 @@ export async function handleItemsSingle(c: Context) {
     FROM subscriptions
     JOIN items ON subscriptions.feed_id = items.feed_id
     WHERE subscriptions.user_id = ? AND items.item_id = ?`,
-        ).bind(user_id, item_id),
+        ).bind(userId, itemId),
 
         // find item
         c.env.DB.prepare(
@@ -43,15 +43,15 @@ export async function handleItemsSingle(c: Context) {
     LEFT JOIN user_preferences ON user_preferences.user_id = ?
     WHERE items.item_id = ?
     ORDER BY items.pub_date DESC`,
-        ).bind(user_id, user_id, item_id),
+        ).bind(userId, userId, itemId),
 
         // find other items from this feed
         c.env.DB.prepare(
             `
-    WITH FeedInfo AS (
-        SELECT feed_id
-        FROM items
-        WHERE item_id = ?
+        WITH FeedInfo AS (
+            SELECT feed_id
+            FROM items
+            WHERE item_id = ?
         )
         SELECT
         items.item_sqid,
@@ -66,7 +66,15 @@ export async function handleItemsSingle(c: Context) {
         WHERE items.item_id != ?
         ORDER BY items.pub_date DESC
         LIMIT 5`,
-        ).bind(item_id, user_id, item_id),
+        ).bind(itemId, userId, itemId),
+
+        // find related items
+        c.env.DB.prepare(`
+            SELECT items.item_sqid, items.title, items.url, feeds.title AS feed_title, feeds.feed_sqid
+            FROM related_items
+            JOIN items ON related_items.related_item_id = items.item_id
+            JOIN feeds ON items.feed_id = feeds.feed_id
+            WHERE related_items.item_id = ?`).bind(itemId),
     ]);
 
     if (!batch[1].results.length) return c.notFound();
@@ -189,7 +197,27 @@ export async function handleItemsSingle(c: Context) {
     }
 
     let related_block = '';
-    if (item.related_content) {
+    if (c.env.ENVIRONMENT !== 'dev' && c.get('USER_IS_ADMIN')) {
+        const matchesOtherBlogs = await c.env.VECTORIZE.queryById(`${itemId}`, {
+            topK: 10,
+            filter: { feed_id: { $ne: `${item?.feed_id}` } },
+        });
+        for (const match of matchesOtherBlogs.matches) {
+            related_block += `<strong>${userId}</strong>:<br><br>${JSON.stringify(match)}<br> `;
+        }
+    } else if (batch[3].results.length) {
+        related_block += '<div class="related-items"><h4>Relate2d</h4><div class="items fancy-gradient-bg">';
+        for (const related_item of batch[3].results) {
+            related_block += renderItemShort(
+                related_item.item_sqid,
+                related_item.title,
+                related_item.url,
+                related_item.feed_title,
+                related_item.feed_sqid,
+            );
+        }
+        related_block += '</div></div>';
+    } else if (item.related_content) {
         const related_content = JSON.parse(item.related_content);
         const related_from_other_blogs = related_content.relatedFromOtherBlogs;
         const related_from_this_blog = related_content.relatedFromThisBlog;
@@ -212,6 +240,7 @@ export async function handleItemsSingle(c: Context) {
     <div class="item-metadata">
         from ${item.type} <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time> | <a href="${item.item_url}" target="_blank">↗&nbsp;original</a>
     </div>
+
     <div class="item-actions">
         <div style="display: flex; gap: 0.25em;">
         ${favoriteBlock}
@@ -222,18 +251,22 @@ export async function handleItemsSingle(c: Context) {
         ${subscriptionBlock}
         </div>
     </div>
+
     <div id="lists_section" class="lists-section"></div>
+
     <article style="margin-top:3em;">
-    ${contentBlock}
+        ${contentBlock}
     </article>
+
     ${related_block}
     ${otherItemsBlock}
     `;
 
     let debug_info = '';
     if (c.get('USER_IS_ADMIN')) {
-        debug_info = `${batch[0].meta.duration}+${batch[1].meta.duration}+${batch[2].meta.duration} ms.;
-            ${batch[0].meta.rows_read}+${batch[1].meta.rows_read}+${batch[2].meta.rows_read} rows read`;
+        debug_info = `
+            ${batch[0].meta.duration}+${batch[1].meta.duration}+${batch[2].meta.duration}+${batch[3].meta.duration} ms.;
+            ${batch[0].meta.rows_read}+${batch[1].meta.rows_read}+${batch[2].meta.rows_read}+${batch[3].meta.rows_read} rows read`;
 
         list += `
         <p style="text-align:center;"><a class="no-underline" href="#hidden">🦎</a></p>
@@ -270,7 +303,13 @@ export async function handleItemsSingle(c: Context) {
         </button>
         <span id="refresh-indicator"></span>
 
-
+        <button hx-post="/admin/items/${item_sqid}/regen-related-items"
+            hx-trigger="click"
+            hx-target="#regen-related-items-new-indicator"
+            hx-swap="outerHTML">
+            re-generate related items (new)
+        </button>
+        <span id="regen-related-items-new-indicator"></span>
 
         <button hx-post="/admin/items/${item_sqid}/delete"
             hx-trigger="click"
@@ -293,7 +332,6 @@ export async function handleItemsSingle(c: Context) {
             'blogs',
             '',
             item.item_url,
-            false,
             debug_info,
         ),
     );

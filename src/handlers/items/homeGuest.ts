@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
-import { guestFlash, renderHTML, renderItemShort } from '../../htmltools';
+import { renderGuestFlash, renderHTML, renderItemShort } from '../../htmltools';
 
 export const handleHomeForGuest = async (c: Context) => {
     const batch = await c.env.DB.batch([
@@ -68,7 +68,7 @@ export const handleHomeForGuest = async (c: Context) => {
     }
 
     const guestInner = `
-        ${guestFlash}
+        ${renderGuestFlash}
         <h2>Few random blogs</h2>
         <div class="container-grid">
         ${latestBlogsBlock}
@@ -86,5 +86,5 @@ export const handleHomeForGuest = async (c: Context) => {
         </a>
         `;
 
-    return c.html(renderHTML('My feed | minifeed', raw(guestInner), c.get('USER_LOGGED_IN'), 'my', '', '', false));
+    return c.html(renderHTML('My feed | minifeed', raw(guestInner), c.get('USER_LOGGED_IN'), 'my'));
 };
