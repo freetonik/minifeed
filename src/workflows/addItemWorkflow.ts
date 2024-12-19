@@ -39,6 +39,7 @@ export class AddItemWorkflow extends WorkflowEntrypoint<Bindings, AddItemWorkflo
             }
 
             const itemDescription = truncate(await stripTags(item.description || ''), 350);
+            const potentialTitle = truncate(await stripTags(item.description || ''), 55);
 
             // new item, but maybe it already exists in the database by URL
             const existingByURL = await this.env.DB.prepare(`
@@ -68,7 +69,11 @@ export class AddItemWorkflow extends WorkflowEntrypoint<Bindings, AddItemWorkflo
 
             // ok, it's really a new item, add it to db
             const itemPubDate: string = getItemPubDate(item).toISOString();
-            const itemTitle = item.title?.length ? await stripTags(item.title) : itemPubDate.slice(0, 10);
+            let itemTitle: string;
+            if (item.title?.length) itemTitle = await stripTags(item.title);
+            else if (potentialTitle?.length) itemTitle = potentialTitle;
+            else itemTitle = itemPubDate.slice(0, 10);
+
             const itemContentHTML =
                 getText(item.content_from_content) ||
                 getText(item.content_from_content_encoded) ||
