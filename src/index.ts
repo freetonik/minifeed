@@ -73,6 +73,9 @@ import { handleMyFriendfeed } from './handlers/items/myFriendfeed';
 import { handleMySubscriptions } from './handlers/items/mySubscriptions';
 import { handleOpensearchXML } from './handlers/search/handleOpensearchXML';
 import { handleSearch } from './handlers/search/handleSearch';
+import { handleUsersSingle } from './handlers/users/user';
+import { handleUsersFollowPOST, handleUsersUnfollowPOST } from './handlers/users/userFollowPartials';
+import { handleUsers } from './handlers/users/users';
 import { renderHTML } from './htmltools';
 import type { MFQueueMessage } from './interface';
 import { handleLists, handleListsSingle, handleListsSingleDeletePOST } from './lists';
@@ -86,16 +89,13 @@ import {
     handleStripeCustomerPortalPOST,
     handleStripeWebhook,
 } from './stripe';
-import { handleUsers, handleUsersFollowPOST, handleUsersSingle, handleUsersUnfollowPOST } from './users';
 import { AddItemWorkflow } from './workflows/addItemWorkflow';
 import { UpdateItemWorkflow } from './workflows/updateItemWorkflow';
 
 // ————————————————————————————————————————————————————————————————>>>>
 
 // main app handles the root paths
-const app = new Hono<{ Bindings: Bindings }>({
-    strict: false,
-});
+const app = new Hono<{ Bindings: Bindings }>({ strict: false });
 
 app.use('*', authCheckMiddleware);
 

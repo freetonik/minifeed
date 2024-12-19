@@ -1,32 +1,14 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
-import { renderGuestFlash, renderHTML, renderItemShort } from './htmltools';
-import { feedIdToSqid } from './utils';
-
-export async function handleUsers(c: Context) {
-    const username = c.get('USERNAME');
-    const { results } = await c.env.DB.prepare(
-        'SELECT * from users WHERE users.email_verified = 1 ORDER BY created ASC ',
-    ).run();
-
-    let inner = '';
-    if (!c.get('USER_LOGGED_IN')) {
-        inner += renderGuestFlash;
-    }
-    for (const user of results) {
-        if (user.username === username)
-            inner += `<div><strong><a href="/users/${user.username}">${user.username}</a></strong> (this is me)</div>`;
-        else inner += `<div><a href="/users/${user.username}">${user.username}</a></div>`;
-    }
-    return c.html(renderHTML('Users', raw(inner), c.get('USERNAME'), 'users'));
-}
+import { renderHTML, renderItemShort } from '../../htmltools';
+import { feedIdToSqid } from '../../utils';
 
 export async function handleUsersSingle(c: Context) {
     const userId = c.get('USER_ID') || '0';
     const currentUsername = c.get('USERNAME');
-
     const userLoggedIn = c.get('USER_LOGGED_IN');
     const username = c.req.param('username');
+
     const batch = await c.env.DB.batch([
         // who this user is and if he is followed by current user batch[0]
         c.env.DB.prepare(
@@ -149,77 +131,5 @@ export async function handleUsersSingle(c: Context) {
 
     inner = top_block + inner;
 
-    return c.html(renderHTML(`${username} | minifeed`, raw(inner), c.get('USERNAME'), 'users'));
-}
-
-export async function handleUsersFollowPOST(c: Context) {
-    const userId = c.get('USER_ID');
-    if (!userId) return c.html('');
-    const username = c.req.param('username');
-
-    const targetUser = await c.env.DB.prepare('SELECT users.user_id FROM users WHERE users.username = ?')
-        .bind(username)
-        .first();
-    const userIdToFollow = targetUser.user_id;
-
-    try {
-        const result = await c.env.DB.prepare(
-            'INSERT INTO followings (follower_user_id, followed_user_id) values (?, ?)',
-        )
-            .bind(userId, userIdToFollow)
-            .run();
-        if (result.success) {
-            c.status(201);
-            return c.html(`
-                <span id="follow">
-                    <button class="button" hx-post="/users/${username}/unfollow"
-                        hx-trigger="click"
-                        hx-target="#follow"
-                        hx-swap="outerHTML">
-                        unfollow
-                    </button>
-                </span>
-                `);
-        }
-    } catch (err) {
-        c.status(400);
-        return c.body('bad request');
-    }
-
-    return c.html(`
-    <span id="subscription">
-    "Error"
-    </span>
-    `);
-}
-
-export async function handleUsersUnfollowPOST(c: Context) {
-    const userId = c.get('USER_ID');
-    if (!userId) return c.html('');
-    const username = c.req.param('username');
-
-    const targetUser = await c.env.DB.prepare('SELECT users.user_id FROM users WHERE users.username = ?')
-        .bind(username)
-        .first();
-    const userIdToUnfollow = targetUser.user_id;
-
-    try {
-        await c.env.DB.prepare('DELETE FROM followings WHERE follower_user_id = ? AND followed_user_id = ?')
-            .bind(userId, userIdToUnfollow)
-            .run();
-    } catch (err) {
-        c.status(400);
-        return c.html(` <span id="follow"> "Error" </span> `);
-    }
-    c.status(201);
-    return c.html(`
-        <span id="follow">
-            <button class="button" hx-post="/users/${username}/follow"
-                hx-trigger="click"
-                hx-target="#follow"
-                hx-swap="outerHTML">
-                follow
-            </button>
-        </span>
-    `);
+    return c.html(renderHTML(`${username} | minifeed`, raw(inner), c.get('USER_LOGGED_IN'), 'users'));
 }
