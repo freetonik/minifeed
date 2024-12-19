@@ -53,7 +53,7 @@ crons = [
 enabled = true
 
 [ai]
-binding = "AI" # available in your Worker on env.AI
+binding = "AI"
 
 [[workflows]]
 name = "add-item-workflow"
@@ -64,4 +64,3 @@ class_name = "AddItemWorkflow"
 name = "update-item-workflow"
 binding = "UPDATE_ITEM_WORKFLOW"
 class_name = "UpdateItemWorkflow"
-

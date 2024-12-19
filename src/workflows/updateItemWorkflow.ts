@@ -3,7 +3,7 @@ import { NonRetryableError } from 'cloudflare:workflows';
 import { vectorizeAndStoreItem } from '../ai';
 import type { Bindings } from '../bindings';
 import { regenerateTopItemsCacheForFeed } from '../feeds';
-import { regenerateRelatedCacheForItem } from '../handlers/items/itemAdmin';
+import { regenerateRelatedCacheForItemNEW } from '../handlers/items/itemAdmin';
 import { scrapeURLIntoObject } from '../scrape';
 import { updateItemIndex } from '../search';
 
@@ -85,7 +85,7 @@ export class UpdateItemWorkflow extends WorkflowEntrypoint<Bindings, Params> {
 
         // STEP 7: Regenerate related cache
         await step.do('regenerate related cache for item', async () => {
-            return await regenerateRelatedCacheForItem(this.env, itemInfo.itemId);
+            return await regenerateRelatedCacheForItemNEW(this.env, itemInfo.itemId);
         });
     }
 }

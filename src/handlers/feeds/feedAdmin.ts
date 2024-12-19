@@ -3,11 +3,10 @@ import { addFeed } from '../../feeds';
 import { renderAddFeedForm, renderHTML } from '../../htmltools';
 import type { ItemRow } from '../../interface';
 import {
-    enqueueFeedUpdate,
     enqueueIndexAllItemsOfFeed,
     enqueueIndexFeed,
     enqueueRebuildFeedTopItemsCache,
-    enqueueScrapeAllItemsOfFeed,
+    enqueueUpdateFeed,
 } from '../../queue';
 import { deleteFeedFromIndex } from '../../search';
 import { feedIdToSqid, feedSqidToId, getFeedIdByRSSUrl } from '../../utils';
@@ -73,14 +72,8 @@ export const handleBlogsNewPOST = async (c: Context) => {
 
 export async function handleFeedsUpdate(c: Context) {
     const feed_id: number = feedSqidToId(c.req.param('feed_sqid'));
-    await enqueueFeedUpdate(c.env, feed_id);
+    await enqueueUpdateFeed(c.env, feed_id);
     return c.text('Feed update enqueued...');
-}
-
-export async function handleFeedsScrape(c: Context) {
-    const feed_id: number = feedSqidToId(c.req.param('feed_sqid'));
-    await enqueueScrapeAllItemsOfFeed(c.env, feed_id);
-    return c.html('Feed scrape enqueued...');
 }
 
 export async function handleFeedsItemsIndexing(c: Context) {

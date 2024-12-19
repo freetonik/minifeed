@@ -9,17 +9,6 @@ export interface MFFeedEntry extends FeedEntry {
     pubdate: string;
 }
 
-// stored in table items_related_cache.content as JSON
-export type RelatedItemCached = {
-    title: string;
-    item_id: number;
-    item_sqid: string;
-    feed_title: string;
-    feed_id: number;
-    feed_sqid: string;
-    url: string;
-};
-
 export type ItemRow = {
     item_id: number;
     created: string;

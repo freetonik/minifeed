@@ -1,8 +1,7 @@
 import type { Context } from 'hono';
 import type { Bindings } from './bindings';
-import { regenerateRelatedCacheForItemMOCK } from './handlers/items/itemAdmin';
 import type { ItemRow } from './interface';
-import { enqueueRegenerateItemRelatedCache, enqueueVectorizeStoreItem } from './queue';
+import { enqueueVectorizeStoreItem } from './queue';
 import { stripNonLinguisticElements, stripTags } from './utils';
 
 export interface EmbeddingResponse {
@@ -126,11 +125,11 @@ export const handleGenerateRelated = async (c: Context) => {
     let response = '<ol>';
     for (const item of items.results) {
         response += `<li>Generating related cache for item <a href="/items/${item.item_sqid}">${item.item_id} / ${item.item_sqid}: ${item.title}</a>`;
-        if (c.env.ENVIRONMENT === 'dev') {
-            await regenerateRelatedCacheForItemMOCK(c.env, item.item_id);
-        } else {
-            await enqueueRegenerateItemRelatedCache(c.env, item.item_id);
-        }
+
+        await c.env.FEED_UPDATE_QUEUE.send({
+            type: 'item_update_related_cache_new',
+            item_id: item.item_id,
+        });
     }
     response += '</ol>';
     return c.html(response);

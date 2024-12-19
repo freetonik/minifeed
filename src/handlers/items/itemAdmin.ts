@@ -1,14 +1,10 @@
 import type { Context } from 'hono';
 import type { Bindings } from '../../bindings';
-import { addItemsToFeed } from '../../feeds';
 import { renderAddItemByURLForm, renderHTML } from '../../htmltools';
-import type { RelatedItemCached } from '../../interface';
 import { deleteItem } from '../../items';
-import { enqueueVectorizeStoreItem } from '../../queue';
 import { scrapeURLIntoObject } from '../../scrape';
-import { updateItemIndex } from '../../search';
 import { dbGetItem } from '../../sqlutils';
-import { feedSqidToId, itemIdToSqid, itemSqidToId } from '../../utils';
+import { feedSqidToId, itemSqidToId } from '../../utils';
 
 export const handleItemsAddItembyUrl = async (c: Context) => {
     const feedSqid = c.req.param('feed_sqid');
@@ -39,35 +35,21 @@ export const handleItemsAddItemByUrlPOST = async (c: Context) => {
     const body = await c.req.parseBody();
     const url = body.url.toString();
     const urls = body.urls.toString();
-    if (!url && !urls) {
-        return c.html('Both URL and URLs are empty');
-    }
-    if (url && urls) {
-        return c.html('Both URL and URLs are filled in, please only fill in one');
-    }
+
+    if (!url && !urls) return c.html('Both URL and URLs are empty');
+    if (url && urls) return c.html('Both URL and URLs are filled in, please only fill in one');
 
     let urls_array: Array<string>;
-    if (url) {
-        urls_array = [url];
-    } else if (urls) {
-        urls_array = urls.split('\r\n');
-    } else urls_array = [];
-
-    if (!urls_array.length) return c.html('No URLs provided');
+    if (url) urls_array = [url];
+    else if (urls) urls_array = urls.split('\r\n');
+    else return c.html('No URLs provided');
 
     // remove empty strings from urls_array
     urls_array = urls_array.filter((url: string) => url !== '');
-
-    const added_items_sqids = [];
+    if (!urls_array.length) return c.html('No URLs provided');
 
     for (const url_value of urls_array) {
-        // check if item url already exists in the db
-        const existingItem = await c.env.DB.prepare('SELECT items.item_id FROM items WHERE url = ?')
-            .bind(url_value)
-            .run();
-        if (existingItem.results.length > 0) {
-            continue;
-        }
+        // TODO: this double-scrapes
         const articleContent = await scrapeURLIntoObject(url_value);
         const item = {
             feed_id: feedId,
@@ -78,24 +60,11 @@ export const handleItemsAddItemByUrlPOST = async (c: Context) => {
             content_from_content: articleContent.HTMLcontent,
         };
 
-        const insert_results = await addItemsToFeed(c.env, [item], feedId, false); // don't scrape after adding
-        const addedItemId = insert_results[0].meta.last_row_id;
-
-        // await enqueueItemIndex(c.env, addedItemId); // addItemsToFeed(..scrapeAfterAdding=false), so scrape it...
-        await updateItemIndex(c.env, addedItemId, articleContent.textContent);
-        await enqueueVectorizeStoreItem(c.env, addedItemId); // ... and vectorize it...
-
-        const addedItemSqid = itemIdToSqid(addedItemId);
-        added_items_sqids.push(addedItemSqid);
+        await c.env.ADD_ITEM_WORKFLOW.create({
+            params: { item, feedId },
+        });
     }
-    // it was a single URL, redirect to new post
-    if (url) {
-        if (added_items_sqids.length > 1) {
-            return c.redirect(`/items/${added_items_sqids[0]}`);
-        }
-        throw new Error('No items added. Probably all of them already exist in the database by unique URL');
-    }
-    // it was multiple URLs, redirect to blog
+
     return c.redirect(`/blogs/${feedSqid}`);
 };
 
@@ -117,182 +86,6 @@ export async function handleRegenerateRelatedItemsNew(c: Context) {
     return c.html('Regenerating related items with new way...');
 }
 
-export const regenerateRelatedCacheForItem = async (env: Bindings, itemId: number) => {
-    if (env.ENVIRONMENT === 'dev') {
-        await regenerateRelatedCacheForItemMOCK(env, itemId);
-        return true;
-    }
-    const vectors = await env.VECTORIZE.getByIds([`${itemId}`]);
-    if (!vectors.length) {
-        console.log({
-            message: 'Unable to generate related cache: item not found in vector store',
-            itemId,
-        });
-        return false;
-    }
-
-    const item = await env.DB.prepare(
-        `SELECT items.item_id, feeds.title as feed_title, items.feed_id
-        FROM items
-        JOIN feeds ON items.feed_id = feeds.feed_id
-        WHERE item_id = ?`,
-    )
-        .bind(itemId)
-        .first();
-
-    if (!item) {
-        console.log({
-            message: 'Unable to generate related cache: item not found in database',
-            itemId,
-        });
-        return false;
-    }
-
-    const cacheContent: { relatedFromOtherBlogs: RelatedItemCached[]; relatedFromThisBlog: RelatedItemCached[] } = {
-        relatedFromOtherBlogs: [],
-        relatedFromThisBlog: [],
-    };
-
-    // Processing items from other blogs
-    const matchesOtherBlogs = await env.VECTORIZE.query(vectors[0].values, {
-        topK: 10,
-        filter: { feed_id: { $ne: `${item.feed_id}` } },
-    });
-
-    const relatedIDsOtherBlog: Array<string> = [];
-    for (const match of matchesOtherBlogs.matches) relatedIDsOtherBlog.push(match.id);
-
-    const queryBindPlaceholders = relatedIDsOtherBlog.map(() => '?').join(','); // Generate '?,?,...,?'
-    const relatedItemsOtherBlog = await env.DB.prepare(
-        `SELECT item_id, item_sqid, items.title, feeds.title as feed_title, items.feed_id, feeds.feed_sqid, items.url
-        FROM items
-        JOIN feeds ON items.feed_id = feeds.feed_id
-        WHERE item_id IN (${queryBindPlaceholders})`,
-    )
-        .bind(...relatedIDsOtherBlog)
-        .all();
-
-    for (const i of relatedItemsOtherBlog.results) {
-        cacheContent.relatedFromOtherBlogs.push({
-            title: i.title as string,
-            item_id: i.item_id as number,
-            item_sqid: i.item_sqid as string,
-            feed_title: i.feed_title as string,
-            feed_id: i.feed_id as number,
-            feed_sqid: i.feed_sqid as string,
-            url: i.url as string,
-        });
-    }
-
-    // Processing items from this blog
-    const matchesThisBlogs = await env.VECTORIZE.query(vectors[0].values, {
-        topK: 6,
-        filter: { feed_id: { $eq: `${item.feed_id}` } },
-    });
-    const relatedIDsThisBlog: Array<string> = [];
-    for (const match of matchesThisBlogs.matches) {
-        if (match.id === `${itemId}`) continue; // skip current item itself
-        relatedIDsThisBlog.push(match.id);
-    }
-    const queryBindPlaceholders2 = relatedIDsThisBlog.map(() => '?').join(','); // Generate '?,?,...,?'
-    const relatedItemsThisBlog = await env.DB.prepare(
-        `SELECT item_id, item_sqid, items.title, feeds.title as feed_title, items.feed_id, feeds.feed_sqid, items.url
-        FROM items
-        JOIN feeds ON items.feed_id = feeds.feed_id
-        WHERE item_id IN (${queryBindPlaceholders2})`,
-    )
-        .bind(...relatedIDsThisBlog)
-        .all();
-
-    for (const i of relatedItemsThisBlog.results) {
-        cacheContent.relatedFromThisBlog.push({
-            title: i.title as string,
-            item_id: i.item_id as number,
-            item_sqid: i.item_sqid as string,
-            feed_title: i.feed_title as string,
-            feed_id: i.feed_id as number,
-            feed_sqid: i.feed_sqid as string,
-            url: i.url as string,
-        });
-    }
-
-    await env.DB.prepare(
-        'INSERT OR REPLACE INTO items_related_cache (item_id, content, created) values (?, ?, CURRENT_TIMESTAMP)',
-    )
-        .bind(itemId, JSON.stringify(cacheContent))
-        .run();
-
-    console.log({
-        message: 'Regenerated cache for item',
-        itemId,
-    });
-    return true;
-};
-
-export const regenerateRelatedCacheForItemMOCK = async (env: Bindings, itemId: number) => {
-    if (env.ENVIRONMENT !== 'dev') return;
-    console.log('DEV MODE: Regenerating cache with random items');
-
-    const item = await env.DB.prepare(
-        `SELECT items.item_id, feeds.title as feed_title
-        FROM items
-        JOIN feeds ON items.feed_id = feeds.feed_id
-        WHERE item_id = ?`,
-    )
-        .bind(itemId)
-        .first();
-
-    if (!item) throw new Error(`Item with id ${itemId} not found`);
-
-    const cache_content: { relatedFromOtherBlogs: RelatedItemCached[]; relatedFromThisBlog: RelatedItemCached[] } = {
-        relatedFromOtherBlogs: [],
-        relatedFromThisBlog: [],
-    };
-
-    const relatedIDsOtherBlog: Array<string> = [];
-
-    const randomItems = await env.DB.prepare(
-        `SELECT item_id, item_sqid, items.title, feeds.title as feed_title, items.feed_id, feeds.feed_sqid, items.url
-        FROM items
-        JOIN  feeds ON items.feed_id = feeds.feed_id
-        ORDER BY RANDOM()
-        LIMIT 10`,
-    ).all();
-
-    relatedIDsOtherBlog.push(...randomItems.results.map((i: any) => i.item_id));
-
-    const queryBindPlaceholders = relatedIDsOtherBlog.map(() => '?').join(','); // Generate '?,?,...,?'
-    const relatedItemsOtherBlog = await env.DB.prepare(
-        `SELECT item_id, item_sqid, items.title, feeds.title as feed_title, items.feed_id, feeds.feed_sqid, items.url
-        FROM items
-        JOIN  feeds ON items.feed_id = feeds.feed_id
-        WHERE item_id IN (${queryBindPlaceholders})`,
-    )
-        .bind(...relatedIDsOtherBlog)
-        .all();
-
-    for (const i of relatedItemsOtherBlog.results) {
-        cache_content.relatedFromOtherBlogs.push({
-            title: i.title as string,
-            item_id: i.item_id as number,
-            item_sqid: i.item_sqid as string,
-            feed_title: i.feed_title as string,
-            feed_id: i.feed_id as number,
-            feed_sqid: i.feed_sqid as string,
-            url: i.url as string,
-        });
-    }
-    console.log({
-        message: 'Regenerated related cache for item',
-        itemId,
-    });
-    await env.DB.prepare(
-        'REPLACE INTO items_related_cache (item_id, content, created) values (?, ?, CURRENT_TIMESTAMP)',
-    )
-        .bind(itemId, JSON.stringify(cache_content))
-        .run();
-};
-
 export const regenerateRelatedCacheForItemNEW = async (env: Bindings, itemId: number) => {
     const item = await dbGetItem(env, itemId);
     const relatedItemIds = [];
@@ -301,11 +94,29 @@ export const regenerateRelatedCacheForItemNEW = async (env: Bindings, itemId: nu
         const randomItems = await env.DB.prepare('SELECT item_id FROM items ORDER BY RANDOM() LIMIT 10').all();
         relatedItemIds.push(...randomItems.results.map((i: any) => i.item_id));
     } else {
+        // if there is an item that is younger than 2 weeks, we don't need to regenerate the cache
+        const twoWeeksAgo = new Date();
+        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+        const oldestExistingRelatedItem = await env.DB.prepare(
+            'SELECT item_id FROM related_items WHERE item_id = ? AND created > ?  LIMIT 1',
+        )
+            .bind(itemId, twoWeeksAgo.toISOString())
+            .first();
+        if (oldestExistingRelatedItem) return true;
+
         const matchesOtherBlogs = await env.VECTORIZE.queryById(`${itemId}`, {
             topK: 10,
             filter: { feed_id: { $ne: `${item?.feed_id}` } },
         });
         for (const match of matchesOtherBlogs.matches) relatedItemIds.push(match.id);
+
+        // check if items exist in db
+        for (const itemId of relatedItemIds) {
+            const existingItem = await env.DB.prepare('SELECT item_id FROM items WHERE item_id = ?').bind(itemId).run();
+            if (existingItem.results.length === 0) {
+                relatedItemIds.splice(relatedItemIds.indexOf(itemId), 1);
+            }
+        }
     }
 
     // delete existing related items first

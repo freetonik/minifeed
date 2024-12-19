@@ -2,18 +2,8 @@ import type { FeedData } from '@extractus/feed-extractor';
 import type { Bindings } from './bindings';
 import { extractRSS, validateFeedData } from './feed_extractor';
 import type { MFFeedEntry } from './interface';
-import { enqueueFeedUpdate, enqueueIndexFeed, enqueueItemScrape } from './queue';
-import {
-    extractItemUrl,
-    feedIdToSqid,
-    getRSSLinkFromUrl,
-    getRootUrl,
-    getText,
-    itemIdToSqid,
-    stripTags,
-    stripTagsSynchronously,
-    truncate,
-} from './utils';
+import { enqueueIndexFeed, enqueueUpdateFeed } from './queue';
+import { extractItemUrl, feedIdToSqid, getRSSLinkFromUrl, getRootUrl, itemIdToSqid, stripTags } from './utils';
 
 export async function addFeed(env: Bindings, url: string, verified = false) {
     let r: FeedData;
@@ -54,7 +44,7 @@ export async function addFeed(env: Bindings, url: string, verified = false) {
                 const feed_sqid = feedIdToSqid(feed_id);
                 await env.DB.prepare('UPDATE feeds SET feed_sqid = ? WHERE feed_id = ?').bind(feed_sqid, feed_id).run();
 
-                await enqueueFeedUpdate(env, feed_id);
+                await enqueueUpdateFeed(env, feed_id);
             }
             return RSSUrl;
         }
@@ -109,12 +99,6 @@ export async function updateFeed(env: Bindings, feedId: number) {
             feedRSSUrl,
         });
 
-        // OLD CODE
-        // if (newItemsToBeAdded.length) {
-        //     await addItemsToFeed(env, newItemsToBeAdded, feedId);
-        //     await regenerateTopItemsCacheForFeed(env, feedId);
-        // }
-
         for (const item of newItemsToBeAdded) {
             await env.ADD_ITEM_WORKFLOW.create({
                 params: { item, feedId },
@@ -130,109 +114,6 @@ export async function updateFeed(env: Bindings, feedId: number) {
     });
 }
 
-// TODO: deprecate
-export async function addItemsToFeed(
-    env: Bindings,
-    items: Array<MFFeedEntry>,
-    feedId: number,
-    scrapeAfterAdding = true,
-) {
-    if (!items.length) return;
-
-    const { results: feeds } = await env.DB.prepare('SELECT title, rss_url FROM feeds WHERE feed_id = ?')
-        .bind(feedId)
-        .all();
-    const feedRSSUrl = String(feeds[0].rss_url);
-
-    const stmt = env.DB.prepare(
-        'INSERT INTO items (feed_id, title, url, pub_date, description, content_html) values (?, ?, ?, ?, ?, ?)',
-    );
-    const binds: D1PreparedStatement[] = [];
-
-    for (const item of items) {
-        let link: string;
-        try {
-            link = extractItemUrl(item, feedRSSUrl);
-        } catch (e) {
-            console.log({
-                message: `Error extracting item URL ${e}`,
-                feedId,
-                feedRSSUrl,
-            });
-            continue;
-        }
-
-        if (item.published) {
-            // if item.published is in future, set it to current date
-            if (new Date(item.published) > new Date()) item.published = new Date().toISOString();
-        } else {
-            // if date was not properly parsed, try to parse it (expects 'pubdate' to be retrieved by feed_extractor's extractRSS function)
-            if (item.pubdate) {
-                const dateFromPubdate = new Date(item.pubdate);
-                // if date is in future, set it to current date
-                if (dateFromPubdate > new Date()) {
-                    item.published = new Date().toISOString();
-                }
-                // if date is older than unix epoch start date, set it to current date
-                else if (dateFromPubdate < new Date('1970-01-01')) {
-                    item.published = new Date().toISOString();
-                } else {
-                    item.published = dateFromPubdate.toISOString();
-                }
-            } else {
-                item.published = new Date().toISOString(); // if date is still not available, use current date
-            }
-        }
-
-        let content_html =
-            item.content_from_content ||
-            item.content_from_content_encoded ||
-            item.content_from_description ||
-            item.content_from_content_html ||
-            '';
-
-        content_html = getText(content_html);
-
-        let itemTitle = item.title?.length ? item.title : item.published.slice(0, 10);
-        itemTitle = await stripTags(itemTitle);
-
-        binds.push(
-            stmt.bind(
-                feedId,
-                itemTitle,
-                link,
-                item.published,
-                truncate(stripTagsSynchronously(item.description), 350),
-                content_html,
-            ),
-        );
-    }
-
-    const results_of_insert = await env.DB.batch(binds);
-    for (const result of results_of_insert) {
-        if (result.success) {
-            const item_id = result.meta.last_row_id;
-            const item_sqid = itemIdToSqid(item_id);
-
-            console.log({
-                message: 'Item added to feed',
-                itemId: item_id,
-                feedId: feedId,
-            });
-
-            await env.DB.prepare('UPDATE items SET item_sqid = ? WHERE item_id = ?').bind(item_sqid, item_id).run();
-            console.log(`Item: ${item_id} set sqid ${item_sqid}`);
-
-            if (scrapeAfterAdding) {
-                console.log(`Item: ${item_id} queued for scraping`);
-                await enqueueItemScrape(env, item_id);
-            }
-        }
-    }
-
-    return results_of_insert;
-}
-
 export async function regenerateTopItemsCacheForFeed(env: Bindings, feedId: number) {
     const { results: top_items } = await env.DB.prepare(
         'SELECT item_id, title FROM items WHERE feed_id = ? ORDER BY items.pub_date DESC LIMIT 5',
@@ -240,15 +121,15 @@ export async function regenerateTopItemsCacheForFeed(env: Bindings, feedId: numb
         .bind(feedId)
         .all();
 
-    top_items.forEach((item: any) => {
-        item.item_sqid = itemIdToSqid(item.item_id);
-        delete item.item_id;
-    });
+    const updatedTopItems = top_items.map((item) => ({
+        item_sqid: itemIdToSqid(item.item_id as number),
+        title: item.title,
+    }));
 
     const items_count = await env.DB.prepare('SELECT COUNT(item_id) FROM Items where feed_id = ?').bind(feedId).all();
 
     const cache_content = {
-        top_items: top_items,
+        top_items: updatedTopItems,
         items_count: items_count.results[0]['COUNT(item_id)'],
     };
 

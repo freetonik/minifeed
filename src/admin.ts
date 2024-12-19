@@ -15,7 +15,7 @@ export const handleAdmin = async (c: Context) => {
     const all_items_count = await c.env.DB.prepare('SELECT COUNT(item_id) FROM Items').all();
     const itemsSearchCollection = await getCollection(c.env);
     const feedsSearchCollection = await getCollection(c.env, c.env.TYPESENSE_FEEDS_COLLECTION);
-    const items_related_cache_count = await c.env.DB.prepare('SELECT COUNT(item_id) FROM items_related_cache').all();
+    const items_related_count = await c.env.DB.prepare('SELECT COUNT(DISTINCT item_id) FROM related_items').all();
     const items_vector_relation_count = await c.env.DB.prepare(
         'SELECT COUNT(item_id) FROM items_vector_relation',
     ).all();
@@ -116,12 +116,12 @@ export const handleAdmin = async (c: Context) => {
             </td>
         </tr>
         <tr>
-            <td>Related items cache</td>
-            <td>${items_related_cache_count.results[0]['COUNT(item_id)']}</td>
+            <td>Related items</td>
+            <td>${items_related_count.results[0]['COUNT(DISTINCT item_id)']}</td>
         </tr>
         <tr>
             <td>Related missing</td>
-            <td>${items_vector_relation_count.results[0]['COUNT(item_id)'] - items_related_cache_count.results[0]['COUNT(item_id)']}
+            <td>${items_vector_relation_count.results[0]['COUNT(item_id)'] - items_related_count.results[0]['COUNT(DISTINCT item_id)']}
             <a href="/admin/items_without_related_cache">[list]</a>
             </td>
 
@@ -522,9 +522,9 @@ export const handleAdminItemsWithoutSqid = async (c: Context) => {
 export const handleAdminItemsWithoutRelatedCache = async (c: Context) => {
     const items = await c.env.DB.prepare(`
         SELECT items.item_sqid, items_vector_relation.item_id from items_vector_relation
-        LEFT JOIN items_related_cache on items_vector_relation.item_id = items_related_cache.item_id
+        LEFT JOIN related_items on items_vector_relation.item_id = related_items.item_id
         JOIN items on items.item_id = items_vector_relation.item_id
-        WHERE items_related_cache.item_id IS NULL `).all();
+        WHERE related_items.item_id IS NULL `).all();
 
     let list = '<ol>';
     for (const item of items.results) {

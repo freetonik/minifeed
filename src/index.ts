@@ -44,7 +44,6 @@ import {
     handleFeedsIndexing,
     handleFeedsItemsGlobalIndex,
     handleFeedsItemsIndexing,
-    handleFeedsScrape,
     handleFeedsUpdate,
 } from './handlers/feeds/feedAdmin';
 import { handleFeedsSubscribe, handleFeedsUnsubscribe } from './handlers/feeds/feedSubscribePartial';
@@ -58,7 +57,6 @@ import {
     handleItemsAddItembyUrl,
     handleItemsDelete,
     handleRegenerateRelatedItemsNew,
-    regenerateRelatedCacheForItem,
     regenerateRelatedCacheForItemNEW,
 } from './handlers/items/itemAdmin';
 import { handleItemsAddToFavorites, handleItemsRemoveFromFavorites } from './handlers/items/itemFavorites';
@@ -79,8 +77,7 @@ import { renderHTML } from './htmltools';
 import type { MFQueueMessage } from './interface';
 import { handleLists, handleListsSingle, handleListsSingleDeletePOST } from './lists';
 import { adminRequiredMiddleware, authCheckMiddleware, authRequiredMiddleware, stripeMiddleware } from './middlewares';
-import { enqueueRegenerateRelatedCacheForAllItems, enqueueScrapeAllItemsOfFeed, enqueueUpdateAllFeeds } from './queue';
-import { scrapeItem } from './scrape';
+import { enqueueRegenerateRelatedCacheForAllItems, enqueueUpdateAllFeeds } from './queue';
 import { updateFeedIndex, updateFeedItemsIndex, updateItemIndex } from './search';
 import {
     handleBillingCancel,
@@ -166,7 +163,6 @@ app.post('/admin/feeds/:feed_sqid/delete', handleFeedsDelete);
 app.post('/admin/feeds/:feed_sqid/delete_duplicates_by_title', handleDeleteDuplicatesByTitle);
 app.post('/admin/feeds/:feed_sqid/delete_duplicates_by_url', handleDeleteDuplicatesByUrl);
 app.post('/admin/feeds/:feed_sqid/update', handleFeedsUpdate);
-app.post('/admin/feeds/:feed_sqid/scrape', handleFeedsScrape);
 app.post('/admin/feeds/:feed_sqid/index', handleFeedsIndexing);
 app.post('/admin/feeds/:feed_sqid/index_items', handleFeedsItemsIndexing);
 app.post('/admin/feeds/:feed_sqid/rebuild_cache', handleFeedsCacheRebuild);
@@ -258,30 +254,6 @@ export default {
                     }
                     break;
 
-                case 'feed_scrape':
-                    if (message.body.feed_id) {
-                        try {
-                            await enqueueScrapeAllItemsOfFeed(env, message.body.feed_id);
-                        } catch (e: unknown) {
-                            console.log(
-                                `Error scraping feed ${message.body.feed_id}: ${e instanceof Error ? e.message : String(e)}`,
-                            );
-                        }
-                    }
-                    break;
-
-                case 'item_scrape':
-                    if (message.body.item_id) {
-                        try {
-                            await scrapeItem(env, message.body.item_id);
-                        } catch (e: unknown) {
-                            console.log(
-                                `Error scraping item ${message.body.item_id}: ${e instanceof Error ? e.message : String(e)}`,
-                            );
-                        }
-                    }
-                    break;
-
                 case 'item_index':
                     if (message.body.item_id) {
                         try {
@@ -328,10 +300,6 @@ export default {
                             );
                         }
                     }
-                    break;
-
-                case 'item_update_related_cache':
-                    if (message.body.item_id) await regenerateRelatedCacheForItem(env, message.body.item_id);
                     break;
 
                 case 'item_update_related_cache_new':

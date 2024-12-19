@@ -4,8 +4,6 @@ import { renderHTML, renderItemShort } from '../../htmltools';
 import { feedSqidToId } from '../../utils';
 
 export const handleBlog = async (c: Context) => {
-    // TODO: we're assuming that feed always has items; if feed has 0 items, this will return 404, but maybe we want to
-    // show the feed still as "processing"; use https://developers.cloudflare.com/d1/platform/client-api/#batch-statements
     const feedSqid = c.req.param('feed_sqid');
     const feedId = feedSqidToId(feedSqid);
     const userId = c.get('USER_ID') || -1;

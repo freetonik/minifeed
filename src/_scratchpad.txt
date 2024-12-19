@@ -1,131 +1,3 @@
-// let similar_items = ``;
-    // if (c.env.ENVIRONMENT != 'dev' && c.get("USER_IS_ADMIN")) {
-    //     const vectors = await c.env.VECTORIZE.getByIds([`${item_id}`]);
-    //     if (vectors.length) {
-    //         const matches = await c.env.VECTORIZE.query(vectors[0].values, { topK: 10, filter: { feed_id: `${item.feed_id}`  }, });
-    //         // const matchesSameBlog = await c.env.VECTORIZE.query(vectors[0].values, { topK: 10, filter: { feed_id: `${item.feed_id}`  }, });
-            
-    //         const in_list:Array<string> = [];
-    //         for (const match of matches.matches) {
-    //             if (match.id == item_id) continue; 
-    //             in_list.push(match.id);
-    //         }
-            
-    //         const placeholders = in_list.map(() => '?').join(',');  // Generate placeholders
-    //         const db_items = await c.env.DB.prepare(
-    //             `SELECT item_id, item_sqid, items.title, feeds.title as feed_title
-    //             FROM items 
-    //             JOIN  feeds ON items.feed_id = feeds.feed_id
-    //             WHERE item_id IN (${placeholders})`
-    //         ).bind(...in_list).all();
-
-    //         if (db_items.results.length) {
-    //             similar_items += `<h4>Similar items:</h4><ul>`;
-    //             db_items.results.forEach((item: any) => {
-    //                 similar_items += `<li>${item.feed_title} → <a href="/items/${item.item_sqid}" target="_blank">${item.title}</a></li>`;
-    //             });
-    //             similar_items += `</ul><hr>`;
-    //         }
-
-    //     }
-    // }
-
-    // TEMPORARY
-    // const cache_content = {
-    //     "relatedFromOtherBlogs": [
-    //         {
-    //             "title": "The wrong good solution",
-    //             "item_id": 10026,
-    //             "item_sqid": "15pihSopHs",
-    //             "feed_title": "Rakhim's blog",
-    //             "feed_id": 1,
-    //             "feed_sqid": "ENivT",
-    //             "url": "https://rakhim.org/2023/06/the-wrong-good-solution/",
-    //         },
-    //         {
-    //             "title": "The wrong good solution 2",
-    //             "item_id": 10026,
-    //             "item_sqid": "15pihSopHs",
-    //             "feed_title": "Rakhim's blog",
-    //             "feed_id": 1,
-    //             "feed_sqid": "ENivT",
-    //             "url": "https://rakhim.org/2023/06/the-wrong-good-solution/",
-    //         },
-    //         {
-    //             "title": "The wrong good solution 3",
-    //             "item_id": 10026,
-    //             "item_sqid": "15pihSopHs",
-    //             "feed_title": "Rakhim's blog",
-    //             "feed_id": 1,
-    //             "feed_sqid": "ENivT",
-    //             "url": "https://rakhim.org/2023/06/the-wrong-good-solution/",
-    //         }
-    //     ],
-    //     "relatedFromThisBlog": [
-    //         {
-    //             "title": "Aya The wrong good solution",
-    //             "item_id": 10026,
-    //             "item_sqid": "15pihSopHs",
-    //             "feed_title": "Rakhim's blog",
-    //             "feed_id": 1,
-    //             "feed_sqid": "ENivT",
-    //             "url": "https://rakhim.org/2023/06/the-wrong-good-solution/",
-    //         },
-    //         {
-    //             "title": "Bya The wrong good solution 2",
-    //             "item_id": 10026,
-    //             "item_sqid": "15pihSopHs",
-    //             "feed_title": "Rakhim's blog",
-    //             "feed_id": 1,
-    //             "feed_sqid": "ENivT",
-    //             "url": "https://rakhim.org/2023/06/the-wrong-good-solution/",
-    //         },
-    //         {
-    //             "title": "Jep The wrong good solution d3",
-    //             "item_id": 10026,
-    //             "item_sqid": "15pihSopHs",
-    //             "feed_title": "Rakhim's blog",
-    //             "feed_id": 1,
-    //             "feed_sqid": "ENivT",
-    //             "url": "https://rakhim.org/2023/06/the-wrong-good-solution/",
-    //         }
-    //     ]
-    // }
-    // await c.env.DB.prepare(
-    //     "REPLACE INTO items_related_cache (item_id, content) values (?, ?)",
-    // )
-    //     .bind(item_id, JSON.stringify(cache_content))
-    //     .run();
-    // TEMPORARY
-
-    ❯ npx wrangler d1 execute minifeed --command="SELECT items.item_id, items.item_sqid FROM items LEFT JOIN items_vector_relation on items.item_id = items_vector_relation.item_id where items_vector_relation.vectorized is null and items.item_id <= 2000" --remote
-
-// export const handle_summarize = async (c: Context) => {
-//     const env = c.env as Bindings;
-//     const start = c.req.query('start');
-//     const stop = c.req.query('stop');
-
-//     if (!start || !stop) return c.html('start and stop required');
-
-//     const items = await env.DB.prepare(
-//         'SELECT item_id, title, item_sqid FROM items WHERE item_id >= ? AND item_id <= ?',
-//     )
-//         .bind(start, stop)
-//         .all<ItemRow>();
-
-//     let response = '<ol>';
-//     for (const item of items.results) {
-//         response += `<li>Summarizing <a href="/items/${item.item_sqid}">${item.item_id} / ${item.item_sqid}: ${item.title}</a>`;
-//         await summarize_and_store_item(c.env, item.item_id);
-//     }
-//     response += '</ol>';
-//     return c.html(response);
-// };
-
-
-
-
-
 
 //////////////////////////////////
 /// loading indicators
@@ -160,7 +32,7 @@ opacity: 1;
     }
 
     @keyframes pulsate {
-  
+
   0, 100% {
     background-color: var(--color-highlight);
   }
@@ -176,3 +48,16 @@ opacity: 1;
         </style>
 
 >>>>>>>>> hx-indicator="#spinner"
+
+### TODO: remove uniqueness constraint from items url
+
+```
+npx wrangler d1 execute minifeed --local --command="CREATE TABLE IF NOT EXISTS items2 ( item_id INTEGER PRIMARY KEY, created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, feed_id INTEGER NOT NULL, title TEXT NOT NULL, description TEXT, content_html TEXT, content_html_scraped TEXT, url TEXT NOT NULL, pub_date TIMESTAMP, FOREIGN KEY(feed_id) REFERENCES feeds(feed_id) ON DELETE CASCADE );"
+
+npx wrangler d1 execute minifeed --local --command="INSERT INTO items2 SELECT * FROM items;"
+
+npx wrangler d1 execute minifeed --local --command="SELECT * from items2"
+
+npx wrangler d1 execute minifeed --command="ALTER TABLE items RENAME TO items_old;"
+npx wrangler d1 execute minifeed --command="ALTER TABLE items2 RENAME TO items;"
+```
