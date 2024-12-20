@@ -127,7 +127,7 @@ export const handleGenerateRelated = async (c: Context) => {
         response += `<li>Generating related cache for item <a href="/items/${item.item_sqid}">${item.item_id} / ${item.item_sqid}: ${item.title}</a>`;
 
         await c.env.FEED_UPDATE_QUEUE.send({
-            type: 'item_update_related_cache_new',
+            type: 'item_regenerate_related',
             item_id: item.item_id,
         });
     }

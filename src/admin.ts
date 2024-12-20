@@ -122,7 +122,7 @@ export const handleAdmin = async (c: Context) => {
         <tr>
             <td>Related missing</td>
             <td>${items_vector_relation_count.results[0]['COUNT(item_id)'] - items_related_count.results[0]['COUNT(DISTINCT item_id)']}
-            <a href="/admin/items_without_related_cache">[list]</a>
+            <a href="/admin/items_without_related">[list]</a>
             </td>
 
         </tr>
@@ -490,7 +490,7 @@ export const handleAdminUnindexedFeeds = async (c: Context) => {
         <h2>Unindexed items (in DB, but not in index): ${unIndexedFeeds.length}</h2>
         ${JSON.stringify(unIndexedFeeds)}
         <form action="/admin/unindexed_feeds/index" method="post">
-            <button>Re-index feeds</button>
+            <button>Re-index feeds ?!</button>
         </form>
     `;
 
@@ -519,12 +519,21 @@ export const handleAdminItemsWithoutSqid = async (c: Context) => {
     return c.html(renderHTML('admin | minifeed', raw(list), true));
 };
 
-export const handleAdminItemsWithoutRelatedCache = async (c: Context) => {
+export const handleAdminItemsWithoutRelated = async (c: Context) => {
     const items = await c.env.DB.prepare(`
-        SELECT items.item_sqid, items_vector_relation.item_id from items_vector_relation
+        SELECT
+            items.item_sqid,
+            items.title,
+            feeds.feed_sqid,
+            feeds.title as feed_title,
+            items_vector_relation.item_id
+        FROM items_vector_relation
         LEFT JOIN related_items on items_vector_relation.item_id = related_items.item_id
         JOIN items on items.item_id = items_vector_relation.item_id
-        WHERE related_items.item_id IS NULL `).all();
+        JOIN feeds on items.feed_id = feeds.feed_id
+        WHERE related_items.item_id IS NULL
+        ORDER BY items.item_id
+        `).all();
 
     let list = '<ol>';
     for (const item of items.results) {

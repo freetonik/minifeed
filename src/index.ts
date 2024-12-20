@@ -4,7 +4,7 @@ import { raw } from 'hono/html';
 import { about } from './about';
 import {
     handleAdmin,
-    handleAdminItemsWithoutRelatedCache,
+    handleAdminItemsWithoutRelated,
     handleAdminItemsWithoutSqid,
     handleAdminUnindexedFeeds,
     handleAdminUnindexedItems,
@@ -57,7 +57,7 @@ import {
     handleItemsAddItembyUrl,
     handleItemsDelete,
     handleRegenerateRelatedItemsNew,
-    regenerateRelatedCacheForItemNEW,
+    regenerateRelatedForItem,
 } from './handlers/items/itemAdmin';
 import { handleItemsAddToFavorites, handleItemsRemoveFromFavorites } from './handlers/items/itemFavorites';
 import {
@@ -154,7 +154,7 @@ app.get('/admin/unindexed_items', handleAdminUnindexedItems);
 app.get('/admin/unindexed_feeds', handleAdminUnindexedFeeds);
 
 app.get('/admin/items_without_sqid', handleAdminItemsWithoutSqid);
-app.get('/admin/items_without_related_cache', handleAdminItemsWithoutRelatedCache);
+app.get('/admin/items_without_related', handleAdminItemsWithoutRelated);
 app.get('/admin/vectorize', handleVectorize);
 app.get('/admin/generate_related', handleGenerateRelated);
 app.get('/admin/duplicates', handleDuplicateItems);
@@ -302,8 +302,8 @@ export default {
                     }
                     break;
 
-                case 'item_update_related_cache_new':
-                    if (message.body.item_id) await regenerateRelatedCacheForItemNEW(env, message.body.item_id);
+                case 'item_regenerate_related':
+                    if (message.body.item_id) await regenerateRelatedForItem(env, message.body.item_id);
                     break;
 
                 case 'item_vectorize_store':

@@ -56,7 +56,7 @@ export async function enqueueRegenerateRelatedCacheForAllItems(env: Bindings) {
             itemId: item.item_id,
         });
         await env.FEED_UPDATE_QUEUE.send({
-            type: 'item_update_related_cache_new',
+            type: 'item_regenerate_related',
             item_id: item.item_id,
         });
     }

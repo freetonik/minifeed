@@ -80,13 +80,13 @@ export const handleItemRefresh = async (c: Context) => {
 export async function handleRegenerateRelatedItemsNew(c: Context) {
     const itemSqid = c.req.param('item_sqid');
     await c.env.FEED_UPDATE_QUEUE.send({
-        type: 'item_update_related_cache_new',
+        type: 'item_regenerate_related',
         item_id: itemSqidToId(itemSqid),
     });
     return c.html('Regenerating related items with new way...');
 }
 
-export const regenerateRelatedCacheForItemNEW = async (env: Bindings, itemId: number) => {
+export const regenerateRelatedForItem = async (env: Bindings, itemId: number) => {
     const item = await dbGetItem(env, itemId);
     const relatedItemIds = [];
 
