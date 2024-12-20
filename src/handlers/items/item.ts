@@ -278,6 +278,15 @@ export async function handleItem(c: Context) {
             hx-swap="outerHTML">
             ❌ delete
         </button>
+
+        <button hx-post="/admin/items/${itemSqid}/delete"
+            hx-trigger="click"
+            hx-vals='{"blacklist": true}'
+            hx-target="#delete-indicator"
+            hx-swap="outerHTML">
+            ❌ delete & ⚫ blacklist
+        </button>
+
         <span id="delete-indicator"></span>
         </p>
 

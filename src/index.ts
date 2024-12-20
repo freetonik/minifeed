@@ -55,7 +55,7 @@ import {
     handleItemRefresh,
     handleItemsAddItemByUrlPOST,
     handleItemsAddItembyUrl,
-    handleItemsDelete,
+    handleItemsDeletePOST,
     handleRegenerateRelatedItemsNew,
     regenerateRelatedForItem,
 } from './handlers/items/itemAdmin';
@@ -177,7 +177,7 @@ app.post('/admin/blogs/:feed_sqid/new', handleItemsAddItemByUrlPOST);
 app.get('/admin/blogs/new', handleBlogsNew);
 app.post('/admin/blogs/new', handleBlogsNewPOST);
 
-app.post('/admin/items/:item_sqid/delete', handleItemsDelete);
+app.post('/admin/items/:item_sqid/delete', handleItemsDeletePOST);
 app.post('/admin/items/:item_sqid/refresh', handleItemRefresh);
 app.post('/admin/items/:item_sqid/regen-related-items', handleRegenerateRelatedItemsNew);
 

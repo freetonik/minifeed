@@ -19,11 +19,14 @@ export const handleItemsAddItembyUrl = async (c: Context) => {
     );
 };
 
-export const handleItemsDelete = async (c: Context) => {
+export const handleItemsDeletePOST = async (c: Context) => {
+    const body = await c.req.parseBody();
+    const addToBlacklist = !!body?.blacklist;
+
     const itemSqid = c.req.param('item_sqid');
     const itemId = itemSqidToId(itemSqid);
 
-    const deleted = await deleteItem(c.env, itemId);
+    const deleted = await deleteItem(c.env, itemId, addToBlacklist);
     if (deleted) return c.html('Item deleted');
     return c.html('ERROR!');
 };
