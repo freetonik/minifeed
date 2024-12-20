@@ -34,6 +34,11 @@ binding = "SESSIONS_KV"
 id = "269cab6a695244cfab39cdc624497d4a"
 preview_id = "9d89d9fbf0c74d4fbae269cd4c5cb0dd"
 
+[[kv_namespaces]]
+binding = "BLACKLIST_URLS"
+id = "4c3cac7167054313a999183ef70990aa"
+preview_id = "67ff4ad3c3324e0ab81c64c30ffb17d1"
+
 [[queues.producers]]
 queue = "feed-update"
 binding = "FEED_UPDATE_QUEUE"

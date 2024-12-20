@@ -3,6 +3,7 @@ import { decode } from 'html-entities';
 import robotsParser from 'robots-parser';
 import { getRssUrlsFromHtmlBody } from 'rss-url-finder';
 import Sqids from 'sqids';
+import { detectAll } from 'tinyld';
 import type { MFFeedEntry } from './interface';
 
 const idToSqid = (id: number, length: number): string => {
@@ -443,4 +444,47 @@ export function groupObjectsByProperty(objects: Array<any>, prop: string): Array
             return acc;
         }, {}),
     );
+}
+
+export function sortByFrequency(arr: Array<number>): Array<number> {
+    // Count occurrences
+    const frequency = arr.reduce<Record<number, number>>((acc, num) => {
+        acc[num] = (acc[num] || 0) + 1;
+        return acc;
+    }, {});
+
+    // Create array of [number, count] pairs and sort by count descending
+    // If counts are equal, sort by the number value ascending
+    return Object.entries(frequency)
+        .map(([num, count]): [number, number] => [Number.parseInt(num), count])
+        .sort((a, b) => b[1] - a[1] || a[0] - b[0])
+        .map((pair) => pair[0]);
+}
+
+export function isDefinitelyNotEnglish(text?: string): boolean {
+    if (!text) return false;
+    const langDetectionResults = detectAll(text);
+
+    // nothing detected
+    if (langDetectionResults.length === 0) return false;
+
+    // however many languages detected, first has non-English accuracy > 0.5, SURE TRUE
+    if (langDetectionResults[0].lang !== 'en' && langDetectionResults[0].accuracy > 0.7) return true;
+
+    // more than 3 languages detected, inconclusive
+    if (langDetectionResults.length > 3) return false;
+
+    // exactly one language detected, and it's english
+    if (langDetectionResults.length === 1 && langDetectionResults[0].lang === 'en') return false;
+
+    // exactly one language detected, and it's not english, SURE TRUE
+    if (langDetectionResults.length === 1 && langDetectionResults[0].lang !== 'en') return true;
+
+    // potentially 2 or 3 languages detected, first is English with enough accuracy
+    if (langDetectionResults[0].lang === 'en' && langDetectionResults[0].accuracy > 0.2) return false;
+
+    // potentially 2 or 3 languages detected, first is not English with enough accuracy
+    if (langDetectionResults[0].lang !== 'en' && langDetectionResults[0].accuracy > 0.2) return true;
+
+    return false;
 }

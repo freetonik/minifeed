@@ -3,6 +3,7 @@ export type Bindings = {
     ASSETS: R2Bucket;
     FEED_UPDATE_QUEUE: Queue;
     SESSIONS_KV: KVNamespace;
+    BLACKLIST_URLS: KVNamespace;
 
     TYPESENSE_API_KEY: string;
     TYPESENSE_API_KEY_SEARCH: string;
