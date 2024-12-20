@@ -71,6 +71,9 @@ import { handleMy } from './handlers/items/my';
 import { handleMyFavorites } from './handlers/items/myFavorites';
 import { handleMyFriendfeed } from './handlers/items/myFriendfeed';
 import { handleMySubscriptions } from './handlers/items/mySubscriptions';
+import { handleListsSingle } from './handlers/lists/list';
+import { handleListsSingleDeletePOST } from './handlers/lists/listPartials';
+import { handleLists } from './handlers/lists/lists';
 import { handleOpensearchXML } from './handlers/search/handleOpensearchXML';
 import { handleSearch } from './handlers/search/handleSearch';
 import { handleUsersSingle } from './handlers/users/user';
@@ -78,7 +81,6 @@ import { handleUsersFollowPOST, handleUsersUnfollowPOST } from './handlers/users
 import { handleUsers } from './handlers/users/users';
 import { renderHTML } from './htmltools';
 import type { MFQueueMessage } from './interface';
-import { handleLists, handleListsSingle, handleListsSingleDeletePOST } from './lists';
 import { adminRequiredMiddleware, authCheckMiddleware, authRequiredMiddleware, stripeMiddleware } from './middlewares';
 import { enqueueRegenerateRelatedCacheForAllItems, enqueueUpdateAllFeeds } from './queue';
 import { updateFeedIndex, updateFeedItemsIndex, updateItemIndex } from './search';

@@ -1,27 +1,7 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
-import { renderGuestFlash, renderHTML, renderItemShort } from './htmltools';
-import { itemSqidToId } from './utils';
-
-export const handleLists = async (c: Context) => {
-    const lists = await c.env.DB.prepare(
-        `SELECT DISTINCT item_lists.*, users.username
-        FROM item_lists
-        JOIN users ON users.user_id = item_lists.user_id
-        JOIN item_list_items ON item_list_items.list_id = item_lists.list_id
-        `,
-    ).all();
-
-    let inner = '';
-    if (!c.get('USER_LOGGED_IN')) {
-        inner += renderGuestFlash;
-    }
-    for (const list of lists.results) {
-        inner += `<div class="borderbox" style="margin-bottom: 1em;"><a href="/lists/${list.list_sqid}">${list.title}</a> (list by @${list.username})</div>`;
-    }
-
-    return c.html(renderHTML('Lists | minifeed', raw(inner), c.get('USERNAME'), 'lists'));
-};
+import { renderHTML, renderItemShort } from '../../htmltools';
+import { itemSqidToId } from '../../utils';
 
 export const handleListsSingle = async (c: Context) => {
     const listSqid = c.req.param('list_sqid');
@@ -60,18 +40,4 @@ export const handleListsSingle = async (c: Context) => {
     }
 
     return c.html(renderHTML(`${listEntry.title} list | minifeed`, raw(inner), c.get('USER_LOGGED_IN'), 'lists'));
-};
-
-export const handleListsSingleDeletePOST = async (c: Context) => {
-    const list_id = itemSqidToId(c.req.param('list_sqid'));
-    const user_id = c.get('USER_ID');
-
-    const list = await c.env.DB.prepare('SELECT * FROM item_lists WHERE list_id = ?').bind(list_id).first();
-    if (!list || list.user_id !== user_id) return c.text('Unauthorized', 401);
-
-    await c.env.DB.prepare('DELETE FROM item_lists WHERE list_id = ?').bind(list_id).run();
-
-    return c.html(
-        `<div class="flash">List deleted. This page is now a ghost. Refresh to let it ascent into ether.</div>`,
-    );
 };

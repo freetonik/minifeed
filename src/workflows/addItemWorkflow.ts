@@ -7,7 +7,15 @@ import { regenerateRelatedForItem } from '../handlers/items/itemAdmin';
 import type { MFFeedEntry } from '../interface';
 import { scrapeURLIntoObject } from '../scrape';
 import { updateItemIndex } from '../search';
-import { extractItemUrl, getItemPubDate, getText, itemIdToSqid, stripTags, truncate } from '../utils';
+import {
+    extractItemUrl,
+    getItemPubDate,
+    getText,
+    itemIdToSqid,
+    stripNonLinguisticElements,
+    stripTags,
+    truncate,
+} from '../utils';
 
 type AddItemWorkflowParams = {
     item: MFFeedEntry;
@@ -38,8 +46,9 @@ export class AddItemWorkflow extends WorkflowEntrypoint<Bindings, AddItemWorkflo
                 throw new NonRetryableError('Failed to extract item URL');
             }
 
-            const itemDescription = truncate(await stripTags(item.description || ''), 350);
-            const potentialTitle = truncate(await stripTags(item.description || ''), 55);
+            const itemDescriptionWithoutSemanticElements = await stripNonLinguisticElements(item.description || '');
+            const itemDescription = truncate(itemDescriptionWithoutSemanticElements, 350);
+            const potentialTitle = truncate(itemDescriptionWithoutSemanticElements, 55);
 
             // new item, but maybe it already exists in the database by URL
             const existingByURL = await this.env.DB.prepare(`
