@@ -69,3 +69,8 @@ class_name = "AddItemWorkflow"
 name = "update-item-workflow"
 binding = "UPDATE_ITEM_WORKFLOW"
 class_name = "UpdateItemWorkflow"
+
+[[workflows]]
+name = "generate-related-feeds-workflow"
+binding = "GENERATE_RELATED_FEEDS_WORKFLOW"
+class_name = "GenerateRelatedFeedsWorkflow"

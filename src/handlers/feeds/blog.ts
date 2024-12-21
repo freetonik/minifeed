@@ -18,6 +18,7 @@ export const handleBlog = async (c: Context) => {
           WHERE feeds.feed_id = ?
           `,
         ).bind(userId, feedId),
+
         c.env.DB.prepare(
             `
           SELECT
@@ -29,6 +30,13 @@ export const handleBlog = async (c: Context) => {
           WHERE items.item_sqid IS NOT 0 AND feeds.feed_id = ?
           ORDER BY items.pub_date DESC`,
         ).bind(userId, feedId),
+
+        c.env.DB.prepare(`
+          SELECT related_feeds.related_feed_id, title, url, rss_url, feed_sqid
+          FROM feeds
+          JOIN related_feeds ON feeds.feed_id = related_feeds.related_feed_id
+          WHERE related_feeds.feed_id = ?
+        `).bind(feedId),
     ]);
 
     // batch[0] is feed joined with subscription status; 0 means no feed found in DB
@@ -67,7 +75,7 @@ export const handleBlog = async (c: Context) => {
     </div>
     `;
 
-    let list = `
+    let inner = `
     <div style="margin-bottom:3em;">
     <h1 style="margin-bottom:0.25em;">
       ${feedTitle}
@@ -86,11 +94,11 @@ export const handleBlog = async (c: Context) => {
     `;
 
     // batch[1] is items
-    if (!batch[1].results.length) list += '<p>Feed is being updated, come back later...</p>';
+    if (!batch[1].results.length) inner += '<p>Feed is being updated, come back later...</p>';
     else {
         for (const item of batch[1].results) {
             const itemTitle = item.favorite_id ? `★ ${item.item_title}` : item.item_title;
-            list += renderItemShort(
+            inner += renderItemShort(
                 item.item_sqid,
                 itemTitle,
                 item.item_url,
@@ -102,7 +110,29 @@ export const handleBlog = async (c: Context) => {
         }
     }
 
-    list += `
+    let related_block = '';
+    console.log(batch[2].results);
+    if (batch[2].results?.length) {
+        related_block += '<div class="related-items"><h4>Related blogs</h4><div class="items fancy-gradient-bg">';
+        for (const i of batch[2].results) {
+            related_block += `
+            <div class="item-tiny">
+              <a href="/blogs/${i.feed_sqid}" class="bold no-color no-underline">${i.title}</a> <br>
+
+              <div class="muted">
+                  <small>
+                  <a class="no-underline no-color" href="${i.url}">${i.url}</a> |
+                      <a class="no-underline no-color" href="${i.rss_url}">RSS</a>
+                  </small>
+              </div>
+          </div>
+          `;
+        }
+        related_block += '</div></div>';
+        inner += related_block;
+    }
+
+    inner += `
     <div class="flash">↑ These items are from RSS. Visit the blog itself at <strong><a href="${feedUrl}">${feedUrl}</a></strong> to find everything else and to appreciate author's digital home.</div>
     `;
 
@@ -111,5 +141,5 @@ export const handleBlog = async (c: Context) => {
         debug_info = `${batch[0].meta.duration}+${batch[1].meta.duration} ms;,
             ${batch[0].meta.rows_read}+${batch[1].meta.rows_read} rows read`;
     }
-    return c.html(renderHTML(`${feedTitle} | minifeed`, raw(list), userLoggedIn, 'blogs', '', '', debug_info));
+    return c.html(renderHTML(`${feedTitle} | minifeed`, raw(inner), userLoggedIn, 'blogs', '', '', debug_info));
 };

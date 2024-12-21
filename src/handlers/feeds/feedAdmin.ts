@@ -117,3 +117,9 @@ export async function handleFeedsGlobalCacheRebuild(c: Context) {
     }
     return c.html('Feed cache rebuild enqueued FOR ALL FEEDS...');
 }
+
+export async function handleFeedsRebuildRelatedFeeds(c: Context) {
+    const feedId: number = feedSqidToId(c.req.param('feed_sqid'));
+    await c.env.GENERATE_RELATED_FEEDS_WORKFLOW.create({ params: { feedId } });
+    return c.html('Feed related feeds rebuild enqueued...');
+}

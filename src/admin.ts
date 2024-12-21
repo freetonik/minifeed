@@ -216,12 +216,21 @@ export const handleAdmin = async (c: Context) => {
         rebuild cache
         </button>
 
+        <button hx-post="/admin/feeds/${feed.feed_sqid}/rebuild_related_blogs"
+            hx-confirm="Sure?"
+            hx-trigger="click"
+            hx-target="#rebuild-related-blogs-indicator-${feed.feed_sqid}"
+            hx-swap="outerHTML">
+            rebuild related blogs
+        </button>
+
         <div>
             <span id="index-indicator-${feed.feed_sqid}"></span>
             <span id="update-indicator-${feed.feed_sqid}"></span>
             <span id="scrape-indicator-${feed.feed_sqid}"></span>
             <span id="delete-indicator-${feed.feed_sqid}"></span>
             <span id="rebuild-cache-indicator-${feed.feed_sqid}"></span>
+            <span id="rebuild-related-blogs-indicator-${feed.feed_sqid}"></span>
         </div>
         </p>
         </div>`;

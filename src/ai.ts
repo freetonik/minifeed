@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 import type { Bindings } from './bindings';
-import type { ItemRow } from './interface';
+import type { FeedRow, ItemRow } from './interface';
 import { enqueueVectorizeStoreItem } from './queue';
 import { stripNonLinguisticElements, stripTags } from './utils';
 
@@ -112,25 +112,50 @@ export const handleVectorize = async (c: Context) => {
 
 export const handleGenerateRelated = async (c: Context) => {
     const env = c.env as Bindings;
+    const type = c.req.param('type');
+    if (!type) return c.text('No type provided', 400);
+
     const start = c.req.query('start');
-    const stop = c.req.query('stop');
-    if (!start || !stop) return c.text('No start or stop provided', 400);
+    const stop = c.req.query('stop') || start;
+    if (!start) return c.text('No start provided', 400);
 
-    const items = await env.DB.prepare(
-        'SELECT item_id, title, item_sqid FROM items WHERE item_id >= ? AND item_id <= ?',
-    )
-        .bind(start, stop)
-        .all<ItemRow>();
+    if (type === 'item') {
+        const items = await env.DB.prepare(
+            'SELECT item_id, title, item_sqid FROM items WHERE item_id >= ? AND item_id <= ?',
+        )
+            .bind(start, stop)
+            .all<ItemRow>();
 
-    let response = '<ol>';
-    for (const item of items.results) {
-        response += `<li>Generating related cache for item <a href="/items/${item.item_sqid}">${item.item_id} / ${item.item_sqid}: ${item.title}</a>`;
+        let response = '<ol>';
+        for (const item of items.results) {
+            response += `<li>Generating related entries for item <a href="/items/${item.item_sqid}">${item.item_id} / ${item.item_sqid}: ${item.title}</a></li>`;
 
-        await c.env.FEED_UPDATE_QUEUE.send({
-            type: 'item_regenerate_related',
-            item_id: item.item_id,
-        });
+            await env.FEED_UPDATE_QUEUE.send({
+                type: 'item_regenerate_related',
+                item_id: item.item_id,
+            });
+        }
+        response += '</ol>';
+        return c.html(response);
     }
-    response += '</ol>';
-    return c.html(response);
+
+    if (type === 'feed') {
+        const feeds = await env.DB.prepare(
+            'SELECT feed_id, feed_sqid, title FROM feeds WHERE feed_id >= ? AND feed_id <= ?',
+        )
+            .bind(start, stop)
+            .all<FeedRow>();
+
+        let response = '<ol>';
+        for (const feed of feeds.results) {
+            const wf = await c.env.GENERATE_RELATED_FEEDS_WORKFLOW.create({ params: { feedId: feed.feed_id } });
+            response += `<li>Generating related entries for feed <a href="/blogs/${feed.feed_sqid}">${feed.feed_id} ${feed.title}</a>
+            <a href="https://dash.cloudflare.com/${c.env.CF_ACCOUNT_ID}/workers/workflows/generate-related-feeds-workflow/instance/${wf.id}">[WORKFLOW]</a></li>
+         `;
+        }
+        response += '</ol>';
+        return c.html(response);
+    }
+
+    return c.text('Wrong type provided', 400);
 };

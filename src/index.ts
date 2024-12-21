@@ -44,6 +44,7 @@ import {
     handleFeedsIndexing,
     handleFeedsItemsGlobalIndex,
     handleFeedsItemsIndexing,
+    handleFeedsRebuildRelatedFeeds,
     handleFeedsUpdate,
 } from './handlers/feeds/feedAdmin';
 import { handleFeedsSubscribe, handleFeedsUnsubscribe } from './handlers/feeds/feedSubscribePartial';
@@ -93,6 +94,7 @@ import {
     handleStripeWebhook,
 } from './stripe';
 import { AddItemWorkflow } from './workflows/addItemWorkflow';
+import { GenerateRelatedFeedsWorkflow } from './workflows/generateRelatedBlogs';
 import { UpdateItemWorkflow } from './workflows/updateItemWorkflow';
 
 // ————————————————————————————————————————————————————————————————>>>>
@@ -159,7 +161,7 @@ app.get('/admin/unindexed_feeds', handleAdminUnindexedFeeds);
 app.get('/admin/items_without_sqid', handleAdminItemsWithoutSqid);
 app.get('/admin/items_without_related', handleAdminItemsWithoutRelated);
 app.get('/admin/vectorize', handleVectorize);
-app.get('/admin/generate_related', handleGenerateRelated);
+app.get('/admin/generate_related/:type', handleGenerateRelated);
 app.get('/admin/duplicates', handleDuplicateItems);
 
 app.post('/admin/feeds/:feed_sqid/delete', handleFeedsDelete);
@@ -338,4 +340,4 @@ export default {
     },
 };
 
-export { AddItemWorkflow, UpdateItemWorkflow };
+export { AddItemWorkflow, GenerateRelatedFeedsWorkflow, UpdateItemWorkflow };
