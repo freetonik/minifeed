@@ -201,6 +201,7 @@ app.get('/signup', handleSignup);
 app.post('/signup', handleSignupPOST);
 app.get('/logout', authRequiredMiddleware, handleLogout);
 
+app.get('/blogs/opml.xml', handleOPMLGlobal);
 app.get('/blogs/:feed_sqid', handleBlog);
 app.get('/blogs', handleBlogs);
 app.get('/blogs/by/:listingType?', handleBlogs);

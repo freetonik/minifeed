@@ -498,14 +498,13 @@ export function generateOPML(feeds: Array<FeedRow>) {
     <head>
     <title>RSS feeds from Minifeed.net</title>
     <dateCreated>${new Date()}</dateCreated>
-    <ownerEmail>hello@rakhim.org</ownerEmail>
     </head>
     <body>
     `;
 
     for (const feed of feeds) {
         opml += `
-        <outline type="rss" text="${feed.title}" title="${feed.title}" xmlUrl="${feed.rss_url}" htmlUrl="${feed.url}" />
+        <outline type="rss" text="${escapeStrForXML(feed.title)}" title="${escapeStrForXML(feed.title)}" xmlUrl="${feed.rss_url}" htmlUrl="${feed.url}" />
         `;
     }
 
@@ -514,4 +513,13 @@ export function generateOPML(feeds: Array<FeedRow>) {
     `;
 
     return opml;
+}
+
+function escapeStrForXML(str: string) {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
 }
