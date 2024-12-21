@@ -58,7 +58,6 @@ export const handleBlogs = async (c: Context) => {
         </span></div>`;
 
         const relatedCache = JSON.parse(feed.content);
-        console.log(relatedCache);
 
         let topItems = '';
         if (relatedCache?.top_items) {

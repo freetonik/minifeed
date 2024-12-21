@@ -152,6 +152,7 @@ export async function gatherResponse(response: Response) {
 }
 
 export const truncate = (s: string, len = 140) => {
+    if (s.length <= len || s.length === 0) return s;
     const txt = s.toString();
     const txt_length = txt.length;
     if (txt_length <= len) return txt;
@@ -239,6 +240,7 @@ export const getItemPubDate = (item: MFFeedEntry): Date => {
 
 // This is used e.g. for preparing plaintext description and for vectorization
 export const stripNonLinguisticElements = async (s: string) => {
+    if (s.length === 0) return '';
     const badList = [
         'img',
         'video',

@@ -60,12 +60,7 @@ export class AddItemWorkflow extends WorkflowEntrypoint<Bindings, AddItemWorkflo
                     feedRSSUrl,
                 });
                 return false;
-                // throw new NonRetryableError('Item URL is blacklisted');
             }
-
-            const itemDescriptionWithoutSemanticElements = await stripNonLinguisticElements(item.description || '');
-            const itemDescription = truncate(itemDescriptionWithoutSemanticElements, 350);
-            const potentialTitle = truncate(itemDescriptionWithoutSemanticElements, 55);
 
             // new item, but maybe it already exists in the database by URL
             const existingByURL = await this.env.DB.prepare(`
@@ -79,6 +74,7 @@ export class AddItemWorkflow extends WorkflowEntrypoint<Bindings, AddItemWorkflo
                     feedId,
                 )
                 .first();
+
             if (existingByURL) {
                 await this.env.BLACKLIST_URLS.put(itemUrl, '1', { metadata: { reason: 'duplicate url' } });
                 console.log({
@@ -112,6 +108,10 @@ export class AddItemWorkflow extends WorkflowEntrypoint<Bindings, AddItemWorkflo
             // ==================================|
             // OMG FINALLY ITEM CAN BE ADDED!!!  |
             // ==================================|
+            const itemDescriptionWithoutSemanticElements = await stripNonLinguisticElements(item.description || '');
+            const itemDescription = truncate(itemDescriptionWithoutSemanticElements, 350);
+            const potentialTitle = truncate(itemDescriptionWithoutSemanticElements, 55);
+
             const itemPubDate: string = getItemPubDate(item).toISOString();
             let itemTitle: string;
             if (item.title?.length) itemTitle = await stripTags(item.title);
