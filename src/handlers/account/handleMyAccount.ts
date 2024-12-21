@@ -10,7 +10,7 @@ export const handleMyAccount = async (c: Context) => {
     const user_id = c.get('USER_ID');
     const user = await c.env.DB.prepare(`
             SELECT
-            users.created, username, email_verified, status, email,
+            users.created, username, status, email,
             tier, expires,
             user_preferences.prefers_full_blog_post, user_preferences.default_homepage_subsection
 
@@ -21,14 +21,7 @@ export const handleMyAccount = async (c: Context) => {
         .bind(user_id)
         .first();
 
-    const resend_verification_link_form = !user.email_verified
-        ? `<form action="/account/resend_verification_link" method="post">
-             <input type="submit" class="button" value="Resend email verification link">
-           </form>`
-        : '';
-
-    const verified = user.email_verified ? 'yes' : `no ${resend_verification_link_form}`;
-    const email = user.email ? user.email : 'no';
+    const email = user.email;
     const username = user.username;
     const hasSubscription = user.tier === SubscriptionTier.PRO;
     const date_format_opts: Intl.DateTimeFormatOptions = {
@@ -65,6 +58,7 @@ export const handleMyAccount = async (c: Context) => {
 
     const prefersFullBlogPost = user.prefers_full_blog_post !== null ? user.prefers_full_blog_post : true;
     const preferencesBlock = `
+    <h4>Preferences</h4>
     <div class="preferences-container borderbox" id="preferences">
         <form action="/account/preferences" method="POST" id="preferences-form">
             <div class="form-section util-mb-1">
@@ -113,8 +107,8 @@ export const handleMyAccount = async (c: Context) => {
     </p>
 
     <p>
-        Email: ${email}<br>
-        Email verified: ${verified}<br>
+        Email: <code>${email}</code><br>
+
     </p>
     ${preferencesBlock}
 
@@ -127,34 +121,34 @@ export const handleMyAccount = async (c: Context) => {
 };
 
 export const handleVerifyEmail = async (c: Context) => {
-    const code = c.req.query('code');
-    const username = c.get('USERNAME');
-    const result = await c.env.DB.prepare('SELECT * from email_verifications WHERE verification_code = ?')
-        .bind(code)
-        .run();
+    if (c.get('USER_LOGGED_IN')) return c.redirect('/');
 
-    if (!result.results.length) {
+    const code = c.req.query('code');
+    const result = await c.env.DB.prepare(
+        'SELECT * from email_verifications JOIN users ON users.user_id = email_verifications.user_id WHERE verification_code = ?',
+    )
+        .bind(code)
+        .first();
+
+    if (!result) {
         return c.html(
             renderHTML(
                 'Email verification | minifeed',
                 raw(`<div class="flash flash-red">Email verification code is invalid or has been used already.</div>`),
-                username,
+                false,
                 '',
             ),
         );
     }
 
-    const userId = result.results[0].user_id;
+    const userId = result.user_id;
+    const username = result.username;
     await c.env.DB.batch([
         c.env.DB.prepare('UPDATE users SET email_verified = 1 WHERE user_id = ?').bind(userId),
         c.env.DB.prepare('DELETE FROM email_verifications WHERE user_id = ?').bind(userId),
     ]);
 
-    const message_flash = username
-        ? `<div class="flash flash-blue">You can now go to <a href="/">your feed</a>... Or contemplate life.</div>`
-        : `<div class="flash flash-blue">You can now <a href="/login">log in</a>.</div>`;
-
-    return c.html(renderHTML('Email verification | minifeed', raw(message_flash), username, ''));
+    return await createSessionSetCookieAndRedirect(c, userId, username, '/', true);
 };
 
 export const handleMyAccountPreferencesPOST = async (c: Context) => {
@@ -201,27 +195,27 @@ export const handleMyAccountPreferencesPOST = async (c: Context) => {
     return c.redirect('/account#preferences');
 };
 
-export const handleResentVerificationEmailPOST = async (c: Context) => {
-    const result = await c.env.DB.prepare(
-        `SELECT verification_code, email, username
-        FROM email_verifications
-        JOIN users ON email_verifications.user_id = users.user_id
-        WHERE email_verifications.user_id = ?`,
-    )
-        .bind(c.get('USER_ID'))
-        .first();
+// export const handleResentVerificationEmailPOST = async (c: Context) => {
+//     const result = await c.env.DB.prepare(
+//         `SELECT verification_code, email, username
+//         FROM email_verifications
+//         JOIN users ON email_verifications.user_id = users.user_id
+//         WHERE email_verifications.user_id = ?`,
+//     )
+//         .bind(c.get('USER_ID'))
+//         .first();
 
-    await send_email_verification_link(c.env, result.username, result.email, result.verification_code);
+//     await send_email_verification_link(c.env, result.username, result.email, result.verification_code);
 
-    return c.html(
-        renderHTML(
-            'Email verification | minifeed',
-            raw(`<div class="flash flash-blue">Verification link is sent</div>`),
-            true,
-            '',
-        ),
-    );
-};
+//     return c.html(
+//         renderHTML(
+//             'Email verification | minifeed',
+//             raw(`<div class="flash flash-blue">Verification link is sent</div>`),
+//             true,
+//             '',
+//         ),
+//     );
+// };
 
 export const handleLogout = async (c: Context) => {
     const sessionKey = getCookie(c, 'minifeed_session');
@@ -407,6 +401,10 @@ export const handleSignup = async (c: Context) => {
 
         <input class="button" type="submit" value="Create account">
     </form>
+
+    <p>
+    <strong>Don't have an invitation code? Request one via <a href="https://minifeed.net/feedback">this feedback form</a>.</strong>
+    </p>
     </div>
     `;
     return c.html(renderHTML('Login or create account | minifeed', raw(inner), false));
@@ -427,8 +425,19 @@ export const handleLoginPOST = async (c: Context) => {
         throw new Error('Wrong email or password.');
     }
 
-    const verified = await verifyPassword(user.password_hash, user.password_salt, attempted_password);
-    if (verified) {
+    const passwordVerified = await verifyPassword(user.password_hash, user.password_salt, attempted_password);
+    if (passwordVerified) {
+        if (user.email_verified !== 1) {
+            return c.html(
+                renderHTML(
+                    'Almost there | minifeed',
+                    raw(`<div class="flash flash-blue">
+                    You have not verified your email yet. Please check your email (${user.email}) for the verification link.
+                    </div>`),
+                    false,
+                ),
+            );
+        }
         try {
             return await createSessionSetCookieAndRedirect(c, user.user_id, user.username);
         } catch (err) {
@@ -482,7 +491,15 @@ export const handleSignupPOST = async (c: Context) => {
             .run();
 
         await send_email_verification_link(c.env, username, email, email_verification_code);
-        return await createSessionSetCookieAndRedirect(c, userId, username, '/', true); // first login ever
+        return c.html(
+            renderHTML(
+                'Account created | minifeed',
+                raw(`<div class="flash flash-blue">
+                    Huzzah! Check your email for a verification link.
+                </div>`),
+                false,
+            ),
+        );
     } catch (err) {
         throw new Error('Something went horribly wrong.');
     }
@@ -514,7 +531,7 @@ const createSessionSetCookieAndRedirect = async (
     userId: number,
     username: string,
     redirectTo = '/',
-    first_login = false,
+    firstLogin = false,
 ) => {
     const sessionKey = randomHash(32);
     const kv_value = `${userId};${username}`;
@@ -527,12 +544,17 @@ const createSessionSetCookieAndRedirect = async (
         maxAge: 34560000,
     });
 
-    if (first_login) {
+    if (firstLogin) {
         return c.html(
             renderHTML(
                 'Account created | minifeed',
                 raw(`<div class="flash flash-blue">
-                    Great! You are now registered and logged in. Check your email for a verification link. Go browse some <a href="/blogs">blogs</a>, <a href="/lists">lists</a>, and <a href="/users">users</a> to subscribe to.
+                    Your account is now verified, and you are logged in. What next?
+                    <ul>
+                    <li>Browse <a href="/blogs">blogs</a>, <a href="/lists">lists</a>, and <a href="/users">users</a> to subscribe to</li>
+                    <li>Try searching for stuff (top of the page)</li>
+                    <li><a href="/feedback">Send any feedback</a> </li>
+                    </ul>
                 </div>`),
                 true,
             ),

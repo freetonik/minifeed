@@ -24,7 +24,6 @@ import {
     handleLogout,
     handleMyAccount,
     handleMyAccountPreferencesPOST,
-    handleResentVerificationEmailPOST,
     handleResetPassword,
     handleResetPasswordPOST,
     handleSetPasswordPOST,
@@ -139,7 +138,7 @@ app.get('/friendfeed', authRequiredMiddleware, handleMyFriendfeed);
 app.get('/favorites', authRequiredMiddleware, handleMyFavorites);
 app.get('/account', authRequiredMiddleware, handleMyAccount);
 app.post('/account/preferences', authRequiredMiddleware, handleMyAccountPreferencesPOST);
-app.post('/account/resend_verification_link', handleResentVerificationEmailPOST);
+// app.post('/account/resend_verification_link', handleResentVerificationEmailPOST);
 
 app.get('/verify_email', handleVerifyEmail);
 
@@ -171,6 +170,7 @@ app.post('/admin/feeds/:feed_sqid/update', handleFeedsUpdate);
 app.post('/admin/feeds/:feed_sqid/index', handleFeedsIndexing);
 app.post('/admin/feeds/:feed_sqid/index_items', handleFeedsItemsIndexing);
 app.post('/admin/feeds/:feed_sqid/rebuild_cache', handleFeedsCacheRebuild);
+app.post('/admin/feeds/:feed_sqid/rebuild_related_blogs', handleFeedsRebuildRelatedFeeds);
 app.post('/admin/feeds/index_items', handleFeedsItemsGlobalIndex);
 app.post('/admin/feeds/index', handleFeedsGlobalIndex);
 app.post('/admin/feeds/rebuild_cache', handleFeedsGlobalCacheRebuild);

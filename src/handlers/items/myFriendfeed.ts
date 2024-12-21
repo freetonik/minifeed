@@ -44,7 +44,7 @@ export const handleMyFriendfeed = async (c: Context) => {
         if (results.length > itemsPerPage) list += `<p><a href="?p=${page + 1}">More</a></p></div>`;
     } else {
         if (page === 1) {
-            list += `You don't follow anyone, or you do, but they aren't subscribed to anything :-( <br> <strong><a href="/users">View all users</a></strong>.`;
+            list += `You don't follow anyone, or you do, but they aren't subscribed to anything ☹️ <br> <strong><a href="/users">View all users</a></strong>.`;
         }
     }
 
