@@ -1,7 +1,14 @@
-export const version = '0.8.0';
+export const version = '0.9.0';
 
 export const changelog = `
     <h2>Changelog</h2>
+
+    <h3>0.9.0 (21.12.2024)</h3>
+    <ul>
+        <li>New feature: related blogs.</li>
+        <li>New feature: OPML exports.</li>
+        <li>Related posts and blogs are now refreshed every 2 weeks.</li>
+    </ul>
 
     <h3>0.8.0 (11.12.2024)</h3>
     <ul>
