@@ -4,7 +4,7 @@ import robotsParser from 'robots-parser';
 import { getRssUrlsFromHtmlBody } from 'rss-url-finder';
 import Sqids from 'sqids';
 import { detectAll } from 'tinyld';
-import type { MFFeedEntry } from './interface';
+import type { FeedRow, MFFeedEntry } from './interface';
 
 const idToSqid = (id: number, length: number): string => {
     const sqids = new Sqids({
@@ -487,4 +487,29 @@ export function isDefinitelyNotEnglish(text?: string): boolean {
     if (langDetectionResults[0].lang !== 'en' && langDetectionResults[0].accuracy > 0.2) return true;
 
     return false;
+}
+
+export function generateOPML(feeds: Array<FeedRow>) {
+    let opml = `
+
+    <opml version="1.0">
+    <head>
+    <title>RSS feeds from Minifeed.net</title>
+    <dateCreated>${new Date()}</dateCreated>
+    <ownerEmail>hello@rakhim.org</ownerEmail>
+    </head>
+    <body>
+    `;
+
+    for (const feed of feeds) {
+        opml += `
+        <outline type="rss" text="${feed.title}" title="${feed.title}" xmlUrl="${feed.rss_url}" htmlUrl="${feed.url}" />
+        `;
+    }
+
+    opml += `</body>
+    </opml>
+    `;
+
+    return opml;
 }

@@ -47,6 +47,7 @@ import {
     handleFeedsUpdate,
 } from './handlers/feeds/feedAdmin';
 import { handleFeedsSubscribe, handleFeedsUnsubscribe } from './handlers/feeds/feedSubscribePartial';
+import { handleOPMLGlobal } from './handlers/feeds/opmlGlobal';
 import { handleFavicon } from './handlers/handleFavicon';
 import { handleGlobal } from './handlers/items/global';
 import { handleHomeForGuest } from './handlers/items/homeGuest';
