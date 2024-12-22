@@ -61,3 +61,34 @@ npx wrangler d1 execute minifeed --local --command="SELECT * from items2"
 npx wrangler d1 execute minifeed --command="ALTER TABLE items RENAME TO items_old;"
 npx wrangler d1 execute minifeed --command="ALTER TABLE items2 RENAME TO items;"
 ```
+
+
+```
+<script>
+        var HW_config = {
+            selector: "#changelog", // CSS selector where to inject the badge
+            account:  "yZwepx",
+        }
+        </script>
+        <script async src="https://cdn.headwayapp.co/widget.js"></script>
+        <style>
+        #HW_badge_cont {
+        display: inline-block;
+        }
+        #HW_badge_cont:after {
+        content: "Changelog";
+        display: inline-block;
+        margin-left: 2.5em;
+        }
+
+        }
+
+        #HW_badge {
+              top: 0.4em;
+            background-color: #3599db;
+        }
+        #HW_badge.HW_softHidden {
+            top: 0.4em;
+            background-color: #b1aaa0;
+        }
+```
