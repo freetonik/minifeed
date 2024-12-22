@@ -385,26 +385,17 @@ export const handleSignup = async (c: Context) => {
         </div>
 
         <div style="margin-bottom:1em;">
-            <label for="pass">Password (8 characters minimum)</label>
-            <input type="password" id="pass" name="password" minlength="8" required />
-        </div>
-
-        <div style="margin-bottom:2em;">
             <label for="email">Email:</label>
             <input type="email" id="email" name="email" required />
         </div>
 
         <div style="margin-bottom:2em;">
-            <label for="invitation_code">Invitation code:</label>
-            <input type="text" id="invitation_code" name="invitation_code" required />
+            <label for="pass">Password (8 characters minimum)</label>
+            <input type="password" id="pass" name="password" minlength="8" required />
         </div>
 
         <input class="button" type="submit" value="Create account">
     </form>
-
-    <p>
-    <strong>Don't have an invitation code? Request one via <a href="https://minifeed.net/feedback">this feedback form</a>.</strong>
-    </p>
     </div>
     `;
     return c.html(renderHTML('Login or create account | minifeed', raw(inner), false));
@@ -452,12 +443,12 @@ export const handleSignupPOST = async (c: Context) => {
     const username = body.username.toString();
     const password = body.password.toString();
     const email = body.email.toString().toLowerCase();
-    const invitation_code = body.invitation_code.toString();
 
-    if (invitation_code !== 'ARUEHW') throw new Error('Invalid invitation code');
-
-    if (!checkUsername(username)) throw new Error('Invalid username');
-    if (password.length < 8) throw new Error('Password too short');
+    if (!checkUsername(username))
+        throw new Error(
+            'Invalid username. Please, use only letters, numbers, and underscores. Minimum 3 characters, maximum 16 characters.',
+        );
+    if (password.length < 8) throw new Error('Password too short. Minimum 8 characters.');
     if (!checkEmail(email)) throw new Error('Invalid email');
 
     // Check if username already exists
