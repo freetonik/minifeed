@@ -89,10 +89,10 @@ export function renderReaderView(title: string, inner: string) {
         /* Base styles */
         :root {
         --text-color: #222;
-        --bg-color: #fff;
-        --max-width: 680px;
+        --bg-color: hsla(50, 25%, 96%);
+        --max-width: 900px;
         --body-padding: 2rem;
-        --line-height: 1.6;
+        --line-height: 1.5;
         }
 
         @media (prefers-color-scheme: dark) {
