@@ -19,7 +19,7 @@ export async function handleItem(c: Context) {
         WHERE subscriptions.user_id = ? AND items.item_id = ?`,
         ).bind(userId, itemId),
 
-        // batch[0]: item
+        // batch[1]: item
         c.env.DB.prepare(
             `
         SELECT
@@ -112,6 +112,7 @@ export async function handleItem(c: Context) {
     let favoriteBlock = '';
     let subscriptionBlock = '';
     let listsBlock = '';
+    let readerViewBlock = '';
     if (userLoggedIn) {
         listsBlock = `
         <span id="lists">
@@ -170,10 +171,13 @@ export async function handleItem(c: Context) {
             </button>
             </span>`;
         }
+
+        readerViewBlock = `<a class="button" href="/items/${itemSqid}/reader">≡ reader</a>`;
     } else {
         listsBlock = `<span id="favorite"> <button class="button" title="Log in to add to list" disabled>⛬ list</button> </span>`;
         favoriteBlock = `<span id="favorite"> <button class="button" title="Log in to favorite" disabled> ☆ favorite </button> </span>`;
         subscriptionBlock = `<span id="subscription"> <button class="button" disabled title="Login to subscribe"> <span>subscribe</span> </button> </span>`;
+        readerViewBlock = `<span id="reader-view"> <button class="button" title="Login to view in reader view" disabled> ↗ reader view </button> </span>`;
     }
 
     let related_block = '';
@@ -206,7 +210,8 @@ export async function handleItem(c: Context) {
         <div style="display: flex; gap: 0.25em;">
         ${favoriteBlock}
         ${listsBlock}
-        <a class="button" href="${item.item_url}" target="_blank">↗ original</a>
+        ${readerViewBlock}
+
         </div>
         <div>
         ${subscriptionBlock}

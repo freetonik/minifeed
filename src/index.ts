@@ -68,6 +68,7 @@ import {
     handleItemsListsRemovePOST,
 } from './handlers/items/itemListActions';
 import { handleItemsLists } from './handlers/items/itemListPartial';
+import { handleItemReaderView } from './handlers/items/itemReaderView';
 import { handleMy } from './handlers/items/my';
 import { handleMyFavorites } from './handlers/items/myFavorites';
 import { handleMyFriendfeed } from './handlers/items/myFriendfeed';
@@ -210,6 +211,7 @@ app.post('/feeds/:feed_sqid/subscribe', authRequiredMiddleware, handleFeedsSubsc
 app.post('/feeds/:feed_sqid/unsubscribe', authRequiredMiddleware, handleFeedsUnsubscribe);
 
 app.get('/items/:item_sqid', handleItem);
+app.get('/items/:item_sqid/reader', authRequiredMiddleware, handleItemReaderView);
 app.get('/items/:item_sqid/lists', authRequiredMiddleware, handleItemsLists);
 app.get('/items/:item_sqid/lists/new', authRequiredMiddleware, handleItemsListsNewForm);
 app.post('/items/:item_sqid/lists', authRequiredMiddleware, handleItemsListsNewPOST);
@@ -235,9 +237,6 @@ app.get('/about/changelog', async (c: Context) =>
 
 app.get('/podcasts', (c: Context) => {
     return c.html(renderHTML('Podcasts | minifeed', raw('Coming soon'), c.get('USER_LOGGED_IN'), 'podcasts'));
-});
-app.get('/channels', (c: Context) => {
-    return c.html(renderHTML('Channels | minifeed', raw('Coming soon'), c.get('USER_LOGGED_IN'), 'channels'));
 });
 
 // MAIN EXPORT
