@@ -5,6 +5,7 @@ import { SubscriptionTier } from './interface';
 
 export const handleStripeCreateCheckoutSessionPOST = async (c: Context) => {
     const rootUrl = c.env.ENVIRONMENT === 'dev' ? 'http://localhost:8181' : 'https://minifeed.net';
+    const priceId = c.env.ENVIRONMENT === 'dev' ? 'price_1QRcf4KC5WacZa26QtsqLKH9' : 'price_1QYnPcKC5WacZa262IMq0DLn';
     const user_id = c.get('USER_ID');
     const stripe = c.get('stripe');
 
@@ -22,11 +23,12 @@ export const handleStripeCreateCheckoutSessionPOST = async (c: Context) => {
         },
         line_items: [
             {
-                price: 'price_1QRcf4KC5WacZa26QtsqLKH9',
+                price: priceId,
                 quantity: 1,
             },
         ],
         mode: 'subscription',
+        allow_promotion_codes: true,
         success_url: `${rootUrl}/account/billing/success`,
         cancel_url: `${rootUrl}/account/billing/cancel`,
         automatic_tax: { enabled: true },
@@ -36,11 +38,25 @@ export const handleStripeCreateCheckoutSessionPOST = async (c: Context) => {
 };
 
 export const handleBillingSuccess = async (c: Context) => {
-    return c.html(renderHTML('Billing | minifeed', raw(`<div class="flash">Success!.</div>`), c.get('USER_LOGGED_IN')));
+    return c.html(
+        renderHTML(
+            'Billing | minifeed',
+            raw(
+                `<div class="flash">❤️ Your subscription is now active! You can manage it in <a href="/account">your account</a>.</div>`,
+            ),
+            c.get('USER_LOGGED_IN'),
+        ),
+    );
 };
 
 export const handleBillingCancel = async (c: Context) => {
-    return c.html(renderHTML('Billing | minifeed', raw(`<div class="flash">Cancel!.</div>`), c.get('USER_LOGGED_IN')));
+    return c.html(
+        renderHTML(
+            'Billing | minifeed',
+            raw(`<div class="flash">Something went wrong, or you have changed your mind, maybe? It's ok...</div>`),
+            c.get('USER_LOGGED_IN'),
+        ),
+    );
 };
 
 async function fulfillCheckout(c: Context, sessionId: string) {

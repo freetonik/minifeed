@@ -30,31 +30,40 @@ export const handleMyAccount = async (c: Context) => {
         day: 'numeric',
     };
 
-    let subscriptionBlock = '';
+    let subscriptionBlockInner = '';
     if (hasSubscription) {
-        const status = user.tier === SubscriptionTier.PRO ? 'Paid' : 'Free';
+        const status = user.tier === SubscriptionTier.PRO ? 'Active' : 'Inactive';
         const subscriptionExpires = user.expires
             ? new Date(user.expires).toLocaleString('en-UK', date_format_opts)
             : 'N/A';
-        subscriptionBlock = `
+        subscriptionBlockInner = `
         Subscription status: ${status}<br>
         Subscription expires: ${subscriptionExpires}
 
-        <p>
-        <form method="POST" action="/account/billing/customer-portal"> <button class="button" type="submit">Manage billing</button> </form></p>
+        <form class="util-mt-1" method="POST" action="/account/billing/customer-portal">
+        <button class="button" type="submit">📒 Manage billing</button>
+        </form>
         `;
     } else {
-        subscriptionBlock = `
-        <div class="borderbox fancy-gradient-bg">
+        subscriptionBlockInner = `
             <strong>
-                Subscribe to access premium features. $25/year.
+                Subscribe to access cool features and support the development of Minifeed. $39 (€39) per year.
             </strong>
+            Upcoming paid features include:
+            <ul>
+            <li>Weekly email digest</li>
+            <li>Listen to articles (text-to-speech)</li>
+            <li>Full-text search of your favorites</li>
+            <li>Create your link blog</li>
+            <li>Reader view</li>
+            <li>OPML export</li>
+            </ul>
             <form class="util-mt-1" action="/account/billing/create-checkout-session" method="POST">
                 <button class="button success" type="submit" id="checkout-button">⚡ Subscribe</button>
             </form>
-        </div>
     `;
     }
+    const subscriptionBlock = `<div class="borderbox fancy-gradient-bg util-mt-1"> ${subscriptionBlockInner} </div>`;
 
     const prefersFullBlogPost = user.prefers_full_blog_post !== null ? user.prefers_full_blog_post : true;
     const preferencesBlock = `
@@ -111,6 +120,7 @@ export const handleMyAccount = async (c: Context) => {
 
     </p>
     ${preferencesBlock}
+    ${c.get('USER_IS_ADMIN') ? subscriptionBlock : ''}
 
     ${list_of_lists}
     <p style="margin-top:2em; text-align:right;">
