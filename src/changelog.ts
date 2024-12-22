@@ -1,7 +1,14 @@
-export const version = '0.9.0';
+export const version = '1.0.0';
 
 export const changelog = `
     <h2>Changelog</h2>
+
+    <h3>1.0.0 (22.12.2024)</h3>
+    <ul>
+        <li>Sign ups are now open to everyone.</li>
+        <li>Paid subscriptions (early bird).</li>
+        <li>Reader mode.</li>
+    </ul>
 
     <h3>0.9.0 (21.12.2024)</h3>
     <ul>
