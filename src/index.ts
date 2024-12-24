@@ -112,12 +112,14 @@ app.use('*', authCheckMiddleware);
 app.get('/robots.txt', async (c) => c.text('User-agent: *\nAllow: /'));
 
 const handleNotFound = (c: Context) => {
+    c.status(404);
     return c.html(
         renderHTML('404 | minifeed', raw(`<div class="flash">Page not found.</div>`), c.get('USER_LOGGED_IN')),
     );
 };
 
 const handleError = (err: Error, c: Context) => {
+    c.status(422);
     return c.html(renderHTML('Error | minifeed', raw(`<div class="flash">${err}</div>`), c.get('USER_LOGGED_IN')));
 };
 
