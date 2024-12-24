@@ -5,5 +5,5 @@ CREATE TABLE IF NOT EXISTS password_resets (
     user_id INTEGER NOT NULL,
     reset_code TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users (user_id)
+    FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
 );

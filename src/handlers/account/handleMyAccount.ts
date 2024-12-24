@@ -384,28 +384,32 @@ export const handleSignup = async (c: Context) => {
     if (c.get('USER_LOGGED_IN')) return c.redirect('/');
 
     const inner = `
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <div style="max-width:25em;margin:auto;">
 
     <div class="borderbox fancy-gradient-bg">
         <h2 style="margin-top:0;">Create account</h2>
         <form action="/signup" method="POST">
-            <div style="margin-bottom:1em;">
+            <div class="util-mb-1">
             <label for="username">Username</label>
             <input type="text" id="username" name="username" required />
         </div>
 
-        <div style="margin-bottom:1em;">
+        <div class="util-mb-1">
             <label for="email">Email:</label>
             <input type="email" id="email" name="email" required />
         </div>
 
-        <div style="margin-bottom:2em;">
+        <div class="util-mb-1">
             <label for="pass">Password (8 characters minimum)</label>
             <input type="password" id="pass" name="password" minlength="8" required />
         </div>
 
+        <div class="util-mb-1 cf-turnstile" data-sitekey="0x4AAAAAAA36sJM6uC8FfZ--"></div>
+
         <input class="button" type="submit" value="Create account">
     </form>
+
     </div>
     `;
     return c.html(renderHTML('Login or create account | minifeed', raw(inner), false));
@@ -454,6 +458,35 @@ export const handleSignupPOST = async (c: Context) => {
     const password = body.password.toString();
     const email = body.email.toString().toLowerCase();
 
+    // CLOUDFLARE TURNSTILE
+    const token = body['cf-turnstile-response']?.toString();
+    if (!token) {
+        return c.text('Missing captcha token', 400);
+    }
+
+    const ip = c.req.header('CF-Connecting-IP');
+    const formData = new FormData();
+    formData.append('secret', c.env.CF_TURNSTILE_SECRET_KEY);
+    formData.append('response', token);
+    formData.append('remoteip', ip);
+
+    const url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+    const result = await fetch(url, {
+        body: formData,
+        method: 'POST',
+    });
+
+    const outcome = await result.json();
+    if (!outcome.success) {
+        return c.text('Missing captcha token', 400);
+    }
+
+    // const invitation_code = body.invitation_code.toString();
+
+    // if (invitation_code !== 'ARUEHW') throw new Error('Invalid invitation code');
+    // if (!checkUsername(username)) throw new Error('Invalid username');
+    // if (password.length < 8) throw new Error('Password too short');
+
     if (!checkUsername(username))
         throw new Error(
             'Invalid username. Please, use only letters, numbers, and underscores. Minimum 3 characters, maximum 16 characters.',
@@ -496,7 +529,8 @@ export const handleSignupPOST = async (c: Context) => {
             renderHTML(
                 'Account created | minifeed',
                 raw(`<div class="flash flash-blue">
-                    Huzzah! Check your email for a verification link.
+                    Huzzah! Check your email for a verification link.<br>
+                    Please, verify your email to within 3 days. Otherwise, your account will be deleted. Sorry for this, we just have to keep bots out. But you're totally human!
                 </div>`),
                 false,
             ),
@@ -514,7 +548,10 @@ const send_email_verification_link = async (
 ) => {
     const emailVerificationLink = `${env.ENVIRONMENT === 'dev' ? 'http://localhost:8181' : 'https://minifeed.net'}/verify_email?code=${email_verification_code}`;
 
-    const emailBody = `Welcome to minifeed, ${username}!<br><br>Please, verify your email by clicking on <strong><a href="${emailVerificationLink}">this link</a></strong>.`;
+    const emailBody = `Welcome to minifeed, ${username}!<br><br>Please, verify your email by clicking on <strong><a href="${emailVerificationLink}">this link</a></strong>.
+    <br>
+    Please, verify your email to within 3 days. Otherwise, your account will be deleted. Sorry for this, we just have to keep bots out. But you're totally human!
+    `;
 
     await sendEmail(env, email, 'Welcome to minifeed', emailBody);
 };

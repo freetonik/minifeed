@@ -81,6 +81,7 @@ import { handleSearch } from './handlers/search/handleSearch';
 import { handleUsersSingle } from './handlers/users/user';
 import { handleUsersFollowPOST, handleUsersUnfollowPOST } from './handlers/users/userFollowPartials';
 import { handleUsers } from './handlers/users/users';
+import { deleteUnverifiedAccounts } from './handlers/users/usersDeletion';
 import { renderHTML } from './htmltools';
 import type { MFQueueMessage } from './interface';
 import { adminRequiredMiddleware, authCheckMiddleware, authRequiredMiddleware, stripeMiddleware } from './middlewares';
@@ -331,6 +332,10 @@ export default {
             case '*/30 * * * *':
                 // Every 30 minutes
                 await enqueueUpdateAllFeeds(env);
+                break;
+            case '0 * * * *':
+                // Every 1 hour
+                await deleteUnverifiedAccounts(env);
                 break;
             case '0 0 * * *':
                 // Every midnight

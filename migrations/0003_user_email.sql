@@ -4,9 +4,9 @@ ALTER TABLE users ADD COLUMN email TEXT;
 ALTER TABLE users ADD COLUMN email_verified BOOLEAN NOT NULL DEFAULT FALSE;
 
 CREATE TABLE IF NOT EXISTS email_verifications (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY,
     user_id INTEGER NOT NULL,
     verification_code TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users (user_id)
+    FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
 );
