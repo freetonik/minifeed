@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import { Hono } from 'hono';
+import { csrf } from 'hono/csrf';
 import { raw } from 'hono/html';
 import { about } from './about';
 import {
@@ -102,6 +103,9 @@ import { UpdateItemWorkflow } from './workflows/updateItemWorkflow';
 
 // main app handles the root paths
 const app = new Hono<{ Bindings: Bindings }>({ strict: false });
+
+// string[]
+app.use('*', csrf());
 
 app.use('*', authCheckMiddleware);
 
