@@ -1,5 +1,8 @@
 import type { Context } from 'hono';
 import { getCookie } from 'hono/cookie';
+import { raw } from 'hono/html';
+import { renderHTML } from './htmltools';
+import { SubscriptionTier } from './interface';
 const Stripe = require('stripe');
 
 // Set user_id and username in context if user is logged in
@@ -48,3 +51,33 @@ export const stripeMiddleware = async (c: Context, next: () => Promise<void>) =>
     c.set('stripe', stripe);
     await next();
 };
+
+export async function paidSubscriptionRequiredMiddleware(c: Context, next: () => Promise<void>) {
+    // TODO:
+    // 1. if session info has subscription info, just go next
+    // 2. if not, check and modify the current session info
+
+    const user_id = c.get('USER_ID');
+    const user = await c.env.DB.prepare(`
+        SELECT
+        tier
+        FROM users
+        LEFT JOIN user_subscriptions on users.user_id = user_subscriptions.user_id
+        WHERE users.user_id = ?`)
+        .bind(user_id)
+        .first();
+
+    const hasSubscription = user.tier === SubscriptionTier.PRO;
+    if (!hasSubscription) {
+        return c.html(
+            renderHTML(
+                'Paid feature | minifeed',
+                raw(`<div class="flash flash-blue">
+                    This feature requires a paid subscription. Consider upgrading your account <a href="/account">here</a>.
+                </div>`),
+                false,
+            ),
+        );
+    }
+    await next();
+}

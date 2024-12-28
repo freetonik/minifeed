@@ -71,7 +71,7 @@ export const handleItemsListsRemovePOST = async (c: Context) => {
     return c.html('Error while removing item from list');
 };
 
-function checkListTitle(listTitle: string) {
+export function checkListTitle(listTitle: string) {
     // allow only latin chars, numbers, -, +, =, ?, _, and space
     const goodChars = /^[a-zA-Z0-9\-=+?_ ]{3,32}$/.test(listTitle);
     // disallow first or last char to be space; disallow consecutive spaces

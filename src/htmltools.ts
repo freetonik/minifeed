@@ -289,6 +289,28 @@ export const renderItemShort = (
     `;
 };
 
+export const renderLinkShort = (title: string, url: string, pub_date: string, itemId?: number, username?: string) => {
+    const postDate = new Date(pub_date).toLocaleDateString('en-UK', dateFormatOptions);
+    const feedLink = url.substring(0, 64);
+
+    let deleteBlock = '';
+    if (username && itemId) {
+        deleteBlock = `| <a hx-delete="/l/${username}/${itemId}" class="no-color no-underline cursor-pointer" hx-target="#item-${itemId}" >delete</a>`;
+    }
+    return `
+    <div id="item-${itemId}" class="item-tiny">
+        <a href="${url}" class="bold no-color no-underline">${title}</a> <br>
+        <div class="muted">
+            <small>
+                ${feedLink} |
+                <span>${postDate}</span>
+                ${deleteBlock}
+            </small>
+        </div>
+    </div>
+    `;
+};
+
 export const renderItemSearchResult = (searchResult: ItemSearchResult) => {
     const item = searchResult.document;
     const postDate = new Date(item.pub_date).toLocaleDateString('en-UK', dateFormatOptions);

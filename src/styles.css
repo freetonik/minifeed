@@ -384,6 +384,10 @@ a.no-color {
     margin-bottom: 3em;
 }
 
+.cursor-pointer {
+    cursor: pointer;
+}
+
 :target {
     animation: highlight 1s ease-in-out;
 }
