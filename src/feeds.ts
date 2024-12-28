@@ -139,3 +139,34 @@ export async function regenerateTopItemsCacheForFeed(env: Bindings, feedId: numb
 
     return true;
 }
+
+export async function generateInitialRelatedFeeds(env: Bindings) {
+    // select feeds that have no related entries
+    const feeds = await env.DB.prepare(`
+        SELECT f.feed_id
+        FROM feeds f
+        LEFT JOIN related_feeds rf ON f.feed_id = rf.feed_id
+        WHERE rf.id IS NULL;
+        `).all();
+    for (const feed of feeds.results) {
+        await env.GENERATE_RELATED_FEEDS_WORKFLOW.create({ params: { feedId: feed.feed_id } });
+    }
+}
+
+export async function regenerateRelatedFeeds(env: Bindings) {
+    // select items whose related feeds were generated more than 1 week ago
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const feeds = await env.DB.prepare(`
+        SELECT f.feed_id
+        FROM feeds f
+        JOIN related_feeds rf ON f.feed_id = rf.feed_id
+        WHERE rf.created < ?
+        LIMIT 100;
+        `)
+        .bind(weekAgo.toISOString())
+        .all();
+
+    for (const feed of feeds.results) {
+        await env.GENERATE_RELATED_FEEDS_WORKFLOW.create({ params: { feedId: feed.feed_id } });
+    }
+}

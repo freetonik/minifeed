@@ -18,7 +18,12 @@ import { handleGenerateRelated, handleVectorize, vectorizeAndStoreItem } from '.
 import type { Bindings } from './bindings';
 import { changelog } from './changelog';
 import { handleFeedback, handleSuggestBlog } from './feedback';
-import { regenerateTopItemsCacheForFeed, updateFeed } from './feeds';
+import {
+    generateInitialRelatedFeeds,
+    regenerateRelatedFeeds,
+    regenerateTopItemsCacheForFeed,
+    updateFeed,
+} from './feeds';
 import {
     handleLogin,
     handleLoginPOST,
@@ -74,6 +79,9 @@ import { handleMy } from './handlers/items/my';
 import { handleMyFavorites } from './handlers/items/myFavorites';
 import { handleMyFriendfeed } from './handlers/items/myFriendfeed';
 import { handleMySubscriptions } from './handlers/items/mySubscriptions';
+import { handleLinkblog } from './handlers/linkblogs/linkblog';
+import { handleLinkblogDELETE } from './handlers/linkblogs/linkblogDELETE';
+import { handleLinkblogPOST } from './handlers/linkblogs/linkblogPOST';
 import { handleListsSingle } from './handlers/lists/list';
 import { handleListsSingleDeletePOST } from './handlers/lists/listPartials';
 import { handleLists } from './handlers/lists/lists';
@@ -85,7 +93,13 @@ import { handleUsers } from './handlers/users/users';
 import { deleteUnverifiedAccounts } from './handlers/users/usersDeletion';
 import { renderHTML } from './htmltools';
 import type { MFQueueMessage } from './interface';
-import { adminRequiredMiddleware, authCheckMiddleware, authRequiredMiddleware, stripeMiddleware } from './middlewares';
+import {
+    adminRequiredMiddleware,
+    authCheckMiddleware,
+    authRequiredMiddleware,
+    paidSubscriptionRequiredMiddleware,
+    stripeMiddleware,
+} from './middlewares';
 import { enqueueRegenerateRelatedCacheForAllItems, enqueueUpdateAllFeeds } from './queue';
 import { updateFeedIndex, updateFeedItemsIndex, updateItemIndex } from './search';
 import {
@@ -237,6 +251,10 @@ app.get('/users/:username', handleUsersSingle);
 app.post('/users/:username/follow', authRequiredMiddleware, handleUsersFollowPOST);
 app.post('/users/:username/unfollow', authRequiredMiddleware, handleUsersUnfollowPOST);
 
+app.get('/l/:username', handleLinkblog);
+app.post('/l/:username', paidSubscriptionRequiredMiddleware, handleLinkblogPOST);
+app.delete('/l/:username/:link_id', paidSubscriptionRequiredMiddleware, handleLinkblogDELETE);
+
 app.get('/about', async (c: Context) => c.html(renderHTML('About | minifeed', raw(about), c.get('USER_LOGGED_IN'))));
 app.get('/about/changelog', async (c: Context) =>
     c.html(renderHTML('Changelog | minifeed', raw(changelog), c.get('USER_LOGGED_IN'))),
@@ -338,10 +356,12 @@ export default {
             case '*/30 * * * *':
                 // Every 30 minutes
                 await enqueueUpdateAllFeeds(env);
+                await generateInitialRelatedFeeds(env);
                 break;
             case '0 * * * *':
                 // Every 1 hour
                 await deleteUnverifiedAccounts(env);
+                await regenerateRelatedFeeds(env);
                 break;
             case '0 0 * * *':
                 // Every midnight
