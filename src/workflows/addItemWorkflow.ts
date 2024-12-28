@@ -63,14 +63,18 @@ export class AddItemWorkflow extends WorkflowEntrypoint<Bindings, AddItemWorkflo
             }
 
             // new item, but maybe it already exists in the database by URL
+            const httpVariant = itemUrl.startsWith('https://') ? `https://${itemUrl.slice(8)}` : itemUrl;
+            const httpsVariant = itemUrl.startsWith('http://') ? `https://${itemUrl.slice(7)}` : itemUrl;
             const existingByURL = await this.env.DB.prepare(`
                             SELECT item_id
                             FROM items
-                            WHERE url = ? OR url = ? AND feed_id = ?
+                            WHERE url = ? OR url = ? OR url = ? OR url = ? AND feed_id = ?
                             `)
                 .bind(
                     itemUrl,
                     itemUrl.slice(0, -1), // to account for possible trailing slash
+                    httpVariant, // if incoming item is https, but we already stored it as http
+                    httpsVariant, // if incoming item is http, but we already stored it as https
                     feedId,
                 )
                 .first();
