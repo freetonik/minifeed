@@ -110,6 +110,10 @@ export const handleBlog = async (c: Context) => {
         }
     }
 
+    inner += `
+    <div class="flash">↑ These items are from RSS. Visit the blog itself at <strong><a href="${feedUrl}">${feedUrl}</a></strong> to find everything else and to appreciate author's digital home.</div>
+    `;
+
     let related_block = '';
     console.log(batch[2].results);
     if (batch[2].results?.length) {
@@ -131,10 +135,6 @@ export const handleBlog = async (c: Context) => {
         related_block += '</div></div>';
         inner += related_block;
     }
-
-    inner += `
-    <div class="flash">↑ These items are from RSS. Visit the blog itself at <strong><a href="${feedUrl}">${feedUrl}</a></strong> to find everything else and to appreciate author's digital home.</div>
-    `;
 
     let debug_info = '';
     if (c.get('USER_IS_ADMIN')) {
