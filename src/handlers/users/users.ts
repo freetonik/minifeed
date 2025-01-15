@@ -7,11 +7,8 @@ export async function handleUsers(c: Context) {
     const { results } = await c.env.DB.prepare(
         `SELECT DISTINCT users.* from users
         LEFT JOIN favorites ON favorites.user_id = users.user_id
-        LEFT JOIN item_lists ON item_lists.user_id = users.user_id
-        LEFT JOIN subscriptions ON subscriptions.user_id = users.user_id
         WHERE
             users.email_verified = 1
-            AND (item_lists.list_id IS NOT NULL OR favorites.favorite_id IS NOT NULL OR subscriptions.subscription_id IS NOT NULL)
         ORDER BY created ASC `,
     ).run();
 
