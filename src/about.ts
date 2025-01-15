@@ -43,22 +43,25 @@ export const about = `
 
     <h3>What are the plans for the future?</h3>
     <p>
-    Minifeed is currently in closed beta. I plan to open it up to the public by the end of 2024. Contact me via <a href="/feedback">feedback</a> if you want an invite code to participate in the public beta, or if you want to get notified when registrations open for everybody.
-    </p>
-
-    <p>
     The general plan is:
 
     <ol>
         <li>Grow the number of blogs from hundreds (today) to thousands</li>
         <li>Develop a way for users to discover new blogs based on their interests</li>
         <li>Keep the website minimal, lean, and fast</li>
+        <li>Find a sustainable model such as paid subscriptions and/or donations</li>
     </ol>
     </p>
 
     <p>
     Planned features are:
     <ol>
+        <li>Weekly email digest</li>
+        <li>Listen to articles (text-to-speech)</li>
+        <li>Full-text search of your favorites</li>
+        <li>Create your link blog</li>
+        <li>Reader view</li>
+        <li>OPML export</li>
         <li>Private notes for posts</li>
         <li>Automatic tagging and categorization of posts</li>
         <li>Comments and discussions</li>
@@ -78,7 +81,7 @@ export const about = `
 
     <h3>How do I know Minifeed will stay afloat?</h3>
     <p>
-    I have been building and using Minifeed since December 2023 (see <a href="/about/changelog">changelog</a>). I will launch it publicly by the end of 2024, allow paid subscriptions, and keep actively working on it for 1 year (until end of 2025). In December 2025 I will make a public announcement choosing between one of 3 options:
+    I have been building and using Minifeed since December 2023 (see <a href="/about/changelog">changelog</a>). Today, the registrations are open, and there is an optional paid subscription. I will actively work on Minifeed at least until the end of 2025. In December 2025 I will make a public announcement choosing between one of 3 options:
     <ol>
         <li>Given enough interest and support from users, continue to develop and maintain Minifeed for the long term.</li>
         <li>Given little, but not enough interest, run it for as long as the money lasts.</li>
