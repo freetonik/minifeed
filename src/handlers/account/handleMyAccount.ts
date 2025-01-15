@@ -47,17 +47,20 @@ export const handleMyAccount = async (c: Context) => {
     } else {
         subscriptionBlockInner = `
             <strong>
-                Subscribe to access cool features and support the development of Minifeed. $39 (€39) per year.
+                Support the development of Minifeed and access cool features in near future. $39 (€39) per year.
             </strong>
             Upcoming paid features include:
             <ul>
-            <li>Weekly email digest</li>
-            <li>Listen to articles (text-to-speech)</li>
-            <li>Full-text search of your favorites</li>
-            <li>Create your link blog</li>
-            <li>Reader view</li>
-            <li>OPML export</li>
+            <li>Weekly email digest †</li>
+            <li>Listen to articles (text-to-speech) †</li>
+            <li>Full-text search of your favorites †</li>
+            <li>Create your link blog *</li>
+            <li>Reader view *</li>
+            <li>OPML export *</li>
             </ul>
+
+            <i>* - beta testing in progress, available soon<br>
+            † - planned for spring 2025</i>
             <form class="util-mt-1" action="/account/billing/create-checkout-session" method="POST">
                 <button class="button success" type="submit" id="checkout-button">⚡ Subscribe</button>
             </form>
@@ -120,7 +123,7 @@ export const handleMyAccount = async (c: Context) => {
 
     </p>
     ${preferencesBlock}
-    ${c.get('USER_IS_ADMIN') ? subscriptionBlock : ''}
+    ${subscriptionBlock}
 
     ${list_of_lists}
     <p style="margin-top:2em; text-align:right;">
