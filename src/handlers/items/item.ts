@@ -177,7 +177,7 @@ export async function handleItem(c: Context) {
         listsBlock = `<span id="favorite"> <button class="button" title="Log in to add to list" disabled>⛬ list</button> </span>`;
         favoriteBlock = `<span id="favorite"> <button class="button" title="Log in to favorite" disabled> ☆ favorite </button> </span>`;
         subscriptionBlock = `<span id="subscription"> <button class="button" disabled title="Login to subscribe"> <span>subscribe</span> </button> </span>`;
-        readerViewBlock = `<span id="reader-view"> <button class="button" title="Login to view in reader view" disabled> ↗ reader view </button> </span>`;
+        readerViewBlock = `<span id="reader-view"> <button class="button" title="Login to view in reader view" disabled>≡ reader</button> </span>`;
     }
 
     let related_block = '';
