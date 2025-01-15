@@ -12,6 +12,10 @@ export const handleAdmin = async (c: Context) => {
         'SELECT * FROM feeds LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id ORDER BY feed_id ASC ',
     ).all();
     const feed_count = await c.env.DB.prepare('SELECT COUNT(feed_id) FROM feeds').all();
+    const users_count = await c.env.DB.prepare('SELECT COUNT(user_id) FROM users').all();
+    const users_count_verified = await c.env.DB.prepare(
+        'SELECT COUNT(user_id) FROM users where email_verified = 1',
+    ).all();
     const all_items_count = await c.env.DB.prepare('SELECT COUNT(item_id) FROM Items').all();
     const itemsSearchCollection = await getCollection(c.env);
     const feedsSearchCollection = await getCollection(c.env, c.env.TYPESENSE_FEEDS_COLLECTION);
@@ -64,6 +68,10 @@ export const handleAdmin = async (c: Context) => {
         <tr>
             <th>Metric</th>
             <th>Count</th>
+        </tr>
+        <tr>
+            <td>Users</td>
+            <td>${users_count_verified.results[0]['COUNT(user_id)']} / ${users_count.results[0]['COUNT(user_id)']}</td>
         </tr>
         <tr>
             <td>Feeds</td>
