@@ -108,11 +108,8 @@ export const handleBlog = async (c: Context) => {
                 item.description,
             );
         }
+        inner += `<div class="flash">↑ These items are from RSS. Visit the blog itself at <strong><a href="${feedUrl}">${feedUrl}</a></strong> to find everything else and to appreciate author's digital home.</div>`;
     }
-
-    inner += `
-    <div class="flash">↑ These items are from RSS. Visit the blog itself at <strong><a href="${feedUrl}">${feedUrl}</a></strong> to find everything else and to appreciate author's digital home.</div>
-    `;
 
     let related_block = '';
     console.log(batch[2].results);
