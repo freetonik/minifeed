@@ -50,9 +50,9 @@ max_batch_timeout = 5 # optional: defaults to 5 seconds
 
 [triggers]
 crons = [
-    "*/30 * * * *",
     "0 * * * *",
-    "0 0 * * *"
+    "0 */2 * * *",
+    "45 0 * * *"
 ]
 
 [observability]

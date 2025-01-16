@@ -353,18 +353,18 @@ export default {
 
     async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
         switch (event.cron) {
-            case '*/30 * * * *':
-                // Every 30 minutes
+            case '0 * * * *':
+                // Every hour
                 await enqueueUpdateAllFeeds(env);
                 await generateInitialRelatedFeeds(env);
                 break;
-            case '0 * * * *':
-                // Every 1 hour
+            case '0 */2 * * *':
+                // Every 2 hours
                 await deleteUnverifiedAccounts(env);
                 await regenerateRelatedFeeds(env);
                 break;
-            case '0 0 * * *':
-                // Every midnight
+            case '45 0 * * *':
+                // Every night at 00:45
                 await enqueueRegenerateRelatedCacheForAllItems(env);
                 break;
         }
