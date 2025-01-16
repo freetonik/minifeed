@@ -42,6 +42,9 @@ export async function addFeed(env: Bindings, url: string, verified = false) {
             const feed_sqid = feedIdToSqid(feed_id);
             await env.DB.prepare('UPDATE feeds SET feed_sqid = ? WHERE feed_id = ?').bind(feed_sqid, feed_id).run();
 
+            // enqueue feed indexing; the feed does not have a description yet
+            await enqueueIndexFeed(env, feed_id);
+
             if (r.entries) await enqueueUpdateFeed(env, feed_id);
 
             return RSSUrl;
