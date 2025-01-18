@@ -76,7 +76,7 @@ export async function handleItemReaderView(c: Context) {
         <h1>${item.item_title}</h1>
         <p>
         ← <a href="/items/${itemSqid}">back</a> |
-        from <a href="${item.feed_sqid}">${item.feed_title}</a> | ${post_date} | <a href="${item.item_url}" target="_blank">original ↗</a>
+        from <a href="${item.feed_sqid}">${item.feed_title}</a> | ${post_date} | <a href="${item.item_url}">original ↗</a>
         </p>
         <hr style="margin:2em 0;">
         ${contentBlock}

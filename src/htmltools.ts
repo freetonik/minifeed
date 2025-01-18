@@ -352,7 +352,7 @@ export const renderFeedSearchResult = (searchResult: FeedSearchResult) => {
         <strong><a href="${url}">${feed.title}</a></strong>
         <br>
         <small class="muted">
-            <a target="_blank" href=${feed.url}>${feed.url}</a> | <a target="_blank" href=${feed.rss_url}>RSS↗</a>
+            <a href=${feed.url}>${feed.url}</a> | <a href=${feed.rss_url}>RSS↗</a>
         </small>
     </div>
     `;

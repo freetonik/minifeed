@@ -92,7 +92,7 @@ export async function handleItem(c: Context) {
     let contentBlock = '';
 
     if (!item.description && !item.content_html) {
-        contentBlock = `<div class="flash" style="margin-top:1em;">This post cannot be viewed on Minifeed. <a href="${item.item_url}" target="_blank">↗ Open original</a></div>`;
+        contentBlock = `<div class="flash" style="margin-top:1em;">This post cannot be viewed on Minifeed. <a href="${item.item_url}">↗ Open original</a></div>`;
     } else {
         if (userLoggedIn && userPrefersFullPost) {
             contentBlock = item.content_html || item.description;
@@ -102,10 +102,10 @@ export async function handleItem(c: Context) {
             } catch {
                 contentBlock = item.description;
             }
-            contentBlock += `<div class="flash" style="margin-top:1em;">This page shows contents from RSS. <a href="${item.item_url}" target="_blank">↗ Open original to view full content</a></div>`;
+            contentBlock += `<div class="flash" style="margin-top:1em;">This page shows contents from RSS. <a href="${item.item_url}">↗ Open original to view full content</a></div>`;
         } else {
             // User is not logged in; description has tags stripped, no need to sanitize
-            contentBlock = `${item.description} <div class="flash" style="margin-top:1em;">This is a short summary. <strong><a class="no-color" href="${item.item_url}" target="_blank">↗ Open original to view full content</a></strong></div>`;
+            contentBlock = `${item.description} <div class="flash" style="margin-top:1em;">This is a short summary. <strong><a class="no-color" href="${item.item_url}">↗ Open original to view full content</a></strong></div>`;
         }
     }
 
@@ -203,7 +203,7 @@ export async function handleItem(c: Context) {
     <h1 style="margin-bottom: 0.25em;">${item.item_title} </h1>
 
     <div class="item-metadata">
-        from ${item.type} <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time> | <a href="${item.item_url}" target="_blank">↗&nbsp;original</a>
+        from ${item.type} <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a>, <time>${post_date}</time> | <a href="${item.item_url}">↗&nbsp;original</a>
     </div>
 
     <div class="item-actions">
