@@ -283,6 +283,7 @@ export const handleAdmin = async (c: Context) => {
 };
 
 export const handleDuplicateItems = async (c: Context) => {
+    const limit = c.req.query('limit') || 100;
     const duplicatesByURL = await c.env.DB.prepare(`
         SELECT item_id, item_sqid, items.title, feed_sqid, feeds.title as feed_title, items.pub_date
         FROM Items
@@ -292,20 +293,23 @@ export const handleDuplicateItems = async (c: Context) => {
             FROM Items
             GROUP BY url
             HAVING COUNT(*) > 1
+            LIMIT ?
         )
-        ORDER BY items.url`).all();
+        ORDER BY items.url`)
+        .bind(limit)
+        .all();
 
-    const duplicatesByTitle = await c.env.DB.prepare(`
-            SELECT item_id, item_sqid, items.title, feed_sqid, feeds.title as feed_title, items.pub_date
-            FROM Items
-            JOIN feeds on items.feed_id = feeds.feed_id
-            WHERE items.title IN (
-                SELECT items.title
-                FROM Items
-                GROUP BY title
-                HAVING COUNT(*) > 1
-            )
-            ORDER BY items.title`).all();
+    // const duplicatesByTitle = await c.env.DB.prepare(`
+    //         SELECT item_id, item_sqid, items.title, feed_sqid, feeds.title as feed_title, items.pub_date
+    //         FROM Items
+    //         JOIN feeds on items.feed_id = feeds.feed_id
+    //         WHERE items.title IN (
+    //             SELECT items.title
+    //             FROM Items
+    //             GROUP BY title
+    //             HAVING COUNT(*) > 1
+    //         )
+    //         ORDER BY items.title`).all();
 
     let inner = `<details class="borderbox">
     <summary>Duplicates by URL: ${duplicatesByURL.results.length}</summary>
@@ -322,21 +326,21 @@ export const handleDuplicateItems = async (c: Context) => {
     }
     inner += '</ol></details>';
 
-    inner += `
-    <details class="borderbox">
-    <summary>Duplicates by title: ${duplicatesByTitle.results.length}</summary>
-    <ol>`;
-    for (const item of duplicatesByTitle.results) {
-        inner += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
-            <br>
-            <a href="/blogs/${item.feed_sqid}">${item.feed_title}</a>
-            <br>
-            <code>${item.pub_date}</code> <br>
-            <code>${item.item_id}</code> → <code>${item.item_sqid}</code>
-            <br><br>
-            </li>`;
-    }
-    inner += '</ol></details><hr>';
+    // inner += `
+    // <details class="borderbox">
+    // <summary>Duplicates by title: ${duplicatesByTitle.results.length}</summary>
+    // <ol>`;
+    // for (const item of duplicatesByTitle.results) {
+    //     inner += `<li><a class="no-color no-underline" href="/items/${item.item_sqid}">${item.title}</a>
+    //         <br>
+    //         <a href="/blogs/${item.feed_sqid}">${item.feed_title}</a>
+    //         <br>
+    //         <code>${item.pub_date}</code> <br>
+    //         <code>${item.item_id}</code> → <code>${item.item_sqid}</code>
+    //         <br><br>
+    //         </li>`;
+    // }
+    // inner += '</ol></details><hr>';
 
     // ==========================================
     inner += '<h1>DUPLICATES (URL) PER FEED</h1>';
