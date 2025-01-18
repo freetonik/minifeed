@@ -355,16 +355,16 @@ export default {
         switch (event.cron) {
             case '0 * * * *':
                 // Every hour
-                await enqueueUpdateAllFeeds(env);
                 await generateInitialRelatedFeeds(env);
                 break;
             case '0 */2 * * *':
                 // Every 2 hours
-                await deleteUnverifiedAccounts(env);
-                await regenerateRelatedFeeds(env);
+                await enqueueUpdateAllFeeds(env);
                 break;
             case '45 0 * * *':
                 // Every night at 00:45
+                await deleteUnverifiedAccounts(env);
+                await regenerateRelatedFeeds(env);
                 await enqueueRegenerateRelatedCacheForAllItems(env);
                 break;
         }
