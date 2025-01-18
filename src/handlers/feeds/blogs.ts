@@ -26,7 +26,7 @@ export const handleBlogs = async (c: Context) => {
         FROM feeds
         LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
         LEFT JOIN subscriptions on feeds.feed_id = subscriptions.feed_id AND subscriptions.user_id = ?
-        WHERE feeds.type = 'blog' ${filtering}
+        WHERE feeds.type = 'blog' ${filtering} AND items_top_cache.content IS NOT NULL
         ORDER BY ${ordering}`)
         .bind(userId)
         .run();
