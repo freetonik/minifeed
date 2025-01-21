@@ -1,6 +1,11 @@
 export const changelog = `
     <h2>Changelog</h2>
 
+    <h3>1.2.0 (21.01.2025)</h3>
+    <ul>
+        <li>You can set your preferred section of the homepage (all, subscriptions, etc.) in <a href="/account">account settings</a>.</li>
+    </ul>
+
     <h3>1.1.0 (15.01.2025)</h3>
     <ul>
         <li>Link blog feature, closed testing.</li>

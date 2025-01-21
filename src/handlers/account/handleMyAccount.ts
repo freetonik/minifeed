@@ -71,13 +71,13 @@ export const handleMyAccount = async (c: Context) => {
             </form>
     `;
     }
-    const subscriptionBlock = `<div class="borderbox fancy-gradient-bg util-mt-1"> ${subscriptionBlockInner} </div>`;
+    const subscriptionBlock = `<div class="borderbox fancy-gradient-bg"> ${subscriptionBlockInner} </div>`;
 
     const prefersFullBlogPost = user.prefers_full_blog_post !== null ? user.prefers_full_blog_post : true;
     const preferredHomepageSubsection = user.default_homepage_subsection || 'all';
     const preferencesBlock = `
 
-    <div class="preferences-container borderbox" id="preferences">
+    <div class="preferences-container borderbox util-mt-1" id="preferences">
         <h4 class="util-mt-0 util-mb-0">Preferences</h4>
         <form action="/account/preferences" method="POST" id="preferences-form">
             <div class="form-section util-mb-1">
@@ -126,15 +126,11 @@ export const handleMyAccount = async (c: Context) => {
     <p>
         Username: ${username}<br>
         Profile: <a href="/users/${username}">${username}</a><br>
-
-    </p>
-
-    <p>
         Email: <code>${email}</code><br>
 
     </p>
-    ${preferencesBlock}
     ${subscriptionBlock}
+    ${preferencesBlock}
 
     ${list_of_lists}
     <p style="margin-top:2em; text-align:right;">
