@@ -3,7 +3,7 @@ import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { raw } from 'hono/html';
 import { sendEmail } from '../../email';
 import { renderHTML } from '../../htmltools';
-import { SubscriptionTier } from '../../interface';
+import { HomePageSubsectionPreference, SubscriptionTier } from '../../interface';
 import type { Bindings } from './../../bindings';
 
 export const handleMyAccount = async (c: Context) => {
@@ -179,7 +179,7 @@ export const handleMyAccountPreferencesPOST = async (c: Context) => {
     const body = await c.req.parseBody();
 
     let prefersFullBlogPost = 1;
-    // let defaultHomepageSubsection = 'all';
+    let defaultHomepageSubsection = 'all';
 
     switch (body['blog-post-view']) {
         case 'prefers-full-blog-post':
@@ -192,54 +192,32 @@ export const handleMyAccountPreferencesPOST = async (c: Context) => {
             throw new Error('Invalid blog post view preference');
     }
 
-    // switch (body['default-section']) {
-    //     case 'all':
-    //         defaultHomepageSubsection = 'all';
-    //         break;
-    //     case 'subscriptions':
-    //         defaultHomepageSubsection = 'subscriptions';
-    //         break;
-    //     case 'favorites':
-    //         defaultHomepageSubsection = 'favorites';
-    //         break;
-    //     case 'friendfeed':
-    //         defaultHomepageSubsection = 'friendfeed';
-    //         break;
-    //     default:
-    //         throw new Error('Invalid default section preference');
-    // }
+    switch (body['default-section']) {
+        case 'all':
+            defaultHomepageSubsection = HomePageSubsectionPreference.ALL;
+            break;
+        case 'subscriptions':
+            defaultHomepageSubsection = HomePageSubsectionPreference.SUBSCRIPTIONS;
+            break;
+        case 'favorites':
+            defaultHomepageSubsection = HomePageSubsectionPreference.FAVORITES;
+            break;
+        case 'friendfeed':
+            defaultHomepageSubsection = HomePageSubsectionPreference.FRIENDFEED;
+            break;
+        default:
+            throw new Error('Invalid default section preference');
+    }
 
     await c.env.DB.prepare(
-        `INSERT OR REPLACE INTO user_preferences (user_id, prefers_full_blog_post)
-        VALUES (?, ?)`,
+        `INSERT OR REPLACE INTO user_preferences (user_id, prefers_full_blog_post, default_homepage_subsection)
+        VALUES (?, ?, ?)`,
     )
-        .bind(c.get('USER_ID'), prefersFullBlogPost)
+        .bind(c.get('USER_ID'), prefersFullBlogPost, defaultHomepageSubsection)
         .run();
 
     return c.redirect('/account#preferences');
 };
-
-// export const handleResentVerificationEmailPOST = async (c: Context) => {
-//     const result = await c.env.DB.prepare(
-//         `SELECT verification_code, email, username
-//         FROM email_verifications
-//         JOIN users ON email_verifications.user_id = users.user_id
-//         WHERE email_verifications.user_id = ?`,
-//     )
-//         .bind(c.get('USER_ID'))
-//         .first();
-
-//     await send_email_verification_link(c.env, result.username, result.email, result.verification_code);
-
-//     return c.html(
-//         renderHTML(
-//             'Email verification | minifeed',
-//             raw(`<div class="flash flash-blue">Verification link is sent</div>`),
-//             true,
-//             '',
-//         ),
-//     );
-// };
 
 export const handleLogout = async (c: Context) => {
     const sessionKey = getCookie(c, 'minifeed_session');

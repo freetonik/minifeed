@@ -120,3 +120,10 @@ export enum SubscriptionTier {
     FREE = 0,
     PRO = 1,
 }
+
+export enum HomePageSubsectionPreference {
+    ALL = 'all',
+    SUBSCRIPTIONS = 'subscriptions',
+    FAVORITES = 'favorites',
+    FRIENDFEED = 'friendfeed',
+}

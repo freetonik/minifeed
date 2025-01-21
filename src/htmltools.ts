@@ -429,7 +429,7 @@ export const renderAddItemByURLForm = (url = '', urls = '', flash = '', blogTitl
 export const renderMySubsections = (active = 'all') => {
     return `
     <nav class="subsections">
-        <a href="/" class="no-color no-underline ${active === 'my' ? 'active bold' : ''}">all</a>
+        <a href="/all" class="no-color no-underline ${active === 'my' ? 'active bold' : ''}">all</a>
         <a href="/subscriptions" class="no-color no-underline ${active === 'subscriptions' ? 'active bold' : ''}">subscriptions</a>
         <a href="/favorites" class="no-color no-underline ${active === 'favorites' ? 'active bold' : ''}">favorites</a>
         <a href="/friendfeed" class="no-color no-underline ${active === 'friendfeed' ? 'active bold' : ''}">friendfeed</a>

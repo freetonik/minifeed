@@ -3,7 +3,7 @@ import { raw } from 'hono/html';
 import { renderHTML, renderItemShort, renderMySubsections } from '../../htmltools';
 
 // // MY HOME FEED: subs + favorites + friendfeed
-export const handleMy = async (c: Context) => {
+export const handleMyAll = async (c: Context) => {
     const user_id = c.get('USER_ID');
     if (!user_id) return c.redirect('/welcome');
 
@@ -14,29 +14,32 @@ export const handleMy = async (c: Context) => {
     const batch = await c.env.DB.batch([
         c.env.DB.prepare(
             `
-        SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
+        SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description, user_preferences.default_homepage_subsection
         FROM items
         JOIN subscriptions ON items.feed_id = subscriptions.feed_id
         JOIN feeds ON items.feed_id = feeds.feed_id
         LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
+        JOIN user_preferences on user_preferences.user_id = ${user_id}
         WHERE items.item_sqid IS NOT 0 AND subscriptions.user_id = ? AND feeds.type = 'blog'
 
         UNION
 
-        SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
+        SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description, user_preferences.default_homepage_subsection
         FROM items
         JOIN subscriptions ON items.feed_id = subscriptions.feed_id
         JOIN feeds ON items.feed_id = feeds.feed_id
         LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
         JOIN followings ON subscriptions.user_id = followings.followed_user_id
+        JOIN user_preferences on user_preferences.user_id = ${user_id}
         WHERE items.item_sqid IS NOT 0 AND followings.follower_user_id = ? AND feeds.type = 'blog'
 
         UNION
 
-        SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
+        SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description, user_preferences.default_homepage_subsection
         FROM items
         JOIN feeds ON items.feed_id = feeds.feed_id
         JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
+        JOIN user_preferences on user_preferences.user_id = ${user_id}
         WHERE items.item_sqid IS NOT 0 AND feeds.type = 'blog'
 
         ORDER BY items.pub_date DESC

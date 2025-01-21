@@ -75,7 +75,7 @@ import {
 } from './handlers/items/itemListActions';
 import { handleItemsLists } from './handlers/items/itemListPartial';
 import { handleItemReaderView } from './handlers/items/itemReaderView';
-import { handleMy } from './handlers/items/my';
+import { handleMyAll } from './handlers/items/my';
 import { handleMyFavorites } from './handlers/items/myFavorites';
 import { handleMyFriendfeed } from './handlers/items/myFriendfeed';
 import { handleMySubscriptions } from './handlers/items/mySubscriptions';
@@ -92,7 +92,7 @@ import { handleUsersFollowPOST, handleUsersUnfollowPOST } from './handlers/users
 import { handleUsers } from './handlers/users/users';
 import { deleteUnverifiedAccounts } from './handlers/users/usersDeletion';
 import { renderHTML } from './htmltools';
-import type { MFQueueMessage } from './interface';
+import { HomePageSubsectionPreference, type MFQueueMessage } from './interface';
 import {
     adminRequiredMiddleware,
     authCheckMiddleware,
@@ -141,10 +141,23 @@ app.notFound(handleNotFound);
 app.onError(handleError);
 
 // APP ROUTES
-app.get('/', (c: Context) => {
-    if (!c.get('USER_ID')) return c.redirect('/welcome');
-    return handleMy(c);
+app.get('/', async (c: Context) => {
+    const user_id = c.get('USER_ID');
+    const user = await c.env.DB.prepare('SELECT default_homepage_subsection FROM user_preferences WHERE user_id = ?')
+        .bind(user_id)
+        .first();
+    switch (user.default_homepage_subsection) {
+        case HomePageSubsectionPreference.SUBSCRIPTIONS:
+            return handleMySubscriptions(c);
+        case HomePageSubsectionPreference.FAVORITES:
+            return handleMyFavorites(c);
+        case HomePageSubsectionPreference.FRIENDFEED:
+            return handleMyFriendfeed(c);
+        default:
+            return handleMyAll(c);
+    }
 });
+app.get('/all', handleMyAll);
 
 // BACKWARDS COMPATIBILITY ROUTES
 app.get('/my', (c: Context) => c.redirect('/'));
