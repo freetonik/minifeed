@@ -279,7 +279,7 @@ export const handleLogin = async (c: Context) => {
     </div>
 
     `;
-    return c.html(renderHTML('Login or create account | minifeed', raw(list), false));
+    return c.html(renderHTML('Log in | minifeed', raw(list), false));
 };
 
 export const handleResetPassword = async (c: Context) => {
@@ -426,7 +426,7 @@ export const handleSignup = async (c: Context) => {
 
     </div>
     `;
-    return c.html(renderHTML('Login or create account | minifeed', raw(inner), false));
+    return c.html(renderHTML('Create account | minifeed', raw(inner), false));
 };
 
 export const handleLoginPOST = async (c: Context) => {
@@ -494,12 +494,6 @@ export const handleSignupPOST = async (c: Context) => {
     if (!outcome.success) {
         return c.text('Missing captcha token', 400);
     }
-
-    // const invitation_code = body.invitation_code.toString();
-
-    // if (invitation_code !== 'ARUEHW') throw new Error('Invalid invitation code');
-    // if (!checkUsername(username)) throw new Error('Invalid username');
-    // if (password.length < 8) throw new Error('Password too short');
 
     if (!checkUsername(username))
         throw new Error(
