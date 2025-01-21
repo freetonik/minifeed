@@ -30,6 +30,18 @@ export const handleMyAccount = async (c: Context) => {
         day: 'numeric',
     };
 
+    const features = `
+    <ul>
+        <li>Weekly email digest †</li>
+        <li>Listen to articles (text-to-speech) †</li>
+        <li>Full-text search of your favorites †</li>
+        <li>Create your link blog *</li>
+        <li>Reader view *</li>
+        <li>OPML export *</li>
+    </ul>
+
+    <i>* - beta testing in progress, available soon<br>
+    † - planned for spring 2025</i>`;
     let subscriptionBlockInner = '';
     if (hasSubscription) {
         const status = user.tier === SubscriptionTier.PRO ? 'Active' : 'Inactive';
@@ -39,6 +51,9 @@ export const handleMyAccount = async (c: Context) => {
         subscriptionBlockInner = `
         Subscription status: ${status}<br>
         Subscription expires: ${subscriptionExpires}
+        <br><br>
+        Features:
+        ${features}
 
         <form class="util-mt-1" method="POST" action="/account/billing/customer-portal">
         <button class="button" type="submit">📒 Manage billing</button>
@@ -50,17 +65,7 @@ export const handleMyAccount = async (c: Context) => {
                 Support the development of Minifeed and access cool features in near future. $39 (€39) per year.
             </strong>
             Upcoming paid features include:
-            <ul>
-            <li>Weekly email digest †</li>
-            <li>Listen to articles (text-to-speech) †</li>
-            <li>Full-text search of your favorites †</li>
-            <li>Create your link blog *</li>
-            <li>Reader view *</li>
-            <li>OPML export *</li>
-            </ul>
-
-            <i>* - beta testing in progress, available soon<br>
-            † - planned for spring 2025</i>
+            ${features}
             <form class="util-mt-1" action="/account/billing/create-checkout-session" method="POST">
                 <button class="button success" type="submit" id="checkout-button">⚡ Subscribe</button>
             </form>
@@ -69,29 +74,35 @@ export const handleMyAccount = async (c: Context) => {
     const subscriptionBlock = `<div class="borderbox fancy-gradient-bg util-mt-1"> ${subscriptionBlockInner} </div>`;
 
     const prefersFullBlogPost = user.prefers_full_blog_post !== null ? user.prefers_full_blog_post : true;
+    const preferredHomepageSubsection = user.default_homepage_subsection || 'all';
     const preferencesBlock = `
-    <h4>Preferences</h4>
+
     <div class="preferences-container borderbox" id="preferences">
+        <h4 class="util-mt-0 util-mb-0">Preferences</h4>
         <form action="/account/preferences" method="POST" id="preferences-form">
             <div class="form-section util-mb-1">
-                <h4 class="util-mt-0">Blog posts view</h4>
+                <span class="util-mr-05">Blog post view</span>
 
-                <div class="radio-group">
-                    <div class="radio-option">
-                        <input type="radio" id="prefers-full-blog-post" name="blog-post-view" value="prefers-full-blog-post" ${prefersFullBlogPost ? 'checked' : ''}>
-                        <label for="prefers-full-blog-post">Show blog posts in full (when available)</label>
-                    </div>
-                    <div class="radio-option">
-                        <input type="radio" id="prefers-short-blog-post" name="blog-post-view" value="prefers-short-blog-post" ${!prefersFullBlogPost ? 'checked' : ''}>
-                        <label for="prefers-short-blog-post">Show excerpts only</label>
-                    </div>
-                </div>
+                <select name="blog-post-view" id="blog-post-select">
+                    <option value="prefers-full-blog-post" ${prefersFullBlogPost ? 'selected' : ''}>Show blog posts in full (when available)</option>
+                    <option value="prefers-short-blog-post" ${!prefersFullBlogPost ? 'selected' : ''}>Show excerpt only</option>
+                </select>
+            </div>
+
+            <div class="form-section util-mb-2">
+                <span class="util-mr-05">Home page default section</span>
+
+                <select name="default-section" id="section-select">
+                    <option value="${HomePageSubsectionPreference.ALL}" ${preferredHomepageSubsection === 'all' ? 'selected' : ''}>All</option>
+                    <option value="${HomePageSubsectionPreference.SUBSCRIPTIONS}" ${preferredHomepageSubsection === 'subscriptions' ? 'selected' : ''}>Subscriptions</option>
+                    <option value="${HomePageSubsectionPreference.FAVORITES}" ${preferredHomepageSubsection === 'favorites' ? 'selected' : ''}>Favorites</option>
+                    <option value="${HomePageSubsectionPreference.FRIENDFEED}" ${preferredHomepageSubsection === 'friendfeed' ? 'selected' : ''}>Friendfeed</option>
+                </select>
             </div>
 
             <button class="button" type="submit">Save Preferences</button>
         </form>
     </div>
-
 `;
     let list_of_lists = '';
     const lists = await c.env.DB.prepare(
