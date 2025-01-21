@@ -143,10 +143,12 @@ app.onError(handleError);
 // APP ROUTES
 app.get('/', async (c: Context) => {
     const user_id = c.get('USER_ID');
+    if (!user_id) return c.redirect('/welcome');
     const user = await c.env.DB.prepare('SELECT default_homepage_subsection FROM user_preferences WHERE user_id = ?')
         .bind(user_id)
         .first();
-    switch (user.default_homepage_subsection) {
+    // if (!user) return handleMyAll(c);
+    switch (user?.default_homepage_subsection) {
         case HomePageSubsectionPreference.SUBSCRIPTIONS:
             return handleMySubscriptions(c);
         case HomePageSubsectionPreference.FAVORITES:
