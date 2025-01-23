@@ -7,7 +7,6 @@ export const handleHomeForGuest = async (c: Context) => {
         c.env.DB.prepare(`
             SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, items_top_cache.content from feeds
             LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
-            WHERE feeds.type = 'blog'
             ORDER BY RANDOM()
             LIMIT 6`),
 
@@ -15,7 +14,7 @@ export const handleHomeForGuest = async (c: Context) => {
             SELECT items.item_id, items.item_sqid, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title, feeds.feed_sqid, items.description
             FROM items
             JOIN feeds ON items.feed_id = feeds.feed_id
-            WHERE items.item_sqid IS NOT 0 AND feeds.type = 'blog'
+            WHERE items.item_sqid IS NOT 0
             ORDER BY items.pub_date DESC
             LIMIT 10`),
     ]);

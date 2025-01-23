@@ -17,7 +17,7 @@ export const handleBlogs = async (c: Context) => {
     else if (listingType === 'alphabetical') ordering = 'feeds.title';
     else if (listingType === 'subscribed') {
         if (!userLoggedIn) return c.redirect('/blogs');
-        filtering = 'AND subscriptions.subscription_id IS NOT NULL';
+        filtering = 'WHERE subscriptions.subscription_id IS NOT NULL';
         ordering = 'subscriptions.subscription_id DESC';
     } else return c.notFound();
 
@@ -26,7 +26,7 @@ export const handleBlogs = async (c: Context) => {
         FROM feeds
         LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
         LEFT JOIN subscriptions on feeds.feed_id = subscriptions.feed_id AND subscriptions.user_id = ?
-        WHERE feeds.type = 'blog' ${filtering} AND items_top_cache.content IS NOT NULL
+        ${filtering} AND items_top_cache.content IS NOT NULL
         ORDER BY ${ordering}`)
         .bind(userId)
         .run();

@@ -20,7 +20,7 @@ export const handleMyAll = async (c: Context) => {
         JOIN feeds ON items.feed_id = feeds.feed_id
         LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
         JOIN user_preferences on user_preferences.user_id = ${user_id}
-        WHERE items.item_sqid IS NOT 0 AND subscriptions.user_id = ? AND feeds.type = 'blog'
+        WHERE items.item_sqid IS NOT 0 AND subscriptions.user_id = ?
 
         UNION
 
@@ -31,7 +31,7 @@ export const handleMyAll = async (c: Context) => {
         LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
         JOIN followings ON subscriptions.user_id = followings.followed_user_id
         JOIN user_preferences on user_preferences.user_id = ${user_id}
-        WHERE items.item_sqid IS NOT 0 AND followings.follower_user_id = ? AND feeds.type = 'blog'
+        WHERE items.item_sqid IS NOT 0 AND followings.follower_user_id = ?
 
         UNION
 
@@ -40,7 +40,7 @@ export const handleMyAll = async (c: Context) => {
         JOIN feeds ON items.feed_id = feeds.feed_id
         JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
         JOIN user_preferences on user_preferences.user_id = ${user_id}
-        WHERE items.item_sqid IS NOT 0 AND feeds.type = 'blog'
+        WHERE items.item_sqid IS NOT 0
 
         ORDER BY items.pub_date DESC
 
@@ -50,7 +50,7 @@ export const handleMyAll = async (c: Context) => {
         c.env.DB.prepare(`
         SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, items_top_cache.content from feeds
         LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
-        WHERE feeds.type = 'blog'
+
         ORDER BY feeds.created DESC
         LIMIT 2`),
     ]);
@@ -113,7 +113,6 @@ export const handleMyAll = async (c: Context) => {
         const randomBlogs = await c.env.DB.prepare(`
             SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, items_top_cache.content from feeds
             LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
-            WHERE feeds.type = 'blog'
             ORDER BY RANDOM()
             LIMIT 8`).all();
 

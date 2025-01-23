@@ -44,7 +44,6 @@ export const handleMySubscriptions = async (c: Context) => {
         const randomBlogs = await c.env.DB.prepare(`
             SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, items_top_cache.content from feeds
             LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
-            WHERE feeds.type = 'blog'
             ORDER BY RANDOM()
             LIMIT 8`).all();
 

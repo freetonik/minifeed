@@ -8,7 +8,7 @@ export async function enqueueUpdateFeed(env: Bindings, feed_id: number) {
 
 // usually triggered by CRON
 export async function enqueueUpdateAllFeeds(env: Bindings) {
-    const { results: feeds } = await env.DB.prepare("SELECT feed_id FROM feeds WHERE type = 'blog'").all();
+    const { results: feeds } = await env.DB.prepare('SELECT feed_id FROM feeds').all();
     for (const feed of feeds) await enqueueUpdateFeed(env, feed.feed_id as number);
 }
 

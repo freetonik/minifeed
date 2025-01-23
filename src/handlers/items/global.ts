@@ -19,7 +19,7 @@ export const handleGlobal = async (c: Context) => {
         FROM items
         JOIN feeds ON items.feed_id = feeds.feed_id
         LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
-        WHERE items.item_sqid IS NOT 0 AND feeds.type = 'blog'
+        WHERE items.item_sqid IS NOT 0
         ORDER BY ${ordering}
         LIMIT ? OFFSET ?`,
     )
