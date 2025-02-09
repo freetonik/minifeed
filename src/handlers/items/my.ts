@@ -14,32 +14,32 @@ export const handleMyAll = async (c: Context) => {
     const batch = await c.env.DB.batch([
         c.env.DB.prepare(
             `
-        SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description, user_preferences.default_homepage_subsection
+        SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
         FROM items
         JOIN subscriptions ON items.feed_id = subscriptions.feed_id
         JOIN feeds ON items.feed_id = feeds.feed_id
         LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
-        JOIN user_preferences on user_preferences.user_id = ${user_id}
+
         WHERE items.item_sqid IS NOT 0 AND subscriptions.user_id = ?
 
         UNION
 
-        SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description, user_preferences.default_homepage_subsection
+        SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
         FROM items
         JOIN subscriptions ON items.feed_id = subscriptions.feed_id
         JOIN feeds ON items.feed_id = feeds.feed_id
         LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
         JOIN followings ON subscriptions.user_id = followings.followed_user_id
-        JOIN user_preferences on user_preferences.user_id = ${user_id}
+
         WHERE items.item_sqid IS NOT 0 AND followings.follower_user_id = ?
 
         UNION
 
-        SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description, user_preferences.default_homepage_subsection
+        SELECT items.item_sqid, items.title, items.url, items.pub_date, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
         FROM items
         JOIN feeds ON items.feed_id = feeds.feed_id
         JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
-        JOIN user_preferences on user_preferences.user_id = ${user_id}
+
         WHERE items.item_sqid IS NOT 0
 
         ORDER BY items.pub_date DESC
@@ -51,7 +51,7 @@ export const handleMyAll = async (c: Context) => {
         SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, items_top_cache.content from feeds
         LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
 
-        ORDER BY feeds.created DESC
+        ORDER BY feeds.feed_id
         LIMIT 2`),
     ]);
 
