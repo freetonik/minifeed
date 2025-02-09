@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { raw } from 'hono/html';
+import isEmail from 'validator/lib/isEmail';
 import { sendEmail } from '../../email';
 import { renderHTML } from '../../htmltools';
 import { HomePageSubsectionPreference, SubscriptionTier } from '../../interface';
@@ -305,7 +306,7 @@ export const handleResetPasswordPOST = async (c: Context) => {
     const email = body.email.toString().toLowerCase();
 
     if (!email) throw new Error('Email is required');
-    if (!checkEmail(email)) throw new Error('Invalid email');
+    if (!isEmail(email)) throw new Error('Invalid email');
 
     const existing_user = await c.env.DB.prepare('SELECT user_id, username, email FROM users WHERE email = ?')
         .bind(email)
@@ -474,7 +475,7 @@ export const handleSignupPOST = async (c: Context) => {
             'Invalid username. Please, use only letters, numbers, and underscores. Minimum 3 characters, maximum 16 characters.',
         );
     if (password.length < 8) throw new Error('Password too short. Minimum 8 characters.');
-    if (!checkEmail(email)) throw new Error('Invalid email');
+    if (!isEmail(email)) throw new Error('Invalid email');
 
     // Check if username already exists
     const existingUser = await c.env.DB.prepare('SELECT username FROM users WHERE username = ?')
@@ -635,8 +636,4 @@ export async function verifyPassword(hash: string, salt: string, passwordAttempt
 
 function checkUsername(username: string) {
     return /^[a-zA-Z0-9_]{3,16}$/.test(username);
-}
-
-function checkEmail(email: string) {
-    return /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email);
 }
