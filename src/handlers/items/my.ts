@@ -51,7 +51,7 @@ export const handleMyAll = async (c: Context) => {
         SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, items_top_cache.content from feeds
         LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
 
-        ORDER BY feeds.feed_id
+        ORDER BY feeds.feed_id DESC
         LIMIT 2`),
     ]);
 
