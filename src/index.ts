@@ -18,12 +18,7 @@ import { handleGenerateRelated, handleVectorize, vectorizeAndStoreItem } from '.
 import type { Bindings } from './bindings';
 import { changelog } from './changelog';
 import { handleFeedback, handleSuggestBlog } from './feedback';
-import {
-    generateInitialRelatedFeeds,
-    regenerateRelatedFeeds,
-    regenerateTopItemsCacheForFeed,
-    updateFeed,
-} from './feeds';
+import { regenerateTopItemsCacheForFeed, updateFeed } from './feeds';
 import {
     handleLogin,
     handleLoginPOST,
@@ -100,7 +95,7 @@ import {
     paidSubscriptionRequiredMiddleware,
     stripeMiddleware,
 } from './middlewares';
-import { enqueueRegenerateRelatedCacheForAllItems, enqueueUpdateAllFeeds } from './queue';
+import { enqueueUpdateAllFeeds } from './queue';
 import { updateFeedIndex, updateFeedItemsIndex, updateItemIndex } from './search';
 import {
     handleBillingCancel,
@@ -370,17 +365,17 @@ export default {
         switch (event.cron) {
             case '0 * * * *':
                 // Every hour
-                await generateInitialRelatedFeeds(env);
+                // await generateInitialRelatedFeeds(env);
                 break;
-            case '0 */2 * * *':
+            case '0 */12 * * *':
                 // Every 2 hours
                 await enqueueUpdateAllFeeds(env);
                 break;
             case '45 0 * * *':
                 // Every night at 00:45
                 await deleteUnverifiedAccounts(env);
-                await regenerateRelatedFeeds(env);
-                await enqueueRegenerateRelatedCacheForAllItems(env);
+                // await regenerateRelatedFeeds(env);
+                // await enqueueRegenerateRelatedCacheForAllItems(env);
                 break;
         }
     },
