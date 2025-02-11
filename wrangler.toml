@@ -62,9 +62,9 @@ enabled = true
 binding = "AI"
 
 [[workflows]]
-name = "add-item-workflow"
-binding = "ADD_ITEM_WORKFLOW"
-class_name = "AddItemWorkflow"
+name = "add-items-workflow"
+binding = "ADD_ITEMS_WORKFLOW"
+class_name = "AddItemsWorkflow"
 
 [[workflows]]
 name = "update-item-workflow"

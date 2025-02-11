@@ -104,7 +104,7 @@ import {
     handleStripeCustomerPortalPOST,
     handleStripeWebhook,
 } from './stripe';
-import { AddItemWorkflow } from './workflows/addItemWorkflow';
+import { AddItemsWorkflow } from './workflows/addItemsWorkflow';
 import { GenerateRelatedFeedsWorkflow } from './workflows/generateRelatedBlogs';
 import { UpdateItemWorkflow } from './workflows/updateItemWorkflow';
 
@@ -381,4 +381,4 @@ export default {
     },
 };
 
-export { AddItemWorkflow, GenerateRelatedFeedsWorkflow, UpdateItemWorkflow };
+export { AddItemsWorkflow, GenerateRelatedFeedsWorkflow, UpdateItemWorkflow };

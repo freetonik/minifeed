@@ -101,11 +101,9 @@ export async function updateFeed(env: Bindings, feedId: number) {
         });
 
         // TODO: replace with queue temporarily
-        for (const item of newItemsToBeAdded) {
-            await env.ADD_ITEM_WORKFLOW.create({
-                params: { item, feedId },
-            });
-        }
+        await env.ADD_ITEMS_WORKFLOW.create({
+            params: { newItemsToBeAdded, feedId },
+        });
         return;
     }
 
