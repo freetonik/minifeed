@@ -95,7 +95,6 @@ import {
     paidSubscriptionRequiredMiddleware,
     stripeMiddleware,
 } from './middlewares';
-import { enqueueUpdateAllFeeds } from './queue';
 import { updateFeedIndex, updateFeedItemsIndex, updateItemIndex } from './search';
 import {
     handleBillingCancel,
@@ -369,7 +368,7 @@ export default {
                 break;
             case '0 */12 * * *':
                 // Every 2 hours
-                await enqueueUpdateAllFeeds(env);
+                // await enqueueUpdateAllFeeds(env);
                 break;
             case '45 0 * * *':
                 // Every night at 00:45
