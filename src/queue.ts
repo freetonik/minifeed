@@ -17,6 +17,12 @@ export async function enqueueRebuildFeedTopItemsCache(env: Bindings, feed_id: nu
 }
 
 ///////////////////////////////
+// SCRAPING ///////////////////
+export async function enqueueItemScrape(env: Bindings, item_id: number) {
+    await env.FEED_UPDATE_QUEUE.send({ type: 'item_scrape', item_id });
+}
+
+///////////////////////////////
 // INDEXING ///////////////////
 export async function enqueueItemIndex(env: Bindings, item_id: number) {
     await env.FEED_UPDATE_QUEUE.send({ type: 'item_index', item_id });
@@ -37,7 +43,17 @@ export async function enqueueVectorizeStoreItem(env: Bindings, item_id: number) 
 }
 
 //////////////////////
+// RELATED FEEDS CACHE
+export async function enqueueRegenerateRelatedFeedsCache(env: Bindings, feed_id: number, delay = 0) {
+    await env.FEED_UPDATE_QUEUE.send({ type: 'feed_regenerate_related', feed_id }, { delaySeconds: delay });
+}
+
+//////////////////////
 // RELATED ITEMS CACHE
+export async function enqueueRegenerateRelatedCache(env: Bindings, item_id: number, delay = 0) {
+    await env.FEED_UPDATE_QUEUE.send({ type: 'item_regenerate_related', item_id }, { delaySeconds: delay });
+}
+
 export async function enqueueRegenerateRelatedCacheForAllItems(env: Bindings) {
     const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
     const { results: items } = await env.DB.prepare(

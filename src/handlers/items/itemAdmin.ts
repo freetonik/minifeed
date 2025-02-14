@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import type { Bindings } from '../../bindings';
 import { renderAddItemByURLForm, renderHTML } from '../../htmltools';
-import { deleteItem } from '../../items';
+import { addItem, deleteItem } from '../../items';
 import { scrapeURLIntoObject } from '../../scrape';
 import { dbGetItem } from '../../sqlutils';
 import { feedSqidToId, itemSqidToId } from '../../utils';
@@ -63,9 +63,7 @@ export const handleItemsAddItemByUrlPOST = async (c: Context) => {
             content_from_content: articleContent.HTMLcontent,
         };
 
-        await c.env.ADD_ITEM_WORKFLOW.create({
-            params: { item, feedId },
-        });
+        await addItem(c.env, item, feedId);
     }
 
     return c.redirect(`/blogs/${feedSqid}`);

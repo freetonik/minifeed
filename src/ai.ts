@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import type { Bindings } from './bindings';
 import type { FeedRow, ItemRow } from './interface';
-import { enqueueVectorizeStoreItem } from './queue';
+import { enqueueRegenerateRelatedCache, enqueueRegenerateRelatedFeedsCache, enqueueVectorizeStoreItem } from './queue';
 import { stripNonLinguisticElements, stripTags } from './utils';
 
 export interface EmbeddingResponse {
@@ -47,6 +47,7 @@ export const addVectorToDb = async (
 export const vectorizeAndStoreItem = async (env: Bindings, item_id: number) => {
     if (env.ENVIRONMENT === 'dev') {
         console.log('DEV MODE: Skipping vectorizeAndStoreItem');
+        await enqueueRegenerateRelatedCache(env, item_id);
         return;
     }
     // if item is already in vector store, skip
@@ -77,7 +78,7 @@ export const vectorizeAndStoreItem = async (env: Bindings, item_id: number) => {
     }
 
     const embeddings: EmbeddingResponse = await vectorize_text(env, `${contentBlock}`);
-    return await addVectorToDb(
+    await addVectorToDb(
         env,
         item.item_id,
         embeddings,
@@ -86,6 +87,8 @@ export const vectorizeAndStoreItem = async (env: Bindings, item_id: number) => {
             feed_id: item.feed_id, // metadata
         },
     );
+
+    await enqueueRegenerateRelatedCache(env, item_id, 60); // regenerate related items cache with delay in case vector db saving is slow
 };
 
 export const handleVectorize = async (c: Context) => {
@@ -148,9 +151,9 @@ export const handleGenerateRelated = async (c: Context) => {
 
         let response = '<ol>';
         for (const feed of feeds.results) {
-            const wf = await c.env.GENERATE_RELATED_FEEDS_WORKFLOW.create({ params: { feedId: feed.feed_id } });
+            await enqueueRegenerateRelatedFeedsCache(env, feed.feed_id as number);
             response += `<li>Generating related entries for feed <a href="/blogs/${feed.feed_sqid}">${feed.feed_id} ${feed.title}</a>
-            <a href="https://dash.cloudflare.com/${c.env.CF_ACCOUNT_ID}/workers/workflows/generate-related-feeds-workflow/instance/${wf.id}">[WORKFLOW]</a></li>
+            </li>
          `;
         }
         response += '</ol>';

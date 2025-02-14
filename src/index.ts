@@ -18,7 +18,13 @@ import { handleGenerateRelated, handleVectorize, vectorizeAndStoreItem } from '.
 import type { Bindings } from './bindings';
 import { changelog } from './changelog';
 import { handleFeedback, handleSuggestBlog } from './feedback';
-import { regenerateTopItemsCacheForFeed, updateFeed } from './feeds';
+import {
+    generateInitialRelatedFeeds,
+    generateRelatedFeedsFromRelatedItems,
+    regenerateRelatedFeeds,
+    regenerateTopItemsCacheForFeed,
+    updateFeed,
+} from './feeds';
 import {
     handleLogin,
     handleLoginPOST,
@@ -88,6 +94,7 @@ import { handleUsers } from './handlers/users/users';
 import { deleteUnverifiedAccounts } from './handlers/users/usersDeletion';
 import { renderHTML } from './htmltools';
 import { HomePageSubsectionPreference, type MFQueueMessage } from './interface';
+import { scrapeAndIndexItem } from './items';
 import {
     adminRequiredMiddleware,
     authCheckMiddleware,
@@ -95,6 +102,7 @@ import {
     paidSubscriptionRequiredMiddleware,
     stripeMiddleware,
 } from './middlewares';
+import { enqueueRegenerateRelatedCacheForAllItems } from './queue';
 import { updateFeedIndex, updateFeedItemsIndex, updateItemIndex } from './search';
 import {
     handleBillingCancel,
@@ -103,8 +111,6 @@ import {
     handleStripeCustomerPortalPOST,
     handleStripeWebhook,
 } from './stripe';
-import { AddItemWorkflow } from './workflows/addItemWorkflow';
-import { GenerateRelatedFeedsWorkflow } from './workflows/generateRelatedBlogs';
 import { UpdateItemWorkflow } from './workflows/updateItemWorkflow';
 
 // ————————————————————————————————————————————————————————————————>>>>
@@ -305,6 +311,12 @@ export default {
                     }
                     break;
 
+                case 'item_scrape':
+                    if (message.body.item_id) {
+                        await scrapeAndIndexItem(env, message.body.item_id);
+                    }
+                    break;
+
                 case 'feed_items_index':
                     if (message.body.feed_id) {
                         try {
@@ -341,6 +353,10 @@ export default {
                     }
                     break;
 
+                case 'feed_regenerate_related':
+                    if (message.body.feed_id) await generateRelatedFeedsFromRelatedItems(env, message.body.feed_id);
+                    break;
+
                 case 'item_regenerate_related':
                     if (message.body.item_id) await regenerateRelatedForItem(env, message.body.item_id);
                     break;
@@ -364,20 +380,17 @@ export default {
         switch (event.cron) {
             case '0 * * * *':
                 // Every hour
-                // await generateInitialRelatedFeeds(env);
-                break;
-            case '0 */12 * * *':
-                // Every 2 hours
+                await generateInitialRelatedFeeds(env);
                 // await enqueueUpdateAllFeeds(env);
                 break;
             case '45 0 * * *':
                 // Every night at 00:45
                 await deleteUnverifiedAccounts(env);
-                // await regenerateRelatedFeeds(env);
-                // await enqueueRegenerateRelatedCacheForAllItems(env);
+                await regenerateRelatedFeeds(env);
+                await enqueueRegenerateRelatedCacheForAllItems(env);
                 break;
         }
     },
 };
 
-export { AddItemWorkflow, GenerateRelatedFeedsWorkflow, UpdateItemWorkflow };
+export { UpdateItemWorkflow };

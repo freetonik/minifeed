@@ -6,6 +6,7 @@ import {
     enqueueIndexAllItemsOfFeed,
     enqueueIndexFeed,
     enqueueRebuildFeedTopItemsCache,
+    enqueueRegenerateRelatedFeedsCache,
     enqueueUpdateFeed,
 } from '../../queue';
 import { deleteFeedFromIndex } from '../../search';
@@ -120,6 +121,6 @@ export async function handleFeedsGlobalCacheRebuild(c: Context) {
 
 export async function handleFeedsRebuildRelatedFeeds(c: Context) {
     const feedId: number = feedSqidToId(c.req.param('feed_sqid'));
-    await c.env.GENERATE_RELATED_FEEDS_WORKFLOW.create({ params: { feedId } });
+    await enqueueRegenerateRelatedFeedsCache(c.env, feedId);
     return c.html('Feed related feeds rebuild enqueued...');
 }

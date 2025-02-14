@@ -51,7 +51,6 @@ max_batch_timeout = 5 # optional: defaults to 5 seconds
 [triggers]
 crons = [
     "0 * * * *",
-    "0 */2 * * *",
     "45 0 * * *"
 ]
 
@@ -62,16 +61,7 @@ enabled = true
 binding = "AI"
 
 [[workflows]]
-name = "add-item-workflow"
-binding = "ADD_ITEM_WORKFLOW"
-class_name = "AddItemWorkflow"
-
-[[workflows]]
 name = "update-item-workflow"
 binding = "UPDATE_ITEM_WORKFLOW"
 class_name = "UpdateItemWorkflow"
 
-[[workflows]]
-name = "generate-related-feeds-workflow"
-binding = "GENERATE_RELATED_FEEDS_WORKFLOW"
-class_name = "GenerateRelatedFeedsWorkflow"
