@@ -102,7 +102,7 @@ import {
     paidSubscriptionRequiredMiddleware,
     stripeMiddleware,
 } from './middlewares';
-import { enqueueRegenerateRelatedCacheForAllItems } from './queue';
+import { enqueueRegenerateRelatedCacheForAllItems, enqueueUpdateAllFeeds } from './queue';
 import { updateFeedIndex, updateFeedItemsIndex, updateItemIndex } from './search';
 import {
     handleBillingCancel,
@@ -381,7 +381,7 @@ export default {
             case '0 * * * *':
                 // Every hour
                 await generateInitialRelatedFeeds(env);
-                // await enqueueUpdateAllFeeds(env);
+                await enqueueUpdateAllFeeds(env);
                 break;
             case '45 0 * * *':
                 // Every night at 00:45
