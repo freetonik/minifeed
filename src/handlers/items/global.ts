@@ -1,43 +1,67 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
 import { renderGlobalSubsections, renderGuestFlash, renderHTML, renderItemShort } from '../../htmltools';
+import { regenerateListOfItemIds } from '../../items';
 
 export const handleGlobal = async (c: Context) => {
     const userId = c.get('USER_ID') || -1;
-    const items_per_page = 60;
+    const itemsPerPage = 60;
     const listingType = c.req.param('listingType') || 'newest';
+    const page = Number(c.req.query('p')) || 1;
+    const offset = page * itemsPerPage - itemsPerPage;
 
     let ordering = 'items.pub_date DESC';
-    if (listingType === 'random') ordering = 'RANDOM()';
-    else if (listingType === 'oldest') ordering = 'items.pub_date ASC';
+    if (listingType === 'oldest') ordering = 'items.pub_date ASC';
+    else if (listingType === 'random') ordering = 'RANDOM()';
 
-    const page = Number(c.req.query('p')) || 1;
-    const offset = page * items_per_page - items_per_page;
-    const { results, meta } = await c.env.DB.prepare(
-        `
-        SELECT items.item_id, items.item_sqid, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
-        FROM items
-        JOIN feeds ON items.feed_id = feeds.feed_id
-        LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
-        WHERE items.item_sqid IS NOT 0
-        ORDER BY ${ordering}
-        LIMIT ? OFFSET ?`,
-    )
-        .bind(userId, items_per_page + 1, offset)
-        .run();
+    let items = [];
+    let metaInfo = {};
+    if (listingType === 'oldest' || listingType === 'newest') {
+        const { results, meta } = await c.env.DB.prepare(
+            `
+            SELECT items.item_id, items.item_sqid, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
+            FROM items
+            JOIN feeds ON items.feed_id = feeds.feed_id
+            LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
+            WHERE items.item_sqid IS NOT 0
+            ORDER BY ${ordering}
+            LIMIT ? OFFSET ?`,
+        )
+            .bind(userId, itemsPerPage + 1, offset)
+            .run();
+        items = results;
+        metaInfo = meta;
+    } else if (listingType === 'random') {
+        // get ids from UTILITY_LISTS_KV
+        let itemIds = await c.env.UTILITY_LISTS_KV.get('all_item_ids', 'json');
+        if (!itemIds) itemIds = await regenerateListOfItemIds(c.env);
 
-    let list = '';
-    if (!c.get('USER_LOGGED_IN')) {
-        list += renderGuestFlash;
+        // get 60 random elements from itemIds
+        // const randomItemIds = itemIds ? JSON.parse(itemIds) : [];
+        const shuffledItemIds = itemIds.sort(() => 0.5 - Math.random());
+        const selectedItemIds = shuffledItemIds.slice(0, itemsPerPage + 1);
+        const { results, meta } = await c.env.DB.prepare(
+            `
+            SELECT items.item_id, items.item_sqid, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
+            FROM items
+            JOIN feeds ON items.feed_id = feeds.feed_id
+            LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
+            WHERE items.item_id IN (${selectedItemIds.map(() => '?').join(',')})`,
+        )
+            .bind(userId, ...selectedItemIds)
+            .run();
+
+        items = results;
+        metaInfo = meta;
     }
 
-    if (!results.length) list += '<p><i>Nothing exists on minifeed yet...</i></p>';
-
+    let list = '';
+    if (!c.get('USER_LOGGED_IN')) list += renderGuestFlash;
     list += renderGlobalSubsections(listingType);
 
     if (listingType === 'newest' || listingType === 'random') {
-        for (let i = 0; i < results.length - 1; i++) {
-            const item = results[i];
+        for (let i = 0; i < items.length - 1; i++) {
+            const item = items[i];
             const itemTitle = item.favorite_id ? `★ ${item.item_title}` : item.item_title;
 
             list += renderItemShort(
@@ -53,8 +77,8 @@ export const handleGlobal = async (c: Context) => {
     }
 
     if (listingType === 'oldest') {
-        for (let i = results.length - 1; i > 0; i--) {
-            const item = results[i];
+        for (let i = items.length - 1; i > 0; i--) {
+            const item = items[i];
             const itemTitle = item.favorite_id ? `★ ${item.item_title}` : item.item_title;
 
             list += renderItemShort(
@@ -69,7 +93,8 @@ export const handleGlobal = async (c: Context) => {
         }
     }
 
-    if (listingType !== 'random' && results.length > items_per_page) list += `<a href="?p=${page + 1}">More...</a></p>`;
+    if (listingType !== 'random' && items.length > itemsPerPage) list += `<a href="?p=${page + 1}">More...</a></p>`;
+
     return c.html(
         renderHTML(
             'Global feed | minifeed',
@@ -78,7 +103,7 @@ export const handleGlobal = async (c: Context) => {
             'global',
             '',
             '',
-            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
+            c.get('USER_IS_ADMIN') ? `${metaInfo.duration} ms., ${metaInfo.rows_read} rows read` : '',
         ),
     );
 };

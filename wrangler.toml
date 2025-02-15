@@ -39,6 +39,11 @@ binding = "BLACKLIST_URLS"
 id = "4c3cac7167054313a999183ef70990aa"
 preview_id = "67ff4ad3c3324e0ab81c64c30ffb17d1"
 
+[[kv_namespaces]]
+binding = "UTILITY_LISTS_KV"
+id = "190960e63bb8483aa43515905fe7f914"
+preview_id = "0d7771cd83bf4a0f987dcaa40e8dcce2"
+
 [[queues.producers]]
 queue = "feed-update"
 binding = "FEED_UPDATE_QUEUE"

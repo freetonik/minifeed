@@ -9,6 +9,7 @@ export type Bindings = {
 
     SESSIONS_KV: KVNamespace;
     BLACKLIST_URLS: KVNamespace;
+    UTILITY_LISTS_KV: KVNamespace;
 
     TYPESENSE_API_KEY: string;
     TYPESENSE_API_KEY_SEARCH: string;

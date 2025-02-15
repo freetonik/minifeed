@@ -142,20 +142,26 @@ export async function addItem(env: Bindings, item: FeedEntry, feedId: number) {
         .bind(feedId, itemTitle, itemUrl, itemPubDate, itemDescription, itemContentHTML)
         .run();
 
-    const itemSqid = itemIdToSqid(insertedItems.meta.last_row_id);
-    await env.DB.prepare('UPDATE items SET item_sqid = ? WHERE item_id = ?')
-        .bind(itemSqid, insertedItems.meta.last_row_id)
-        .run();
+    const itemId = insertedItems.meta.last_row_id as number;
+    const itemSqid = itemIdToSqid(itemId);
+    await env.DB.prepare('UPDATE items SET item_sqid = ? WHERE item_id = ?').bind(itemSqid, itemId).run();
+
+    const itemIds = await env.UTILITY_LISTS_KV.get('all_item_ids', 'json');
+    // add itemId to itemIds list if it's not already there
+    if (itemIds.indexOf(itemId) === -1) {
+        itemIds.push(itemId);
+        await env.UTILITY_LISTS_KV.put('all_item_ids', JSON.stringify(itemIds));
+    }
 
     console.log({
         message: 'New item added',
-        itemId: insertedItems.meta.last_row_id,
+        itemId: itemId,
         item_sqid: itemSqid,
         url: itemUrl,
         feedId: feedId,
     });
 
-    return insertedItems.meta.last_row_id;
+    return itemId;
 }
 
 export async function refreshItemsMissingRelated(env: Bindings) {
@@ -190,4 +196,12 @@ export async function refreshItemsMissingVector(env: Bindings) {
         });
         await enqueueVectorizeStoreItem(env, item.item_id as number);
     }
+}
+
+export async function regenerateListOfItemIds(env: Bindings) {
+    // TODO: when number of items grows beyond 30-50k — limit to 10-20k items, select via RANDOM()
+    const items = await env.DB.prepare('SELECT item_id FROM items WHERE item_sqid != 0').all();
+    const itemIds = items.results.map((item) => item.item_id);
+    await env.UTILITY_LISTS_KV.put('all_item_ids', JSON.stringify(itemIds));
+    return itemIds;
 }

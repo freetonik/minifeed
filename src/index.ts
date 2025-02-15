@@ -94,7 +94,12 @@ import { handleUsers } from './handlers/users/users';
 import { deleteUnverifiedAccounts } from './handlers/users/usersDeletion';
 import { renderHTML } from './htmltools';
 import { HomePageSubsectionPreference, type MFQueueMessage } from './interface';
-import { refreshItemsMissingRelated, refreshItemsMissingVector, scrapeIndexVectorizeItem } from './items';
+import {
+    refreshItemsMissingRelated,
+    refreshItemsMissingVector,
+    regenerateListOfItemIds,
+    scrapeIndexVectorizeItem,
+} from './items';
 import {
     adminRequiredMiddleware,
     authCheckMiddleware,
@@ -387,6 +392,7 @@ export default {
                 await deleteUnverifiedAccounts(env);
                 await regenerateRelatedFeeds(env);
                 await enqueueRegenerateRelatedCacheForAllItems(env);
+                await regenerateListOfItemIds(env); // used for random feed
                 break;
         }
     },

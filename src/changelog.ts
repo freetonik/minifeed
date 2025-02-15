@@ -1,6 +1,11 @@
 export const changelog = `
     <h2>Changelog</h2>
 
+    <h3>1.2.1 (15.02.2025)</h3>
+    <ul>
+        <li>Speed up the loading of global listings by roughly 10x.</li>
+    </ul>
+
     <h3>1.2.0 (21.01.2025)</h3>
     <ul>
         <li>You can set your preferred section of the homepage (all, subscriptions, etc.) in <a href="/account">account settings</a>.</li>
