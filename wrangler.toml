@@ -43,10 +43,35 @@ preview_id = "67ff4ad3c3324e0ab81c64c30ffb17d1"
 queue = "feed-update"
 binding = "FEED_UPDATE_QUEUE"
 
+[[queues.producers]]
+queue = "item-vectorize"
+binding = "ITEM_VECTORIZE_QUEUE"
+
+[[queues.producers]]
+queue = "item-scrape"
+binding = "ITEM_SCRAPE_QUEUE"
+
+[[queues.producers]]
+queue = "search-index"
+binding = "SEARCH_INDEX_QUEUE"
+
+
 [[queues.consumers]]
 queue = "feed-update"
 max_batch_size = 1    # optional: defaults to 10
 max_batch_timeout = 5 # optional: defaults to 5 seconds
+
+[[queues.consumers]]
+queue = "item-vectorize"
+max_batch_size = 1    # optional: defaults to 10
+
+[[queues.consumers]]
+queue = "item-scrape"
+max_batch_size = 1    # optional: defaults to 10
+
+[[queues.consumers]]
+queue = "search-index"
+max_batch_size = 1    # optional: defaults to 10
 
 [triggers]
 crons = [
@@ -59,9 +84,3 @@ enabled = true
 
 [ai]
 binding = "AI"
-
-[[workflows]]
-name = "update-item-workflow"
-binding = "UPDATE_ITEM_WORKFLOW"
-class_name = "UpdateItemWorkflow"
-

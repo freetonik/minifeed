@@ -1,7 +1,12 @@
 export type Bindings = {
     DB: D1Database;
     ASSETS: R2Bucket;
+
     FEED_UPDATE_QUEUE: Queue;
+    ITEM_VECTORIZE_QUEUE: Queue;
+    ITEM_SCRAPE_QUEUE: Queue;
+    SEARCH_INDEX_QUEUE: Queue;
+
     SESSIONS_KV: KVNamespace;
     BLACKLIST_URLS: KVNamespace;
 
@@ -19,6 +24,4 @@ export type Bindings = {
 
     VECTORIZE: Vectorize;
     AI: Ai;
-
-    UPDATE_ITEM_WORKFLOW: Workflow;
 };

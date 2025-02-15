@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import type { Bindings } from '../../bindings';
 import { renderAddItemByURLForm, renderHTML } from '../../htmltools';
-import { addItem, deleteItem } from '../../items';
+import { addItem, deleteItem, scrapeIndexVectorizeItem } from '../../items';
 import { scrapeURLIntoObject } from '../../scrape';
 import { dbGetItem } from '../../sqlutils';
 import { feedSqidToId, itemSqidToId } from '../../utils';
@@ -72,10 +72,8 @@ export const handleItemsAddItemByUrlPOST = async (c: Context) => {
 export const handleItemRefresh = async (c: Context) => {
     const itemSqid = c.req.param('item_sqid');
     const itemId = itemSqidToId(itemSqid);
-    const wf = await c.env.UPDATE_ITEM_WORKFLOW.create({ params: { itemId } });
-    return c.html(`
-        <a href="https://dash.cloudflare.com/${c.env.CF_ACCOUNT_ID}/workers/workflows/update-item-workflow/instance/${wf.id}">WORKFLOW STARTED</a>
-        `);
+    await scrapeIndexVectorizeItem(c.env, itemId);
+    return c.html('Enqueued...');
 };
 
 export async function handleRegenerateRelatedItemsNew(c: Context) {

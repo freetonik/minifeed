@@ -2,9 +2,9 @@ import type { FeedEntry } from '@extractus/feed-extractor';
 import type { Bindings } from './bindings';
 import { regenerateTopItemsCacheForFeed } from './feeds';
 import type { ItemRow } from './interface';
-import { enqueueVectorizeStoreItem } from './queue';
+import { enqueueItemIndex, enqueueRegenerateRelatedCache, enqueueVectorizeStoreItem } from './queue';
 import { scrapeURLIntoObject } from './scrape';
-import { deleteItemFromIndex, updateItemIndex } from './search';
+import { deleteItemFromIndex } from './search';
 import {
     extractItemUrl,
     getItemPubDate,
@@ -46,33 +46,34 @@ export async function deleteItem(env: Bindings, itemId: number, blacklist = fals
     return false;
 }
 
-export async function scrapeAndIndexItem(env: Bindings, itemId: number) {
+export async function scrapeIndexVectorizeItem(env: Bindings, itemId: number, skipScrape = false) {
     const item = await env.DB.prepare('SELECT url, description FROM items WHERE item_id = ?')
         .bind(itemId)
         .first<ItemRow>();
     if (!item) return;
 
     let textContent = undefined;
-    try {
-        const scrapedArticle = await scrapeURLIntoObject(item.url);
-        let newItemDescription = item.description;
-        if (!newItemDescription || newItemDescription.length < 5) newItemDescription = scrapedArticle.description;
+    if (!skipScrape) {
+        try {
+            const scrapedArticle = await scrapeURLIntoObject(item.url);
+            let newItemDescription = item.description;
+            if (!newItemDescription || newItemDescription.length < 5) newItemDescription = scrapedArticle.description;
 
-        await env.DB.prepare('UPDATE items SET content_html_scraped = ?, description = ? WHERE item_id = ?')
-            .bind(scrapedArticle.HTMLcontent, newItemDescription, itemId)
-            .run();
+            await env.DB.prepare('UPDATE items SET content_html_scraped = ?, description = ? WHERE item_id = ?')
+                .bind(scrapedArticle.HTMLcontent, newItemDescription, itemId)
+                .run();
 
-        textContent = scrapedArticle.textContent;
-    } catch (e) {
-        console.log({
-            message: `Scrape failed: ${e}`,
-            itemId: item?.item_id,
-            url: item?.url,
-        });
+            textContent = scrapedArticle.textContent;
+        } catch (e) {
+            console.log({
+                message: `Scrape failed: ${e}`,
+                itemId: item?.item_id,
+                url: item?.url,
+            });
+        }
     }
-
     // update search index if we have text content
-    if (textContent) await updateItemIndex(env, itemId, textContent);
+    if (textContent) await enqueueItemIndex(env, itemId);
 
     // vectorize; even if scraping failed, we still want to vectorize since we were waiting for scraping
     await enqueueVectorizeStoreItem(env, itemId);
@@ -155,4 +156,38 @@ export async function addItem(env: Bindings, item: FeedEntry, feedId: number) {
     });
 
     return insertedItems.meta.last_row_id;
+}
+
+export async function refreshItemsMissingRelated(env: Bindings) {
+    const items = await env.DB.prepare(`
+        SELECT items.item_id, items.item_sqid
+        FROM items_vector_relation
+        LEFT JOIN related_items on items_vector_relation.item_id = related_items.item_id
+        JOIN items on items.item_id = items_vector_relation.item_id
+        WHERE related_items.item_id IS NULL LIMIT 1000
+        `).all();
+    for (const item of items.results) {
+        console.log({
+            message: 'Enqueuing regenerating related items',
+            itemId: item.item_id,
+            itemSqid: item.item_sqid,
+        });
+        await enqueueRegenerateRelatedCache(env, item.item_id as number); // regenerate related items cache with delay in case vector db saving is slow
+    }
+}
+
+export async function refreshItemsMissingVector(env: Bindings) {
+    const items = await env.DB.prepare(`
+        SELECT item_id, item_sqid
+        FROM items
+        WHERE item_id NOT IN (SELECT item_id FROM items_vector_relation) LIMIT 1000
+        `).all();
+    for (const item of items.results) {
+        console.log({
+            message: 'Enqueuing vectorizing item',
+            itemId: item.item_id,
+            itemSqid: item.item_sqid,
+        });
+        await enqueueVectorizeStoreItem(env, item.item_id as number);
+    }
 }

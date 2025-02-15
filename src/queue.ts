@@ -19,13 +19,13 @@ export async function enqueueRebuildFeedTopItemsCache(env: Bindings, feed_id: nu
 ///////////////////////////////
 // SCRAPING ///////////////////
 export async function enqueueItemScrape(env: Bindings, item_id: number) {
-    await env.FEED_UPDATE_QUEUE.send({ type: 'item_scrape', item_id });
+    await env.ITEM_SCRAPE_QUEUE.send({ type: 'item_scrape', item_id });
 }
 
 ///////////////////////////////
 // INDEXING ///////////////////
 export async function enqueueItemIndex(env: Bindings, item_id: number) {
-    await env.FEED_UPDATE_QUEUE.send({ type: 'item_index', item_id });
+    await env.SEARCH_INDEX_QUEUE.send({ type: 'item_index', item_id });
 }
 
 export async function enqueueIndexAllItemsOfFeed(env: Bindings, feed_id: number) {
@@ -39,7 +39,7 @@ export async function enqueueIndexFeed(env: Bindings, feed_id: number) {
 ///////////////////////////////
 // VECTORIZING/////////////////
 export async function enqueueVectorizeStoreItem(env: Bindings, item_id: number) {
-    await env.FEED_UPDATE_QUEUE.send({ type: 'item_vectorize_store', item_id });
+    await env.ITEM_VECTORIZE_QUEUE.send({ type: 'item_vectorize_store', item_id });
 }
 
 //////////////////////

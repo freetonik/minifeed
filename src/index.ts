@@ -94,7 +94,7 @@ import { handleUsers } from './handlers/users/users';
 import { deleteUnverifiedAccounts } from './handlers/users/usersDeletion';
 import { renderHTML } from './htmltools';
 import { HomePageSubsectionPreference, type MFQueueMessage } from './interface';
-import { scrapeAndIndexItem } from './items';
+import { refreshItemsMissingRelated, refreshItemsMissingVector, scrapeIndexVectorizeItem } from './items';
 import {
     adminRequiredMiddleware,
     authCheckMiddleware,
@@ -111,7 +111,6 @@ import {
     handleStripeCustomerPortalPOST,
     handleStripeWebhook,
 } from './stripe';
-import { UpdateItemWorkflow } from './workflows/updateItemWorkflow';
 
 // ————————————————————————————————————————————————————————————————>>>>
 
@@ -284,7 +283,7 @@ export default {
     fetch: app.fetch, // normal processing of requests
 
     async queue(batch: MessageBatch<MFQueueMessage>, env: Bindings) {
-        // consumer of queue FEED_UPDATE_QUEUE
+        // consumer of queues FEED_UPDATE_QUEUE, ITEM_VECTORIZE_QUEUE
         for (const message of batch.messages) {
             switch (message.body.type) {
                 case 'feed_update':
@@ -312,9 +311,7 @@ export default {
                     break;
 
                 case 'item_scrape':
-                    if (message.body.item_id) {
-                        await scrapeAndIndexItem(env, message.body.item_id);
-                    }
+                    if (message.body.item_id) await scrapeIndexVectorizeItem(env, message.body.item_id);
                     break;
 
                 case 'feed_items_index':
@@ -382,6 +379,8 @@ export default {
                 // Every hour
                 await generateInitialRelatedFeeds(env);
                 await enqueueUpdateAllFeeds(env);
+                await refreshItemsMissingRelated(env);
+                await refreshItemsMissingVector(env);
                 break;
             case '45 0 * * *':
                 // Every night at 00:45
@@ -392,5 +391,3 @@ export default {
         }
     },
 };
-
-export { UpdateItemWorkflow };
