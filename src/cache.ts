@@ -24,7 +24,7 @@ export async function cacheResponse(cacheKeyPattern: string, html: string): Prom
         const cacheResponse = new Response(html, {
             headers: {
                 'Content-Type': 'text/html;charset=UTF-8',
-                'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+                'Cache-Control': 'public, s-max-age=3600', // Cache for 1 hour
             },
         });
         await cache.put(cacheKey, cacheResponse);
