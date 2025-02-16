@@ -4,6 +4,7 @@ export const changelog = `
     <h3>1.2.1 (15.02.2025)</h3>
     <ul>
         <li>Speed up the loading of global listings by roughly 10x.</li>
+        <li>Cache large pages (e.g. blogs) for better performance.</li>
     </ul>
 
     <h3>1.2.0 (21.01.2025)</h3>

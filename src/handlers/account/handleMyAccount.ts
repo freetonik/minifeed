@@ -7,7 +7,12 @@ import { renderHTML } from '../../htmltools';
 import { HomePageSubsectionPreference, SubscriptionTier } from '../../interface';
 import type { Bindings } from './../../bindings';
 
-export function renderSubscriptionBlock(hasSubscription: boolean, userTier?: SubscriptionTier, userExpires?: string) {
+export function renderSubscriptionBlock(
+    hasSubscription: boolean,
+    userTier?: SubscriptionTier,
+    userExpires?: string,
+    guest = false,
+) {
     const date_format_opts: Intl.DateTimeFormatOptions = {
         year: 'numeric',
         month: 'short',
@@ -43,15 +48,25 @@ export function renderSubscriptionBlock(hasSubscription: boolean, userTier?: Sub
         </form>
         `;
     } else {
+        let button = '';
+        if (guest) {
+            button = `
+            <div>
+                <a href='/signup' class="util-mt-1 button success">⚡ Sign up for free and upgrade later</a>
+            </div>`;
+        } else {
+            button = `
+            <form class="util-mt-1" action="/account/billing/create-checkout-session" method="POST">
+                <button class="button success" type="submit" id="checkout-button">⚡ Subscribe</button>
+            </form>`;
+        }
         subscriptionBlockInner = `
             <strong>
                 Support the development of Minifeed and access cool features in near future. $39 (€39) per year.
             </strong>
             Upcoming paid features include:
             ${features}
-            <form class="util-mt-1" action="/account/billing/create-checkout-session" method="POST">
-                <button class="button success" type="submit" id="checkout-button">⚡ Subscribe</button>
-            </form>
+            ${button}
     `;
     }
     return `<div class="borderbox fancy-gradient-bg"> ${subscriptionBlockInner} </div>`;
