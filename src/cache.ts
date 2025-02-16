@@ -1,8 +1,7 @@
 export async function getCachedResponse(cacheKeyPattern: string): Promise<Response | undefined> {
-    const cacheKey = new Request(cacheKeyPattern);
-    const cache = caches.default;
-
     try {
+        const cacheKey = new Request(cacheKeyPattern);
+        const cache = caches.default;
         const cachedResponse = await cache.match(cacheKey);
         if (cachedResponse) {
             return new Response(cachedResponse.body, {
@@ -17,19 +16,18 @@ export async function getCachedResponse(cacheKeyPattern: string): Promise<Respon
     }
 }
 
-export async function cacheResponse(cacheKeyPattern: string, html: string): Promise<void> {
+export async function cacheResponse(cacheKeyPattern: string, html: string, sMaxAgeSeconds = 3600): Promise<void> {
     try {
         const cacheKey = new Request(cacheKeyPattern);
         const cache = caches.default;
         const cacheResponse = new Response(html, {
             headers: {
                 'Content-Type': 'text/html;charset=UTF-8',
-                'Cache-Control': 'public, s-max-age=3600', // Cache for 1 hour
+                'Cache-Control': `public, s-max-age=${sMaxAgeSeconds}`,
             },
         });
         await cache.put(cacheKey, cacheResponse);
     } catch (error) {
-        // Log cache error but continue with normal response
         console.error('Cache storage error:', error);
     }
 }
