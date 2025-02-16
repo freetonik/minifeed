@@ -120,16 +120,20 @@ export const regenerateRelatedForItem = async (env: Bindings, itemId: number) =>
 
     // delete existing related items first
     await env.DB.prepare('DELETE FROM related_items WHERE item_id = ?').bind(itemId).run();
+
     // insert new related items
     const stmt = env.DB.prepare('INSERT INTO related_items (item_id, related_item_id) values (?, ?)');
     const binds: D1PreparedStatement[] = [];
     for (const relateItemId of relatedItemIds) {
         binds.push(stmt.bind(itemId, relateItemId));
     }
-    await env.DB.batch(binds);
-    console.log({
-        message: 'Regenerated cache for item',
-        itemId,
-    });
+
+    if (binds.length > 0) {
+        await env.DB.batch(binds);
+        console.log({
+            message: 'Regenerated cache for item',
+            itemId,
+        });
+    }
     return true;
 };
