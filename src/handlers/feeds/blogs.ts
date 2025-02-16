@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
+import { cacheResponse, getCachedResponse } from '../../cache';
 import { renderBlogsSubsections, renderGuestFlash, renderHTML } from '../../htmltools';
 
 export const handleBlogs = async (c: Context) => {
@@ -7,28 +8,15 @@ export const handleBlogs = async (c: Context) => {
     const userLoggedIn = c.get('USER_LOGGED_IN');
 
     const listingType = c.req.param('listingType') || 'newest';
+    const cacheKeyPattern = `https://minifeed-cache/blogs/by/${listingType}`;
 
     let ordering = 'feeds.created DESC';
     let filtering = '';
 
-    if (!userLoggedIn) {
-        const cacheKey = new Request(`https://minifeed-cache/blogs/by/${listingType}`);
-        const cache = caches.default;
-
-        try {
-            const cachedResponse = await cache.match(cacheKey);
-            if (cachedResponse) {
-                return new Response(cachedResponse.body, {
-                    headers: {
-                        'Content-Type': 'text/html;charset=UTF-8',
-                        'Cache-Hit': 'true',
-                    },
-                });
-            }
-        } catch (error) {
-            // Log cache error but continue with normal page generation
-            console.error('Cache retrieval error:', error);
-        }
+    // Caching for guests
+    if (!userLoggedIn && listingType !== 'random') {
+        const cachedResponse = await getCachedResponse(cacheKeyPattern);
+        if (cachedResponse) return cachedResponse;
     }
 
     if (listingType === 'random') ordering = 'RANDOM()';
@@ -117,22 +105,7 @@ export const handleBlogs = async (c: Context) => {
         c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
     );
 
-    if (!userLoggedIn) {
-        try {
-            const cacheKey = new Request(`https://minifeed-cache/blogs/by/${listingType}`);
-            const cache = caches.default;
-            const cacheResponse = new Response(html, {
-                headers: {
-                    'Content-Type': 'text/html;charset=UTF-8',
-                    'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
-                },
-            });
-            await cache.put(cacheKey, cacheResponse);
-        } catch (error) {
-            // Log cache error but continue with normal response
-            console.error('Cache storage error:', error);
-        }
-    }
+    if (!userLoggedIn && listingType !== 'random') await cacheResponse(cacheKeyPattern, html);
 
     const response = c.html(html);
     return response;
