@@ -53,6 +53,7 @@ import {
 import { handleFeedsSubscribe, handleFeedsUnsubscribe } from './handlers/feeds/feedSubscribePartial';
 import { handleOPMLGlobal } from './handlers/feeds/opmlGlobal';
 import { handleFavicon } from './handlers/handleFavicon';
+import { handleRobotsTxt } from './handlers/handleRobotsTxt';
 import { handleGlobal } from './handlers/items/global';
 import { handleHomeForGuest } from './handlers/items/homeGuest';
 import { handleItem } from './handlers/items/item';
@@ -128,7 +129,7 @@ app.use('*', csrf());
 
 app.use('*', authCheckMiddleware);
 
-app.get('/robots.txt', async (c) => c.text('User-agent: *\nAllow: /'));
+app.get('/robots.txt', handleRobotsTxt);
 
 const handleNotFound = (c: Context) => {
     c.status(404);
