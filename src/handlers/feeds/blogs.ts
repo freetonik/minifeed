@@ -11,6 +11,26 @@ export const handleBlogs = async (c: Context) => {
     let ordering = 'feeds.created DESC';
     let filtering = '';
 
+    if (!userLoggedIn) {
+        const cacheKey = new Request(`https://minifeed-cache/blogs/by/${listingType}`);
+        const cache = caches.default;
+
+        try {
+            const cachedResponse = await cache.match(cacheKey);
+            if (cachedResponse) {
+                return new Response(cachedResponse.body, {
+                    headers: {
+                        'Content-Type': 'text/html;charset=UTF-8',
+                        'Cache-Hit': 'true',
+                    },
+                });
+            }
+        } catch (error) {
+            // Log cache error but continue with normal page generation
+            console.error('Cache retrieval error:', error);
+        }
+    }
+
     if (listingType === 'random') ordering = 'RANDOM()';
     else if (listingType === 'newest') ordering = 'feeds.created DESC';
     else if (listingType === 'oldest') ordering = 'feeds.created ASC';
@@ -87,15 +107,33 @@ export const handleBlogs = async (c: Context) => {
     } // iterate over feeds
 
     inner += `<div style="margin-top:2em;text-align:center;"><a class="button" href="/suggest">+ suggest a blog</a></div>`;
-    return c.html(
-        renderHTML(
-            'Blogs | minifeed',
-            raw(inner),
-            userLoggedIn,
-            'blogs',
-            '',
-            '',
-            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
-        ),
+    const html = renderHTML(
+        'Blogs | minifeed',
+        raw(inner),
+        userLoggedIn,
+        'blogs',
+        '',
+        '',
+        c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
     );
+
+    if (!userLoggedIn) {
+        try {
+            const cacheKey = new Request(`https://minifeed-cache/blogs/by/${listingType}`);
+            const cache = caches.default;
+            const cacheResponse = new Response(html, {
+                headers: {
+                    'Content-Type': 'text/html;charset=UTF-8',
+                    'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+                },
+            });
+            await cache.put(cacheKey, cacheResponse);
+        } catch (error) {
+            // Log cache error but continue with normal response
+            console.error('Cache storage error:', error);
+        }
+    }
+
+    const response = c.html(html);
+    return response;
 };

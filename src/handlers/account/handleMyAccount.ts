@@ -7,30 +7,12 @@ import { renderHTML } from '../../htmltools';
 import { HomePageSubsectionPreference, SubscriptionTier } from '../../interface';
 import type { Bindings } from './../../bindings';
 
-export const handleMyAccount = async (c: Context) => {
-    const user_id = c.get('USER_ID');
-    const user = await c.env.DB.prepare(`
-            SELECT
-            users.created, username, status, email,
-            tier, expires,
-            user_preferences.prefers_full_blog_post, user_preferences.default_homepage_subsection
-
-            FROM users
-            LEFT JOIN user_subscriptions on users.user_id = user_subscriptions.user_id
-            LEFT JOIN user_preferences on users.user_id = user_preferences.user_id
-            WHERE users.user_id = ?`)
-        .bind(user_id)
-        .first();
-
-    const email = user.email;
-    const username = user.username;
-    const hasSubscription = user.tier === SubscriptionTier.PRO;
+export function renderSubscriptionBlock(hasSubscription: boolean, userTier?: SubscriptionTier, userExpires?: string) {
     const date_format_opts: Intl.DateTimeFormatOptions = {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
     };
-
     const features = `
     <ul>
         <li>Weekly email digest †</li>
@@ -45,9 +27,9 @@ export const handleMyAccount = async (c: Context) => {
     † - planned for spring 2025</i>`;
     let subscriptionBlockInner = '';
     if (hasSubscription) {
-        const status = user.tier === SubscriptionTier.PRO ? 'Active' : 'Inactive';
-        const subscriptionExpires = user.expires
-            ? new Date(user.expires).toLocaleString('en-UK', date_format_opts)
+        const status = userTier === SubscriptionTier.PRO ? 'Active' : 'Inactive';
+        const subscriptionExpires = userExpires
+            ? new Date(userExpires).toLocaleString('en-UK', date_format_opts)
             : 'N/A';
         subscriptionBlockInner = `
         Subscription status: ${status}<br>
@@ -72,7 +54,28 @@ export const handleMyAccount = async (c: Context) => {
             </form>
     `;
     }
-    const subscriptionBlock = `<div class="borderbox fancy-gradient-bg"> ${subscriptionBlockInner} </div>`;
+    return `<div class="borderbox fancy-gradient-bg"> ${subscriptionBlockInner} </div>`;
+}
+
+export const handleMyAccount = async (c: Context) => {
+    const user_id = c.get('USER_ID');
+    const user = await c.env.DB.prepare(`
+            SELECT
+            users.created, username, status, email,
+            tier, expires,
+            user_preferences.prefers_full_blog_post, user_preferences.default_homepage_subsection
+
+            FROM users
+            LEFT JOIN user_subscriptions on users.user_id = user_subscriptions.user_id
+            LEFT JOIN user_preferences on users.user_id = user_preferences.user_id
+            WHERE users.user_id = ?`)
+        .bind(user_id)
+        .first();
+
+    const email = user.email;
+    const username = user.username;
+    const hasSubscription = user.tier === SubscriptionTier.PRO;
+    const subscriptionBlock = renderSubscriptionBlock(hasSubscription, user.tier, user.expires);
 
     const prefersFullBlogPost = user.prefers_full_blog_post !== null ? user.prefers_full_blog_post : true;
     const preferredHomepageSubsection = user.default_homepage_subsection || 'all';
