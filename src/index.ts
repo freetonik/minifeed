@@ -2,7 +2,6 @@ import type { Context } from 'hono';
 import { Hono } from 'hono';
 import { csrf } from 'hono/csrf';
 import { raw } from 'hono/html';
-import { about } from './about';
 import {
     handleAdmin,
     handleAdminItemsWithoutRelated,
@@ -16,8 +15,6 @@ import {
 } from './admin';
 import { handleGenerateRelated, handleVectorize, vectorizeAndStoreItem } from './ai';
 import type { Bindings } from './bindings';
-import { changelog } from './changelog';
-import { handleFeedback, handleSuggestBlog } from './feedback';
 import {
     generateInitialRelatedFeeds,
     generateRelatedFeedsFromRelatedItems,
@@ -88,6 +85,10 @@ import { handleListsSingleDeletePOST } from './handlers/lists/listPartials';
 import { handleLists } from './handlers/lists/lists';
 import { handleOpensearchXML } from './handlers/search/opensearchXML';
 import { handleSearch } from './handlers/search/search';
+import { about } from './handlers/staticPages/about';
+import { changelog } from './handlers/staticPages/changelog';
+import { handleDonate } from './handlers/staticPages/donate';
+import { handleFeedback, handleSuggestBlog } from './handlers/staticPages/feedback';
 import { handleUsersSingle } from './handlers/users/user';
 import { handleUsersFollowPOST, handleUsersUnfollowPOST } from './handlers/users/userFollowPartials';
 import { handleUsers } from './handlers/users/users';
@@ -229,6 +230,7 @@ app.post('/admin/items/:item_sqid/regen-related-items', handleRegenerateRelatedI
 app.get('/search', handleSearch);
 app.get('/global/:listingType?', handleGlobal);
 app.get('/feedback', handleFeedback);
+app.get('/donate', handleDonate);
 app.get('/suggest', handleSuggestBlog);
 app.get('/opensearch.xml', handleOpensearchXML);
 app.get('/favicon.ico', handleFavicon);

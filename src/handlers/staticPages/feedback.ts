@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
-import { renderHTML } from './htmltools';
+import { renderHTML } from '../../htmltools';
 
 export async function handleFeedback(c: Context) {
     const feedbackForm = `

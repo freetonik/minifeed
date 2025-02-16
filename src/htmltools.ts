@@ -61,6 +61,7 @@ export const renderHTML = (
         <p>
             Minifeed.net ::
             <a href="/about">about</a> /
+            <a href="/donate">donate</a> /
             <a href="/about/changelog">changelog</a> /
             <a href="https://status.minifeed.net/">status</a> /
             <a href="/feedback">feedback</a>

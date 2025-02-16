@@ -94,6 +94,11 @@ export const about = `
     Minifeed is built with Typescript and runs on Cloudflare Workers platform. The database is SQLite, and the search engine is Typesense. The technical goal is to keep loading times of any page under 1 second. There is minimal JavaScript (htmx) to allow small interactive features such as adding posts to favorites, building lists, and following users. There is no tracking, no ads, and the only cookies are for authentication. Minifeed uses Cloudflare's analytics system to track page views and errors, but this data is anonymized and not connected to user accounts.
     </p>
 
+    <h3>How can I support Minifeed?</h3>
+    <p>
+    Check out the <a href="/donate">donations page</a> for ways to support Minifeed.
+    </p>
+
     <h3>How do I contact you?</h3>
     <p>
     You can contact me via <a href="/feedback">feedback</a>.
