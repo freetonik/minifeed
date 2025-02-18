@@ -5,6 +5,7 @@ import { stripTags } from '../../utils';
 export async function handleLinkblogPOST(c: Context) {
     const body = await c.req.parseBody();
     const url = body.url.toString();
+    const description = body.description.toString();
     let userTitle = body.title.toString().trim() || null;
     const userId = c.get('USER_ID');
     const username = c.get('USERNAME');
@@ -13,6 +14,13 @@ export async function handleLinkblogPOST(c: Context) {
     if (targetUsername !== username) {
         throw new Error('You are not authorized to post to this linkblog');
     }
+
+    if (description.length > 2000) {
+        throw new Error('Description too long. Up to 2000 characters allowed.');
+    }
+
+    let sanitizedDescription = '';
+    if (description.length > 0) sanitizedDescription = await stripTags(description);
 
     // check if url is valid
     if (!url.match(/^https?:\/\//)) {
@@ -37,14 +45,14 @@ export async function handleLinkblogPOST(c: Context) {
             .bind(existingUrl.linkblog_item_id, userId)
             .first();
         if (existingUrlForUser) {
-            return c.redirect(`/l/${username}`);
+            return c.redirect(`/linkblogs/${username}`);
         }
 
         // add to user's linkblog
         await c.env.DB.prepare('INSERT INTO linkblog_user_items (linkblog_item_id, user_id, title) VALUES (?, ?, ?)')
             .bind(existingUrl.linkblog_item_id, userId, userTitle)
             .run();
-        return c.redirect(`/l/${username}`);
+        return c.redirect(`/linkblogs/${username}`);
     }
 
     let fetchedTitle: string;
@@ -60,11 +68,13 @@ export async function handleLinkblogPOST(c: Context) {
 
     const newLinkblogItemId = newUrl.linkblog_item_id;
     // add to user's linkblog
-    await c.env.DB.prepare('INSERT INTO linkblog_user_items (linkblog_item_id, user_id, title) VALUES (?, ?, ?)')
-        .bind(newLinkblogItemId, userId, userTitle)
+    await c.env.DB.prepare(
+        'INSERT INTO linkblog_user_items (linkblog_item_id, user_id, title, description) VALUES (?, ?, ?, ?)',
+    )
+        .bind(newLinkblogItemId, userId, userTitle, sanitizedDescription)
         .run();
 
-    return c.redirect(`/l/${username}`);
+    return c.redirect(`/linkblogs/${username}`);
 }
 
 async function getTitle(url: string) {

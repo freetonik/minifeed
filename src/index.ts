@@ -81,6 +81,7 @@ import { handleMySubscriptions } from './handlers/items/mySubscriptions';
 import { handleLinkblog } from './handlers/linkblogs/linkblog';
 import { handleLinkblogDELETE } from './handlers/linkblogs/linkblogDELETE';
 import { handleLinkblogPOST } from './handlers/linkblogs/linkblogPOST';
+import { handleLinks } from './handlers/linkblogs/links';
 import { handleListsSingle } from './handlers/lists/list';
 import { handleListsSingleDeletePOST } from './handlers/lists/listPartials';
 import { handleLists } from './handlers/lists/lists';
@@ -273,9 +274,12 @@ app.get('/users/:username', handleUsersSingle);
 app.post('/users/:username/follow', authRequiredMiddleware, handleUsersFollowPOST);
 app.post('/users/:username/unfollow', authRequiredMiddleware, handleUsersUnfollowPOST);
 
-app.get('/l/:username', handleLinkblog);
-app.post('/l/:username', paidSubscriptionRequiredMiddleware, handleLinkblogPOST);
-app.delete('/l/:username/:link_id', paidSubscriptionRequiredMiddleware, handleLinkblogDELETE);
+app.get('/links', handleLinks);
+app.get('/links/:listingType', handleLinks);
+
+app.get('/linkblogs/:username', handleLinkblog);
+app.post('/linkblogs/:username', paidSubscriptionRequiredMiddleware, handleLinkblogPOST);
+app.delete('/linkblogs/:username/:link_id', paidSubscriptionRequiredMiddleware, handleLinkblogDELETE);
 
 app.get('/about', async (c: Context) => c.html(renderHTML('About | minifeed', raw(about), c.get('USER_LOGGED_IN'))));
 app.get('/about/changelog', async (c: Context) =>
@@ -396,6 +400,7 @@ export default {
                 await regenerateRelatedFeeds(env);
                 await enqueueRegenerateRelatedCacheForAllItems(env);
                 await regenerateListOfItemIds(env); // used for random feed
+                // TODO: remove links that are not in users' linkblogs
                 break;
         }
     },
