@@ -55,42 +55,25 @@ export const handleGlobal = async (c: Context) => {
         metaInfo = meta;
     }
 
+    if (!items.length) return c.notFound();
+
     let list = '';
     if (!c.get('USER_LOGGED_IN')) list += renderGuestFlash;
     list += renderGlobalSubsections(listingType);
 
-    if (listingType === 'newest' || listingType === 'random') {
-        for (let i = 0; i < items.length - 1; i++) {
-            const item = items[i];
-            const itemTitle = item.favorite_id ? `★ ${item.item_title}` : item.item_title;
+    for (let i = 0; i < items.length - 1; i++) {
+        const item = items[i];
+        const itemTitle = item.favorite_id ? `★ ${item.item_title}` : item.item_title;
 
-            list += renderItemShort(
-                item.item_sqid,
-                itemTitle,
-                item.item_url,
-                item.feed_title,
-                item.feed_sqid,
-                item.pub_date,
-                item.description,
-            );
-        }
-    }
-
-    if (listingType === 'oldest') {
-        for (let i = items.length - 1; i > 0; i--) {
-            const item = items[i];
-            const itemTitle = item.favorite_id ? `★ ${item.item_title}` : item.item_title;
-
-            list += renderItemShort(
-                item.item_sqid,
-                itemTitle,
-                item.item_url,
-                item.feed_title,
-                item.feed_sqid,
-                item.pub_date,
-                item.description,
-            );
-        }
+        list += renderItemShort(
+            item.item_sqid,
+            itemTitle,
+            item.item_url,
+            item.feed_title,
+            item.feed_sqid,
+            item.pub_date,
+            item.description,
+        );
     }
 
     if (listingType !== 'random' && items.length > itemsPerPage) list += `<a href="?p=${page + 1}">More...</a></p>`;
