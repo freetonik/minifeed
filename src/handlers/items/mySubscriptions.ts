@@ -23,7 +23,8 @@ export const handleMySubscriptions = async (c: Context) => {
         .bind(user_id, user_id, items_per_page + 1, offset)
         .all();
 
-    let inner = ` ${renderMySubsections('subscriptions')}
+    if (!results.length && page > 1) return c.notFound();
+    let inner = `${renderMySubsections('subscriptions')}
 
     `;
     if (results.length) {
