@@ -58,6 +58,7 @@ export async function paidSubscriptionRequiredMiddleware(c: Context, next: () =>
     // 2. if not, check and modify the current session info
 
     const user_id = c.get('USER_ID');
+    const userLoggedIn = c.get('USER_LOGGED_IN');
     const user = await c.env.DB.prepare(`
         SELECT
         tier
@@ -75,9 +76,10 @@ export async function paidSubscriptionRequiredMiddleware(c: Context, next: () =>
                 raw(`<div class="flash flash-blue">
                     This feature requires a paid subscription. Consider upgrading your account <a href="/account">here</a>.
                 </div>`),
-                false,
+                userLoggedIn,
             ),
         );
     }
+
     await next();
 }
