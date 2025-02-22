@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import { itemSqidToId } from '../../utils';
 
-export const handleListsSingleDeletePOST = async (c: Context) => {
+export async function handleListsSingleDeletePOST(c: Context) {
     const list_id = itemSqidToId(c.req.param('list_sqid'));
     const user_id = c.get('USER_ID');
 
@@ -13,4 +13,4 @@ export const handleListsSingleDeletePOST = async (c: Context) => {
     return c.html(
         `<div class="flash">List deleted. This page is now a ghost. Refresh to let it ascent into ether.</div>`,
     );
-};
+}

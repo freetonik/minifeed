@@ -1,13 +1,13 @@
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import type { Bindings } from './bindings';
 
-export const sendEmail = async (
+export async function sendEmail(
     env: Bindings,
     to: string,
     subject: string,
     body: string,
     from = 'no-reply@minifeed.net',
-) => {
+) {
     const mail = new SendEmailCommand({
         Source: from,
         ReturnPath: from,
@@ -35,4 +35,4 @@ export const sendEmail = async (
         return e instanceof Error ? e.toString() : 'An unknown error occurred';
     }
     return true;
-};
+}

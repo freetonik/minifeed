@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import { raw } from 'hono/html';
 import { renderGuestFlash, renderHTML, renderItemShort } from '../../htmltools';
 
-export const handleHomeForGuest = async (c: Context) => {
+export async function handleHomeForGuest(c: Context) {
     const batch = await c.env.DB.batch([
         c.env.DB.prepare(`
             SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, items_top_cache.content from feeds
@@ -67,7 +67,7 @@ export const handleHomeForGuest = async (c: Context) => {
     }
 
     const guestInner = `
-        ${renderGuestFlash}
+        ${renderGuestFlash()}
         <h2>Few random blogs</h2>
         <div class="container-grid">
         ${latestBlogsBlock}
@@ -86,4 +86,4 @@ export const handleHomeForGuest = async (c: Context) => {
         `;
 
     return c.html(renderHTML('Minifeed', raw(guestInner), c.get('USER_LOGGED_IN'), 'my'));
-};
+}

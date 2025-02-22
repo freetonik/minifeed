@@ -3,7 +3,7 @@ import { raw } from 'hono/html';
 import { renderHTML, renderItemShort } from '../../htmltools';
 import { itemSqidToId } from '../../utils';
 
-export const handleListsSingle = async (c: Context) => {
+export async function handleListsSingle(c: Context) {
     const listSqid = c.req.param('list_sqid');
     const listId = itemSqidToId(listSqid);
     const userId = c.get('USER_ID');
@@ -48,4 +48,4 @@ export const handleListsSingle = async (c: Context) => {
     }
 
     return c.html(renderHTML(`${listEntry.title} list | minifeed`, raw(inner), c.get('USER_LOGGED_IN'), 'lists'));
-};
+}

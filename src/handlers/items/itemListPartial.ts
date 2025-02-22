@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import { itemSqidToId } from '../../utils';
 
 // Renders lists for item
-export const handleItemsLists = async (c: Context) => {
+export async function handleItemsLists(c: Context) {
     const itemSqid = c.req.param('item_sqid');
     const itemId: number = itemSqidToId(itemSqid);
     const userId = c.get('USER_ID');
@@ -61,4 +61,4 @@ export const handleItemsLists = async (c: Context) => {
     `;
 
     return c.html(content);
-};
+}

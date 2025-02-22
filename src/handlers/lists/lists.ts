@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import { raw } from 'hono/html';
 import { renderGuestFlash, renderHTML } from '../../htmltools';
 
-export const handleLists = async (c: Context) => {
+export async function handleLists(c: Context) {
     const lists = await c.env.DB.prepare(
         `SELECT DISTINCT item_lists.*, users.username, COUNT(item_list_items.item_id) as item_count
         FROM item_lists
@@ -13,7 +13,7 @@ export const handleLists = async (c: Context) => {
 
     let inner = '';
     if (!c.get('USER_LOGGED_IN')) {
-        inner += renderGuestFlash;
+        inner += renderGuestFlash();
     }
     for (const list of lists.results) {
         inner += `<div class="borderbox fancy-gradient-bg" style="margin-bottom: 1em;">
@@ -25,4 +25,4 @@ export const handleLists = async (c: Context) => {
     }
 
     return c.html(renderHTML('Lists | minifeed', raw(inner), c.get('USERNAME'), 'lists'));
-};
+}

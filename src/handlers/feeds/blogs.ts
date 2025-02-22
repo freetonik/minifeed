@@ -3,7 +3,7 @@ import { raw } from 'hono/html';
 import { cacheResponse, getCachedResponse } from '../../cache';
 import { renderBlogsSubsections, renderGuestFlash, renderHTML } from '../../htmltools';
 
-export const handleBlogs = async (c: Context) => {
+export async function handleBlogs(c: Context) {
     const userId = c.get('USER_ID') || -1;
     const userLoggedIn = c.get('USER_LOGGED_IN');
 
@@ -40,7 +40,7 @@ export const handleBlogs = async (c: Context) => {
         .run();
 
     let inner = '';
-    if (!userLoggedIn) inner += renderGuestFlash;
+    if (!userLoggedIn) inner += renderGuestFlash();
     inner += renderBlogsSubsections(listingType, userLoggedIn);
 
     for (const feed of results) {
@@ -109,4 +109,4 @@ export const handleBlogs = async (c: Context) => {
 
     const response = c.html(html);
     return response;
-};
+}

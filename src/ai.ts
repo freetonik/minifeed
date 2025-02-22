@@ -9,25 +9,25 @@ export interface EmbeddingResponse {
     data: number[][];
 }
 
-export const vectorize_text = async (env: Bindings, text: string): Promise<EmbeddingResponse> => {
+export async function vectorizeText(env: Bindings, text: string): Promise<EmbeddingResponse> {
     return await env.AI.run('@cf/baai/bge-base-en-v1.5', { text: [text] });
-};
+}
 
-export const summarizeText = async (env: Bindings, text: string) => {
+export async function summarizeText(env: Bindings, text: string) {
     const response = await env.AI.run('@cf/facebook/bart-large-cnn', {
         input_text: text,
         max_length: 1024,
     });
     return response;
-};
+}
 
-export const addVectorToDb = async (
+export async function addVectorToDb(
     env: Bindings,
     id: number,
     embeddings: EmbeddingResponse,
     namespace: string,
     metadata?: Record<string, VectorizeVectorMetadata>,
-) => {
+) {
     const vectors: VectorizeVector[] = [];
     for (const vector of embeddings.data) {
         vectors.push({
@@ -42,9 +42,9 @@ export const addVectorToDb = async (
         await env.DB.prepare('REPLACE INTO items_vector_relation (item_id, vectorized) VALUES (?,?)').bind(id, 1).run();
         return upserted;
     }
-};
+}
 
-export const vectorizeAndStoreItem = async (env: Bindings, item_id: number) => {
+export async function vectorizeAndStoreItem(env: Bindings, item_id: number) {
     if (env.ENVIRONMENT === 'dev') {
         console.log('DEV MODE: Skipping vectorizeAndStoreItem');
         await enqueueRegenerateRelatedCache(env, item_id);
@@ -77,7 +77,7 @@ export const vectorizeAndStoreItem = async (env: Bindings, item_id: number) => {
         }
     }
 
-    const embeddings: EmbeddingResponse = await vectorize_text(env, `${contentBlock}`);
+    const embeddings: EmbeddingResponse = await vectorizeText(env, `${contentBlock}`);
     await addVectorToDb(
         env,
         item.item_id,
@@ -89,9 +89,9 @@ export const vectorizeAndStoreItem = async (env: Bindings, item_id: number) => {
     );
 
     await enqueueRegenerateRelatedCache(env, item_id, 60); // regenerate related items cache with delay in case vector db saving is slow
-};
+}
 
-export const handleVectorize = async (c: Context) => {
+export async function handleVectorize(c: Context) {
     const env = c.env as Bindings;
     const start = c.req.query('start');
     const stop = c.req.query('stop');
@@ -111,9 +111,9 @@ export const handleVectorize = async (c: Context) => {
     }
     response += '</ol>';
     return c.html(response);
-};
+}
 
-export const handleGenerateRelated = async (c: Context) => {
+export async function handleGenerateRelated(c: Context) {
     const env = c.env as Bindings;
     const type = c.req.param('type');
     if (!type) return c.text('No type provided', 400);
@@ -161,4 +161,4 @@ export const handleGenerateRelated = async (c: Context) => {
     }
 
     return c.text('Wrong type provided', 400);
-};
+}

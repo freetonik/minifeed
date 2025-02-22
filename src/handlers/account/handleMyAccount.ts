@@ -72,7 +72,7 @@ export function renderSubscriptionBlock(
     return `<div class="borderbox fancy-gradient-bg"> ${subscriptionBlockInner} </div>`;
 }
 
-export const handleMyAccount = async (c: Context) => {
+export async function handleMyAccount(c: Context) {
     const user_id = c.get('USER_ID');
     const user = await c.env.DB.prepare(`
             SELECT
@@ -157,9 +157,9 @@ export const handleMyAccount = async (c: Context) => {
     </p>`;
 
     return c.html(renderHTML('My account | minifeed', raw(list), username, ''));
-};
+}
 
-export const handleVerifyEmail = async (c: Context) => {
+export async function handleVerifyEmail(c: Context) {
     if (c.get('USER_LOGGED_IN')) return c.redirect('/');
 
     const code = c.req.query('code');
@@ -188,9 +188,9 @@ export const handleVerifyEmail = async (c: Context) => {
     ]);
 
     return await createSessionSetCookieAndRedirect(c, userId, username, '/', true);
-};
+}
 
-export const handleMyAccountPreferencesPOST = async (c: Context) => {
+export async function handleMyAccountPreferencesPOST(c: Context) {
     const body = await c.req.parseBody();
 
     let prefersFullBlogPost = 1;
@@ -232,9 +232,9 @@ export const handleMyAccountPreferencesPOST = async (c: Context) => {
         .run();
 
     return c.redirect('/account#preferences');
-};
+}
 
-export const handleLogout = async (c: Context) => {
+export async function handleLogout(c: Context) {
     const sessionKey = getCookie(c, 'minifeed_session');
     if (!sessionKey) {
         return c.redirect('/');
@@ -242,9 +242,9 @@ export const handleLogout = async (c: Context) => {
     await c.env.SESSIONS_KV.delete(sessionKey);
     deleteCookie(c, 'minifeed_session');
     return c.redirect('/');
-};
+}
 
-export const handleLogin = async (c: Context) => {
+export async function handleLogin(c: Context) {
     if (c.get('USER_ID')) return c.redirect('/');
 
     const list = `
@@ -273,9 +273,9 @@ export const handleLogin = async (c: Context) => {
 
     `;
     return c.html(renderHTML('Log in | minifeed', raw(list), false));
-};
+}
 
-export const handleResetPassword = async (c: Context) => {
+export async function handleResetPassword(c: Context) {
     if (c.get('USER_LOGGED_IN')) return c.redirect('/');
     const code = c.req.query('code');
     let inner = '';
@@ -317,9 +317,9 @@ export const handleResetPassword = async (c: Context) => {
     }
 
     return c.html(renderHTML('Reset password | minifeed', raw(inner), false));
-};
+}
 
-export const handleResetPasswordPOST = async (c: Context) => {
+export async function handleResetPasswordPOST(c: Context) {
     const body = await c.req.parseBody();
     const email = body.email.toString().toLowerCase();
 
@@ -348,9 +348,9 @@ export const handleResetPasswordPOST = async (c: Context) => {
             false,
         ),
     );
-};
+}
 
-export const handleSetPasswordPOST = async (c: Context) => {
+export async function handleSetPasswordPOST(c: Context) {
     const body = await c.req.parseBody();
     const password = body.password.toString();
     const reset_code = body.reset_code.toString();
@@ -385,9 +385,9 @@ export const handleSetPasswordPOST = async (c: Context) => {
     );
 
     return c.html(renderHTML('Reset password | minifeed', inner, false));
-};
+}
 
-export const handleSignup = async (c: Context) => {
+export async function handleSignup(c: Context) {
     if (c.get('USER_LOGGED_IN')) return c.redirect('/');
 
     const inner = `
@@ -420,9 +420,9 @@ export const handleSignup = async (c: Context) => {
     </div>
     `;
     return c.html(renderHTML('Create account | minifeed', raw(inner), false));
-};
+}
 
-export const handleLoginPOST = async (c: Context) => {
+export async function handleLoginPOST(c: Context) {
     const body = await c.req.parseBody();
     const email = body.email.toString();
     const attempted_password = body.password.toString();
@@ -457,9 +457,9 @@ export const handleLoginPOST = async (c: Context) => {
         }
     }
     throw new Error('Wrong email or password');
-};
+}
 
-export const handleSignupPOST = async (c: Context) => {
+export async function handleSignupPOST(c: Context) {
     const body = await c.req.parseBody();
     const username = body.username.toString();
     const password = body.password.toString();
@@ -539,14 +539,14 @@ export const handleSignupPOST = async (c: Context) => {
     } catch (err) {
         throw new Error('Something went horribly wrong.');
     }
-};
+}
 
-const send_email_verification_link = async (
+async function send_email_verification_link(
     env: Bindings,
     username: string,
     email: string,
     email_verification_code: string,
-) => {
+) {
     const emailVerificationLink = `${env.ENVIRONMENT === 'dev' ? 'http://localhost:8181' : 'https://minifeed.net'}/verify_email?code=${email_verification_code}`;
 
     const emailBody = `Welcome to minifeed, ${username}!<br><br>Please, verify your email by clicking on <strong><a href="${emailVerificationLink}">this link</a></strong>.
@@ -555,23 +555,23 @@ const send_email_verification_link = async (
     `;
 
     await sendEmail(env, email, 'Welcome to minifeed', emailBody);
-};
+}
 
-const send_password_reset_link = async (env: Bindings, email: string, password_reset_code: string) => {
+async function send_password_reset_link(env: Bindings, email: string, password_reset_code: string) {
     const passwordResetLink = `${env.ENVIRONMENT === 'dev' ? 'http://localhost:8181' : 'https://minifeed.net'}/reset_password?code=${password_reset_code}`;
 
     const emailBody = `You have requested to reset your password for your minifeed account. If you did not request it, please ignore this email. Otherwise, please click on <strong><a href="${passwordResetLink}">this link</a></strong> to reset your password.`;
 
     await sendEmail(env, email, 'Password reset request', emailBody);
-};
+}
 
-const createSessionSetCookieAndRedirect = async (
+async function createSessionSetCookieAndRedirect(
     c: Context,
     userId: number,
     username: string,
     redirectTo = '/',
     firstLogin = false,
-) => {
+) {
     const sessionKey = randomHash(32);
     const kv_value = `${userId};${username}`;
     await c.env.SESSIONS_KV.put(sessionKey, kv_value);
@@ -601,7 +601,7 @@ const createSessionSetCookieAndRedirect = async (
     }
 
     return c.redirect(redirectTo);
-};
+}
 
 function randomHash(len: number): string {
     return Array.from(crypto.getRandomValues(new Uint8Array(Math.ceil(len / 2))), (b) =>

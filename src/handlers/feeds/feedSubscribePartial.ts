@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import { feedSqidToId } from '../../utils';
 
-export const handleFeedsSubscribe = async (c: Context) => {
+export async function handleFeedsSubscribe(c: Context) {
     if (!c.get('USER_ID')) return c.redirect('/login');
     const userId = c.get('USER_ID');
     const feedSqid = c.req.param('feed_sqid');
@@ -31,9 +31,9 @@ export const handleFeedsSubscribe = async (c: Context) => {
         c.status(400);
         return c.body('bad request');
     }
-};
+}
 
-export const handleFeedsUnsubscribe = async (c: Context) => {
+export async function handleFeedsUnsubscribe(c: Context) {
     if (!c.get('USER_ID')) return c.redirect('/login');
     const userId = c.get('USER_ID');
     const feedSqid = c.req.param('feed_sqid');
@@ -63,4 +63,4 @@ export const handleFeedsUnsubscribe = async (c: Context) => {
         </button>
       </span>
     `);
-};
+}

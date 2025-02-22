@@ -3,7 +3,7 @@ import { raw } from 'hono/html';
 import { renderHTML, renderItemShort, renderMySubsections } from '../../htmltools';
 
 // // MY HOME FEED: subs + favorites + friendfeed
-export const handleMyAll = async (c: Context) => {
+export async function handleMyAll(c: Context) {
     const user_id = c.get('USER_ID');
     if (!user_id) return c.redirect('/welcome');
 
@@ -181,4 +181,4 @@ export const handleMyAll = async (c: Context) => {
                 : '',
         ),
     );
-};
+}

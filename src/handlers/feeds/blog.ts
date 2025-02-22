@@ -3,7 +3,7 @@ import { raw } from 'hono/html';
 import { renderHTML, renderItemShort } from '../../htmltools';
 import { feedSqidToId } from '../../utils';
 
-export const handleBlog = async (c: Context) => {
+export async function handleBlog(c: Context) {
     const feedSqid = c.req.param('feed_sqid');
     const feedId = feedSqidToId(feedSqid);
     const userId = c.get('USER_ID') || -1;
@@ -139,4 +139,4 @@ export const handleBlog = async (c: Context) => {
             ${batch[0].meta.rows_read}+${batch[1].meta.rows_read} rows read`;
     }
     return c.html(renderHTML(`${feedTitle} | minifeed`, raw(inner), userLoggedIn, 'blogs', '', '', debug_info));
-};
+}

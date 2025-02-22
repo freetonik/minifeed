@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 
-export const handleRobotsTxt = async (c: Context) => {
+export function handleRobotsTxt(c: Context) {
     return c.text(`# AI Data scrapers
 
 User-agent: anthropic-ai
@@ -44,4 +44,4 @@ Disallow: /
 
 User-agent: *
 Disallow:`);
-};
+}

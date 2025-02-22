@@ -42,7 +42,7 @@ export async function adminRequiredMiddleware(c: Context, next: () => Promise<vo
     await next();
 }
 
-export const stripeMiddleware = async (c: Context, next: () => Promise<void>) => {
+export async function stripeMiddleware(c: Context, next: () => Promise<void>) {
     const stripeKey = c.env.STRIPE_API_KEY;
     const stripe = new Stripe(stripeKey, {
         maxNetworkRetries: 3,
@@ -50,7 +50,7 @@ export const stripeMiddleware = async (c: Context, next: () => Promise<void>) =>
     });
     c.set('stripe', stripe);
     await next();
-};
+}
 
 export async function paidSubscriptionRequiredMiddleware(c: Context, next: () => Promise<void>) {
     // TODO:

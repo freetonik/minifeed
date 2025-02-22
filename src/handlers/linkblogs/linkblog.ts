@@ -73,7 +73,7 @@ export async function handleLinkblog(c: Context) {
 </span>`;
     }
 
-    if (batch[2].results.length === 0) inner += `<p>No links yet.</p>`;
+    if (batch[2].results.length === 0) inner += '<p>No links yet.</p>';
 
     for (let i = 0; i < batch[2].results.length - 1; i++) {
         const item = batch[2].results[i];

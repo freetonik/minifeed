@@ -6,7 +6,7 @@ import Sqids from 'sqids';
 import { detectAll } from 'tinyld';
 import type { FeedRow, MFFeedEntry } from './interface';
 
-const idToSqid = (id: number, length: number): string => {
+function idToSqid(id: number, length: number): string {
     const sqids = new Sqids({
         minLength: length,
         alphabet: 'UV8E4hOJwLiXMpYBsWyQ7rNoeDgm9TGxbFI5aknAztjC2K3uZ6cldSqRv1PfH0',
@@ -17,20 +17,28 @@ const idToSqid = (id: number, length: number): string => {
             .split('')
             .map((char) => Number.parseInt(char, 10)),
     );
-};
+}
 
-const sqidToId = (sqid: string, length: number): number => {
+function sqidToId(sqid: string, length: number): number {
     const sqids = new Sqids({
         minLength: length,
         alphabet: 'UV8E4hOJwLiXMpYBsWyQ7rNoeDgm9TGxbFI5aknAztjC2K3uZ6cldSqRv1PfH0',
     });
     return Number.parseInt(sqids.decode(sqid).join(''), 10);
-};
+}
 
-export const feedIdToSqid = (feedId: number): string => idToSqid(feedId, 5);
-export const feedSqidToId = (feedSqid: string): number => sqidToId(feedSqid, 5);
-export const itemIdToSqid = (itemId: number): string => idToSqid(itemId, 10);
-export const itemSqidToId = (itemSqid: string): number => sqidToId(itemSqid, 10);
+export function feedIdToSqid(feedId: number): string {
+    return idToSqid(feedId, 5);
+}
+export function feedSqidToId(feedSqid: string): number {
+    return sqidToId(feedSqid, 5);
+}
+export function itemIdToSqid(itemId: number): string {
+    return idToSqid(itemId, 10);
+}
+export function itemSqidToId(itemSqid: string): number {
+    return sqidToId(itemSqid, 10);
+}
 
 export async function getRSSLinkFromUrl(url: string) {
     let req: Response;
@@ -72,19 +80,19 @@ export async function getFeedIdByRSSUrl(c: Context, rssUrl: string) {
  * @param val - The input value.
  * @returns The text value of the input.
  */
-export const getText = (val: any) => {
+export function getText(val: any) {
     const txt = isObject(val) ? val._text || val['#text'] || val._cdata || val.$t : val;
     return txt ? decode(String(txt).trim()) : '';
-};
-const ob2Str = (val: any) => {
+}
+function ob2Str(val: any) {
     return {}.toString.call(val);
-};
+}
 
-export const isObject = (val: any) => {
+export function isObject(val: any) {
     return ob2Str(val) === '[object Object]' && !Array.isArray(val);
-};
+}
 
-export const absolutifyImageUrls = async (html: string, rootUrl: string): Promise<string> => {
+export async function absolutifyImageUrls(html: string, rootUrl: string): Promise<string> {
     const rewriter = new HTMLRewriter().on('img', {
         element(element) {
             const src = element.getAttribute('src');
@@ -98,7 +106,7 @@ export const absolutifyImageUrls = async (html: string, rootUrl: string): Promis
     const response = new Response(html);
     const transformedResponse = rewriter.transform(response);
     return await transformedResponse.text();
-};
+}
 
 /**
  * Returns the root URL of the given URL.
@@ -151,7 +159,7 @@ export async function gatherResponse(response: Response) {
     return response.text();
 }
 
-export const truncate = (s: string, len = 140) => {
+export function truncate(s: string, len = 140) {
     if (s.length <= len || s.length === 0) return s;
     const txt = s.toString();
     const txt_length = txt.length;
@@ -165,9 +173,9 @@ export const truncate = (s: string, len = 140) => {
         return `${sub_text_array.map((word: string) => word.trim()).join(' ')}...`;
     }
     return `${sub_text.substring(0, len - 3)}...`;
-};
+}
 
-export const stripTags = (s: string) => {
+export function stripTags(s: string) {
     const stripped_text = new HTMLRewriter()
         .on('*', {
             text(textChunk) {
@@ -183,17 +191,17 @@ export const stripTags = (s: string) => {
         .text();
 
     return stripped_text;
-};
+}
 
-export const stripTagsSynchronously = (s: string | undefined) => {
+export function stripTagsSynchronously(s: string | undefined) {
     if (!s) return '';
     return s
         .toString()
         .replace(/(<([^>]+)>)/gi, '')
         .trim();
-};
+}
 
-export const extractItemUrl = (item: MFFeedEntry, feedRSSUrl: string) => {
+export function extractItemUrl(item: MFFeedEntry, feedRSSUrl: string) {
     if (!item.link && !item.id) throw new Error('Cannot extract item URL: missing link, guid, or id');
 
     let link = item.link || item.id;
@@ -208,9 +216,9 @@ export const extractItemUrl = (item: MFFeedEntry, feedRSSUrl: string) => {
     }
 
     return link;
-};
+}
 
-export const getItemPubDate = (item: MFFeedEntry): Date => {
+export function getItemPubDate(item: MFFeedEntry): Date {
     // published date was parsed OK
     if (item.published) {
         // if item.published is in future, set it to current date
@@ -232,10 +240,10 @@ export const getItemPubDate = (item: MFFeedEntry): Date => {
     }
     // if no date was found, set it to current date
     return new Date();
-};
+}
 
 // This is used e.g. for preparing plaintext description and for vectorization
-export const stripNonLinguisticElements = async (s: string) => {
+export async function stripNonLinguisticElements(s: string) {
     if (s.length === 0) return '';
     const badList = [
         'img',
@@ -266,9 +274,9 @@ export const stripNonLinguisticElements = async (s: string) => {
         .text();
 
     return stripped;
-};
+}
 
-export const sanitizeHTML = async (contentBlock: string): Promise<string> => {
+export async function sanitizeHTML(contentBlock: string): Promise<string> {
     const sanitizedContentBlock = new HTMLRewriter()
         .on('*', {
             element(element) {
@@ -396,7 +404,7 @@ export const sanitizeHTML = async (contentBlock: string): Promise<string> => {
         .text();
 
     return sanitizedContentBlock;
-};
+}
 
 export function delay(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));

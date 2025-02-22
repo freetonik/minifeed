@@ -6,7 +6,7 @@ import { scrapeURLIntoObject } from '../../scrape';
 import { dbGetItem } from '../../sqlutils';
 import { feedSqidToId, itemSqidToId } from '../../utils';
 
-export const handleItemsAddItembyUrl = async (c: Context) => {
+export async function handleItemsAddItembyUrl(c: Context) {
     const feedSqid = c.req.param('feed_sqid');
     const feedId = feedSqidToId(feedSqid);
 
@@ -17,9 +17,9 @@ export const handleItemsAddItembyUrl = async (c: Context) => {
     return c.html(
         renderHTML('Add new item', renderAddItemByURLForm('', '', '', blogTitle), c.get('USERNAME'), 'blogs'),
     );
-};
+}
 
-export const handleItemsDeletePOST = async (c: Context) => {
+export async function handleItemsDeletePOST(c: Context) {
     const body = await c.req.parseBody();
     const addToBlacklist = !!body?.blacklist;
 
@@ -29,9 +29,9 @@ export const handleItemsDeletePOST = async (c: Context) => {
     const deleted = await deleteItem(c.env, itemId, addToBlacklist);
     if (deleted) return c.html('Item deleted');
     return c.html('ERROR!');
-};
+}
 
-export const handleItemsAddItemByUrlPOST = async (c: Context) => {
+export async function handleItemsAddItemByUrlPOST(c: Context) {
     const feedSqid = c.req.param('feed_sqid');
     const feedId = feedSqidToId(feedSqid);
 
@@ -67,14 +67,14 @@ export const handleItemsAddItemByUrlPOST = async (c: Context) => {
     }
 
     return c.redirect(`/blogs/${feedSqid}`);
-};
+}
 
-export const handleItemRefresh = async (c: Context) => {
+export async function handleItemRefresh(c: Context) {
     const itemSqid = c.req.param('item_sqid');
     const itemId = itemSqidToId(itemSqid);
     await scrapeIndexVectorizeItem(c.env, itemId);
     return c.html('Enqueued...');
-};
+}
 
 export async function handleRegenerateRelatedItemsNew(c: Context) {
     const itemSqid = c.req.param('item_sqid');
@@ -85,7 +85,7 @@ export async function handleRegenerateRelatedItemsNew(c: Context) {
     return c.html('Regenerating related items with new way...');
 }
 
-export const regenerateRelatedForItem = async (env: Bindings, itemId: number) => {
+export async function regenerateRelatedForItem(env: Bindings, itemId: number) {
     const item = await dbGetItem(env, itemId);
     const relatedItemIds = [];
 
@@ -136,4 +136,4 @@ export const regenerateRelatedForItem = async (env: Bindings, itemId: number) =>
         });
     }
     return true;
-};
+}

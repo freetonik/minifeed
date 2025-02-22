@@ -12,7 +12,7 @@ import {
 import { deleteFeedFromIndex } from '../../search';
 import { feedIdToSqid, feedSqidToId, getFeedIdByRSSUrl } from '../../utils';
 
-export const handleFeedsDelete = async (c: Context) => {
+export async function handleFeedsDelete(c: Context) {
     const feedId: number = feedSqidToId(c.req.param('feed_sqid'));
 
     const ids_of_feed_items = await c.env.DB.prepare('SELECT item_id FROM items WHERE feed_id = ?').bind(feedId).all();
@@ -43,14 +43,14 @@ export const handleFeedsDelete = async (c: Context) => {
     await deleteFeedFromIndex(c.env, feedId);
 
     return c.html(`Feed ${feedId} deleted`);
-};
+}
 
-export const handleBlogsNew = async (c: Context) => {
+export async function handleBlogsNew(c: Context) {
     if (!c.get('USER_ID')) return c.redirect('/login');
     return c.html(renderHTML('Add new blog', renderAddFeedForm(), c.get('USERNAME'), 'blogs'));
-};
+}
 
-export const handleBlogsNewPOST = async (c: Context) => {
+export async function handleBlogsNewPOST(c: Context) {
     const body = await c.req.parseBody();
     const url = body.url.toString();
     let rssUrl: string | undefined;
@@ -69,7 +69,7 @@ export const handleBlogsNewPOST = async (c: Context) => {
         return c.redirect(`/blogs/${sqid}`, 301);
     }
     return c.text('Something went wrong');
-};
+}
 
 export async function handleFeedsUpdate(c: Context) {
     const feed_id: number = feedSqidToId(c.req.param('feed_sqid'));

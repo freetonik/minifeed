@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import { raw } from 'hono/html';
 import { renderHTML, renderItemShort, renderMySubsections } from '../../htmltools';
 
-export const handleMySubscriptions = async (c: Context) => {
+export async function handleMySubscriptions(c: Context) {
     const user_id = c.get('USER_ID');
     const items_per_page = 30;
     const page = Number(c.req.query('p')) || 1;
@@ -110,4 +110,4 @@ export const handleMySubscriptions = async (c: Context) => {
             c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
         ),
     );
-};
+}

@@ -1,14 +1,14 @@
 import type { Context } from 'hono';
 import { itemIdToSqid, itemSqidToId } from '../../utils';
 
-export const handleItemsListsNewForm = async (c: Context) => {
+export async function handleItemsListsNewForm(c: Context) {
     const itemSqid = c.req.param('item_sqid');
     return c.html(`<form hx-post="/items/${itemSqid}/lists" hx-target="this" hx-swap="outerHTML" style="margin-top:0.5em;">
         <input type="text" name="list_title" placeholder="Type list title and press Enter" style="font-size: inherit !important;padding: 0.25em 0.5em !important;">
     </form>`);
-};
+}
 
-export const handleItemsListsNewPOST = async (c: Context) => {
+export async function handleItemsListsNewPOST(c: Context) {
     const body = await c.req.parseBody();
     const itemSqid = c.req.param('item_sqid');
     const listTitle = body.list_title.toString();
@@ -40,10 +40,10 @@ export const handleItemsListsNewPOST = async (c: Context) => {
     return c.html(
         `<a class="no-underline no-color" href="/lists/${list_sqid}">${listTitle}</a> <a hx-post="/items/${itemSqid}/lists/${list_sqid}/remove" hx-swap="outerHTML transition:true">[- remove from list]</a><br>`,
     );
-};
+}
 
 // add item to list
-export const handleItemsListsAddPOST = async (c: Context) => {
+export async function handleItemsListsAddPOST(c: Context) {
     const item_sqid = c.req.param('item_sqid');
     const list_sqid = c.req.param('list_sqid');
     const item_id = itemSqidToId(item_sqid);
@@ -55,9 +55,9 @@ export const handleItemsListsAddPOST = async (c: Context) => {
 
     if (result.success) return c.html('[added]');
     return c.html('Error while adding item to list');
-};
+}
 
-export const handleItemsListsRemovePOST = async (c: Context) => {
+export async function handleItemsListsRemovePOST(c: Context) {
     const item_sqid = c.req.param('item_sqid');
     const list_sqid = c.req.param('list_sqid');
     const item_id = itemSqidToId(item_sqid);
@@ -69,7 +69,7 @@ export const handleItemsListsRemovePOST = async (c: Context) => {
 
     if (result.success) return c.html('[removed]');
     return c.html('Error while removing item from list');
-};
+}
 
 export function checkListTitle(listTitle: string) {
     // allow only latin chars, numbers, -, +, =, ?, _, and space

@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 
-export const handleOpensearchXML = async (c: Context) => {
+export async function handleOpensearchXML(c: Context) {
     c.header('Content-Type', 'application/xml');
     c.status(200);
     return c.body(`
@@ -20,4 +20,4 @@ export const handleOpensearchXML = async (c: Context) => {
             <Url type="text/html" template="https://minifeed.net/search?q={searchTerms}"/>
         </OpenSearchDescription>
 `);
-};
+}

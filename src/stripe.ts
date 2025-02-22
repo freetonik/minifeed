@@ -3,7 +3,7 @@ import { raw } from 'hono/html';
 import { renderHTML } from './htmltools';
 import { SubscriptionTier } from './interface';
 
-export const handleStripeCreateCheckoutSessionPOST = async (c: Context) => {
+export async function handleStripeCreateCheckoutSessionPOST(c: Context) {
     const rootUrl = c.env.ENVIRONMENT === 'dev' ? 'http://localhost:8181' : 'https://minifeed.net';
     const priceId = c.env.ENVIRONMENT === 'dev' ? 'price_1QRcf4KC5WacZa26QtsqLKH9' : 'price_1QYnPcKC5WacZa262IMq0DLn';
     const user_id = c.get('USER_ID');
@@ -35,9 +35,9 @@ export const handleStripeCreateCheckoutSessionPOST = async (c: Context) => {
     });
 
     return c.redirect(session.url, 303);
-};
+}
 
-export const handleBillingSuccess = async (c: Context) => {
+export async function handleBillingSuccess(c: Context) {
     return c.html(
         renderHTML(
             'Billing | minifeed',
@@ -47,9 +47,9 @@ export const handleBillingSuccess = async (c: Context) => {
             c.get('USER_LOGGED_IN'),
         ),
     );
-};
+}
 
-export const handleBillingCancel = async (c: Context) => {
+export async function handleBillingCancel(c: Context) {
     return c.html(
         renderHTML(
             'Billing | minifeed',
@@ -57,7 +57,7 @@ export const handleBillingCancel = async (c: Context) => {
             c.get('USER_LOGGED_IN'),
         ),
     );
-};
+}
 
 async function fulfillCheckout(c: Context, sessionId: string) {
     const stripe = c.get('stripe');
@@ -86,7 +86,7 @@ async function fulfillCheckout(c: Context, sessionId: string) {
     }
 }
 
-export const handleStripeWebhook = async (c: Context) => {
+export async function handleStripeWebhook(c: Context) {
     const stripe = c.get('stripe');
     const endpointSecret = c.env.STRIPE_WEBHOOK_ENDPOINT_SECRET;
 
@@ -108,9 +108,9 @@ export const handleStripeWebhook = async (c: Context) => {
         console.log(errorMessage);
         return c.text(errorMessage, 400);
     }
-};
+}
 
-export const handleStripeCustomerPortalPOST = async (c: Context) => {
+export async function handleStripeCustomerPortalPOST(c: Context) {
     const stripe = c.get('stripe');
     const user_id = c.get('USER_ID');
     const user = await c.env.DB.prepare(`
@@ -129,7 +129,7 @@ export const handleStripeCustomerPortalPOST = async (c: Context) => {
         return_url: 'https://minifeed.net/account',
     });
     return c.redirect(session.url, 303);
-};
+}
 
 const upgradeUser = async (c: Context, user_id: number, customerId: string, tier: SubscriptionTier, months: number) => {
     const until = new Date();

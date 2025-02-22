@@ -6,7 +6,7 @@ import { deleteItem } from './items';
 import { getCollection } from './search';
 import { feedSqidToId, findObjsUniqueToListOne, groupObjectsByProperty } from './utils';
 
-export const handleAdmin = async (c: Context) => {
+export async function handleAdmin(c: Context) {
     let list = '';
     const feeds = await c.env.DB.prepare(
         'SELECT * FROM feeds LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id ORDER BY feed_id ASC ',
@@ -280,9 +280,9 @@ export const handleAdmin = async (c: Context) => {
     `;
 
     return c.html(renderHTML('admin | minifeed', raw(list), true));
-};
+}
 
-export const handleDuplicateItems = async (c: Context) => {
+export async function handleDuplicateItems(c: Context) {
     const limit = c.req.query('limit') || 100;
     const duplicatesByURL = await c.env.DB.prepare(`
         SELECT item_id, item_sqid, items.title, feed_sqid, feeds.title as feed_title, items.pub_date
@@ -406,9 +406,9 @@ export const handleDuplicateItems = async (c: Context) => {
     }
 
     return c.html(renderHTML('admin | minifeed', raw(inner), true));
-};
+}
 
-export const handleAdminUnvectorizedItems = async (c: Context) => {
+export async function handleAdminUnvectorizedItems(c: Context) {
     let list = '<ol>';
 
     const unvectorized_items = await c.env.DB.prepare(
@@ -434,9 +434,9 @@ export const handleAdminUnvectorizedItems = async (c: Context) => {
     list += '</ol>';
 
     return c.html(renderHTML('admin | minifeed', raw(list), true));
-};
+}
 
-export const handleAdminUnindexedItems = async (c: Context) => {
+export async function handleAdminUnindexedItems(c: Context) {
     const allItemIdsEntries = await c.env.DB.prepare(
         'SELECT item_id, item_sqid, items.feed_id, feeds.feed_sqid FROM Items JOIN feeds on items.feed_id = feeds.feed_id ',
     ).all();
@@ -475,9 +475,9 @@ export const handleAdminUnindexedItems = async (c: Context) => {
     `;
 
     return c.html(renderHTML('admin | minifeed', raw(inner), true));
-};
+}
 
-export const handleAdminUnindexedFeeds = async (c: Context) => {
+export async function handleAdminUnindexedFeeds(c: Context) {
     const allFeedIdsEntries = await c.env.DB.prepare('SELECT feed_id, feed_sqid FROM feeds ').all();
     const allDBFeeds = [];
     for (const feed of allFeedIdsEntries.results) {
@@ -516,9 +516,9 @@ export const handleAdminUnindexedFeeds = async (c: Context) => {
     `;
 
     return c.html(renderHTML('admin | minifeed', raw(inner), true));
-};
+}
 
-export const handleAdminItemsWithoutSqid = async (c: Context) => {
+export async function handleAdminItemsWithoutSqid(c: Context) {
     const items_without_sqid = await c.env.DB.prepare(`
         SELECT item_id, item_sqid, items.title, feed_sqid, feeds.title as feed_title
         FROM Items
@@ -538,9 +538,9 @@ export const handleAdminItemsWithoutSqid = async (c: Context) => {
     list += '</ol>';
 
     return c.html(renderHTML('admin | minifeed', raw(list), true));
-};
+}
 
-export const handleAdminItemsWithoutRelated = async (c: Context) => {
+export async function handleAdminItemsWithoutRelated(c: Context) {
     const items = await c.env.DB.prepare(`
         SELECT
             items.item_sqid,
@@ -569,7 +569,7 @@ export const handleAdminItemsWithoutRelated = async (c: Context) => {
     list += '</ol>';
 
     return c.html(renderHTML('admin | minifeed', raw(list), true));
-};
+}
 
 async function processJsonlStream(response: Response) {
     if (!response.body) return;

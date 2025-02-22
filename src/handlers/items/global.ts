@@ -3,7 +3,7 @@ import { raw } from 'hono/html';
 import { renderGlobalSubsections, renderGuestFlash, renderHTML, renderItemShort } from '../../htmltools';
 import { regenerateListOfItemIds } from '../../items';
 
-export const handleGlobal = async (c: Context) => {
+export async function handleGlobal(c: Context) {
     const userId = c.get('USER_ID') || -1;
     const itemsPerPage = 60;
     const listingType = c.req.param('listingType') || 'newest';
@@ -58,7 +58,7 @@ export const handleGlobal = async (c: Context) => {
     if (!items.length) return c.notFound();
 
     let list = '';
-    if (!c.get('USER_LOGGED_IN')) list += renderGuestFlash;
+    if (!c.get('USER_LOGGED_IN')) list += renderGuestFlash();
     list += renderGlobalSubsections(listingType);
 
     for (let i = 0; i < items.length - 1; i++) {
@@ -89,4 +89,4 @@ export const handleGlobal = async (c: Context) => {
             c.get('USER_IS_ADMIN') ? `${metaInfo.duration} ms., ${metaInfo.rows_read} rows read` : '',
         ),
     );
-};
+}

@@ -171,7 +171,6 @@ export async function handleItem(c: Context) {
             </button>
             </span>`;
         }
-
         readerViewBlock = `<a class="button" href="/items/${itemSqid}/reader">≡ reader</a>`;
     } else {
         listsBlock = `<span id="favorite"> <button class="button" title="Log in to add to list" disabled>⛬ list</button> </span>`;

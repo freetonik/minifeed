@@ -2,7 +2,7 @@ import { html, raw } from 'hono/html';
 import { renderedCSS } from './css';
 import type { FeedSearchResult, ItemSearchResult } from './interface';
 
-export const renderHTML = (
+export function renderHTML(
     title: string,
     inner: string,
     loggedIn = false,
@@ -10,7 +10,7 @@ export const renderHTML = (
     searchQuery = '',
     canonicalUrl = '',
     debugInfo = '',
-) => {
+) {
     const canonicalUrlBlock = canonicalUrl ? raw(`<link rel="canonical" href="${canonicalUrl}" />`) : '';
 
     const userBlock = loggedIn
@@ -71,7 +71,7 @@ export const renderHTML = (
     </footer>
     </body>
     </html>`;
-};
+}
 
 export function renderReaderView(title: string, inner: string) {
     return html`
@@ -262,7 +262,7 @@ export function renderReaderView(title: string, inner: string) {
 
 const dateFormatOptions: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
 
-export const renderItemShort = (
+export function renderItemShort(
     item_sqid: string,
     title: string,
     url: string,
@@ -270,7 +270,7 @@ export const renderItemShort = (
     feed_sqid?: string,
     pub_date?: string,
     summary?: string,
-) => {
+) {
     const divClass = summary ? 'item-short' : 'item-tiny';
     const postDate = pub_date ? `${new Date(pub_date).toLocaleDateString('en-UK', dateFormatOptions)} | ` : '';
     const feedLink = feed_title ? `<a href="/blogs/${feed_sqid}">${feed_title}</a> | ` : '';
@@ -289,16 +289,16 @@ export const renderItemShort = (
         ${summaryContent}
     </div>
     `;
-};
+}
 
-export const renderLinkShort = (
+export function renderLinkShort(
     title: string,
     url: string,
     description: string,
     pub_date: string,
     itemId?: number,
     username?: string,
-) => {
+) {
     const postDate = new Date(pub_date).toLocaleDateString('en-UK', dateFormatOptions);
     const feedLink = url.substring(0, 64);
 
@@ -322,9 +322,9 @@ export const renderLinkShort = (
         ${summaryContent}
     </div>
     `;
-};
+}
 
-export const renderItemSearchResult = (searchResult: ItemSearchResult) => {
+export function renderItemSearchResult(searchResult: ItemSearchResult) {
     const item = searchResult.document;
     const postDate = new Date(item.pub_date).toLocaleDateString('en-UK', dateFormatOptions);
     const uri_root_from_type = item.type === 'blog' ? 'blogs' : '';
@@ -351,9 +351,9 @@ export const renderItemSearchResult = (searchResult: ItemSearchResult) => {
         </p>
     </div>
     `;
-};
+}
 
-export const renderFeedSearchResult = (searchResult: FeedSearchResult) => {
+export function renderFeedSearchResult(searchResult: FeedSearchResult) {
     const feed = searchResult.document;
     const uri_root_from_type = feed.type === 'blog' ? 'blogs' : '';
     const type = feed.type === 'blog' ? 'blog' : 'Minifeed blog';
@@ -369,9 +369,9 @@ export const renderFeedSearchResult = (searchResult: FeedSearchResult) => {
         </small>
     </div>
     `;
-};
+}
 
-export const renderAddFeedForm = (url = '', flash = '') => {
+export function renderAddFeedForm(url = '', flash = '') {
     let flash_test = '';
     if (flash.includes('Cannot find RSS link'))
         flash_test += 'Cannot find RSS link on that page. Try entering direct RSS URL.';
@@ -398,9 +398,9 @@ export const renderAddFeedForm = (url = '', flash = '') => {
         <input type="submit" value="Add blog" />
       </form>
   `);
-};
+}
 
-export const renderAddItemByURLForm = (url = '', urls = '', flash = '', blogTitle = '') => {
+export function renderAddItemByURLForm(url = '', urls = '', flash = '', blogTitle = '') {
     let flash_test = '';
     if (flash.includes('Cannot fetch url')) flash_test += 'That page does not exist.';
     else flash_test += flash;
@@ -437,9 +437,9 @@ export const renderAddItemByURLForm = (url = '', urls = '', flash = '', blogTitl
       </form>
     </div>
   `);
-};
+}
 
-export const renderMySubsections = (active = 'all') => {
+export function renderMySubsections(active = 'all') {
     return `
     <nav class="subsections">
         <a href="/all" class="no-color no-underline ${active === 'my' ? 'active bold' : ''}">all</a>
@@ -448,9 +448,9 @@ export const renderMySubsections = (active = 'all') => {
         <a href="/friendfeed" class="no-color no-underline ${active === 'friendfeed' ? 'active bold' : ''}">friendfeed</a>
     </nav>
     `;
-};
+}
 
-export const renderGlobalSubsections = (active = 'newest') => {
+export function renderGlobalSubsections(active = 'newest') {
     return `
     <nav class="subsections">
         <a href="/global" class="no-color no-underline ${active === 'newest' ? 'active bold' : ''}">newest</a>
@@ -458,9 +458,9 @@ export const renderGlobalSubsections = (active = 'newest') => {
         <a href="/global/random" class="no-color no-underline ${active === 'random' ? 'active bold' : ''}">random</a>
     </nav>
     `;
-};
+}
 
-export const renderBlogsSubsections = (active = 'newest', userLoggedIn = true) => {
+export function renderBlogsSubsections(active = 'newest', userLoggedIn = true) {
     return `
     <nav class="subsections">
         <a href="/blogs" class="no-color no-underline ${active === 'newest' ? 'active bold' : ''}">new</a>
@@ -471,9 +471,9 @@ export const renderBlogsSubsections = (active = 'newest', userLoggedIn = true) =
         ${!userLoggedIn ? 'disabled' : ''} ">subscribed</a>
     </nav>
     `;
-};
+}
 
-export const renderLinksSubsections = (active = 'newest', username = '') => {
+export function renderLinksSubsections(active = 'newest', username = '') {
     let myLink = '';
     if (username) {
         myLink = `<a href="/linkblogs/${username}" class="no-color no-underline">my linkblog → </a>`;
@@ -485,10 +485,12 @@ export const renderLinksSubsections = (active = 'newest', username = '') => {
         ${myLink}
     </nav>
     `;
-};
+}
 
-export const renderGuestFlash = `<div class="flash">
+export function renderGuestFlash() {
+    return `<div class="flash">
     <strong>Minifeed</strong> is a curated blog reader and search engine.
     We collect humans-written blogs to make them discoverable and searchable.
     Sign up to subscribe to blogs, follow people, save favorites, and create lists.
     </div>`;
+}

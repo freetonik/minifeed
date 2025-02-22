@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import { itemSqidToId } from '../../utils';
 
-export const handleItemsAddToFavorites = async (c: Context) => {
+export async function handleItemsAddToFavorites(c: Context) {
     const itemSqid = c.req.param('item_sqid');
     const itemId: number = itemSqidToId(itemSqid);
     const userId = c.get('USER_ID');
@@ -34,9 +34,9 @@ export const handleItemsAddToFavorites = async (c: Context) => {
     "Error"
     </span>
     `);
-};
+}
 
-export const handleItemsRemoveFromFavorites = async (c: Context) => {
+export async function handleItemsRemoveFromFavorites(c: Context) {
     const itemSqid = c.req.param('item_sqid');
     const itemId: number = itemSqidToId(itemSqid);
     const userId = c.get('USER_ID');
@@ -65,4 +65,4 @@ export const handleItemsRemoveFromFavorites = async (c: Context) => {
     }
 
     return c.html(` <span id="favorite"> "Error" </span> `);
-};
+}

@@ -13,7 +13,7 @@ export async function handleUsers(c: Context) {
     ).run();
 
     let inner = '';
-    if (!c.get('USER_LOGGED_IN')) inner += renderGuestFlash;
+    if (!c.get('USER_LOGGED_IN')) inner += renderGuestFlash();
 
     for (const user of results) {
         if (user.username === username)
