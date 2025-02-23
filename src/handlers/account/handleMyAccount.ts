@@ -20,16 +20,13 @@ export function renderSubscriptionBlock(
     };
     const features = `
     <ul>
-        <li>Weekly email digest †</li>
-        <li>Listen to articles (text-to-speech) †</li>
-        <li>Full-text search of your favorites †</li>
-        <li>Create your link blog *</li>
-        <li>Reader view *</li>
-        <li>OPML export *</li>
-    </ul>
-
-    <i>* - beta testing in progress, available soon<br>
-    † - planned for spring 2025</i>`;
+        <li>Create your link blog</li>
+        <li>Reader view</li>
+        <li>OPML export</li>
+        <li>Weekly email digest (coming soon)</li>
+        <li>Listen to articles (coming soon)</li>
+        <li>Full-text search of your favorites (coming soon)</li>
+    </ul>`;
     let subscriptionBlockInner = '';
     if (hasSubscription) {
         const status = userTier === SubscriptionTier.PRO ? 'Active' : 'Inactive';
@@ -62,9 +59,8 @@ export function renderSubscriptionBlock(
         }
         subscriptionBlockInner = `
             <strong>
-                Support the development of Minifeed and access cool features in near future. $39 (€39) per year.
+                Support the development of Minifeed and get access to new features. $39 (€39) per year.
             </strong>
-            Upcoming paid features include:
             ${features}
             ${button}
     `;
@@ -140,7 +136,7 @@ export async function handleMyAccount(c: Context) {
         list_of_lists += '</ul>';
     }
 
-    const list = `
+    const inner = `
     <h1>My account</h1>
     <p>
         Username: ${username}<br>
@@ -156,7 +152,7 @@ export async function handleMyAccount(c: Context) {
         <a class="button button-small" href="/logout">Log out</a>
     </p>`;
 
-    return c.html(renderHTML('My account | minifeed', raw(list), username, ''));
+    return c.html(renderHTML('My account | minifeed', raw(inner), username, ''));
 }
 
 export async function handleVerifyEmail(c: Context) {
