@@ -280,8 +280,13 @@ app.get('/links', handleLinks);
 app.get('/links/:listingType', handleLinks);
 
 app.get('/linkblogs/:username', handleLinkblog);
-app.post('/linkblogs/:username', paidSubscriptionRequiredMiddleware, handleLinkblogPOST);
-app.delete('/linkblogs/:username/:link_id', paidSubscriptionRequiredMiddleware, handleLinkblogDELETE);
+app.post('/linkblogs/:username', authRequiredMiddleware, paidSubscriptionRequiredMiddleware, handleLinkblogPOST);
+app.delete(
+    '/linkblogs/:username/:link_id',
+    authRequiredMiddleware,
+    paidSubscriptionRequiredMiddleware,
+    handleLinkblogDELETE,
+);
 
 app.get('/about', async (c: Context) => c.html(renderHTML('About | minifeed', raw(about), c.get('USER_LOGGED_IN'))));
 app.get('/about/changelog', async (c: Context) =>
