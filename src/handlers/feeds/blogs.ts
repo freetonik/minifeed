@@ -94,7 +94,13 @@ export async function handleBlogs(c: Context) {
         </div>`;
     } // iterate over feeds
 
-    inner += `<div style="margin-top:2em;text-align:center;"><a class="button" href="/suggest">+ suggest a blog</a></div>`;
+    let opmlLink = '';
+    if (listingType === 'subscribed')
+        opmlLink = ` <a class="button util-ml-1" href="/blogs/by/subscribed/opml.xml">OPML export</a>`;
+    else if (listingType === 'newest' || listingType === 'oldest' || listingType === 'alphabetical')
+        opmlLink = ` <a class="button util-ml-1" href="/blogs/opml.xml">OPML export</a>`;
+
+    inner += `<div style="margin-top:2em;text-align:center;"><a class="button" href="/suggest">+ suggest a blog</a>${opmlLink}</div>`;
     const html = renderHTML(
         'Blogs | minifeed',
         raw(inner),

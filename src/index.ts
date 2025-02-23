@@ -52,6 +52,7 @@ import {
 } from './handlers/feeds/feedAdmin';
 import { handleFeedsSubscribe, handleFeedsUnsubscribe } from './handlers/feeds/feedSubscribePartial';
 import { handleOPMLGlobal } from './handlers/feeds/opmlGlobal';
+import { handleOPMLSubscribed } from './handlers/feeds/opmlSubscribed';
 import { handleFavicon } from './handlers/handleFavicon';
 import { handleRobotsTxt } from './handlers/handleRobotsTxt';
 import { handleGlobal } from './handlers/items/global';
@@ -250,6 +251,7 @@ app.get('/blogs/opml.xml', handleOPMLGlobal);
 app.get('/blogs/:feed_sqid', handleBlog);
 app.get('/blogs', handleBlogs);
 app.get('/blogs/by/:listingType?', handleBlogs);
+app.get('/blogs/by/subscribed/opml.xml', authRequiredMiddleware, handleOPMLSubscribed);
 
 app.post('/feeds/:feed_sqid/subscribe', authRequiredMiddleware, handleFeedsSubscribe);
 app.post('/feeds/:feed_sqid/unsubscribe', authRequiredMiddleware, handleFeedsUnsubscribe);
