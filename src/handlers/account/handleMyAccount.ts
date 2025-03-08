@@ -527,7 +527,7 @@ export async function handleSignupPOST(c: Context) {
                 'Account created | minifeed',
                 raw(`<div class="flash flash-blue">
                     Huzzah! Check your email for a verification link.<br>
-                    Please, verify your email to within 3 days. Otherwise, your account will be deleted. Sorry for this, we just have to keep bots out. But you're totally human!
+                    Please verify your email within 3 days. Otherwise, your account will be deleted. Sorry for this, we just have to keep bots out. But you're totally human!
                 </div>`),
                 false,
             ),
@@ -545,9 +545,9 @@ async function send_email_verification_link(
 ) {
     const emailVerificationLink = `${env.ENVIRONMENT === 'dev' ? 'http://localhost:8181' : 'https://minifeed.net'}/verify_email?code=${email_verification_code}`;
 
-    const emailBody = `Welcome to minifeed, ${username}!<br><br>Please, verify your email by clicking on <strong><a href="${emailVerificationLink}">this link</a></strong>.
+    const emailBody = `Welcome to minifeed, ${username}!<br><br>Verify your email by clicking on <strong><a href="${emailVerificationLink}">this link</a></strong>.
     <br>
-    Please, verify your email to within 3 days. Otherwise, your account will be deleted. Sorry for this, we just have to keep bots out. But you're totally human!
+    Please do it within 3 days. Otherwise, your account will be deleted. Sorry for this, we just have to keep bots out. But you're totally human!
     `;
 
     await sendEmail(env, email, 'Welcome to minifeed', emailBody);
