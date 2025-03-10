@@ -50,9 +50,20 @@ export async function vectorizeAndStoreItem(env: Bindings, item_id: number) {
         await enqueueRegenerateRelatedCache(env, item_id);
         return;
     }
-    // if item is already in vector store, skip
+
+    // if item is already in vector store, skip but maybe update db
     const vectors = await env.VECTORIZE.getByIds([`${item_id}`]);
-    if (vectors.length) return;
+    if (vectors.length) {
+        const vectorRelationItem = await env.DB.prepare('SELECT item_id FROM items_vector_relation WHERE item_id = ?')
+            .bind(item_id)
+            .first();
+        if (!vectorRelationItem) {
+            await env.DB.prepare('REPLACE INTO items_vector_relation (item_id, vectorized) VALUES (?,?)')
+                .bind(item_id, 1)
+                .run();
+        }
+        return;
+    }
 
     const item = await env.DB.prepare(
         'SELECT item_id, feed_id, title, description, content_html FROM items WHERE item_id = ?',
