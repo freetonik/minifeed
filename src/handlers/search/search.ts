@@ -12,7 +12,7 @@ export async function handleSearch(c: Context) {
     // if query only contains spaces
     if (!q || q.trim().length === 0) return renderSearchError(c, 'Search query cannot be empty', q || '');
     // if query is over 50 characters
-    if (q.length > 50) return renderSearchError(c, 'Search query cannot be longer than 50 characters', q);
+    if (q.length > 100) return renderSearchError(c, 'Search query cannot be longer than 100 characters', q);
     // if query is does not contain any letters
     if (!q.match(/[a-zA-Z]/)) return renderSearchError(c, 'Search query must contain at least one letter', q);
     // scope exists, but wrong
