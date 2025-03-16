@@ -112,7 +112,6 @@ export async function handleBlog(c: Context) {
     }
 
     let related_block = '';
-    console.log(batch[2].results);
     if (batch[2].results?.length) {
         related_block += '<div class="related-items"><h4>Related blogs</h4><div class="items fancy-gradient-bg">';
         for (const i of batch[2].results) {

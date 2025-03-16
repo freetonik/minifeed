@@ -1,49 +1,12 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
 import { renderHTML, renderReaderView } from '../../htmltools';
-import { SubscriptionTier } from '../../interface';
 import { absolutifyImageUrls, getRootUrl, itemSqidToId, sanitizeHTML } from '../../utils';
 
 export async function handleItemReaderView(c: Context) {
     const itemSqid = c.req.param('item_sqid');
     const itemId: number = itemSqidToId(itemSqid);
-    const userId = c.get('USER_ID');
-
-    const batch = await c.env.DB.batch([
-        // batch[0]: user
-        c.env.DB.prepare(`
-            SELECT
-            users.created, username, status, email,
-            tier, expires
-
-            FROM users
-            LEFT JOIN user_subscriptions on users.user_id = user_subscriptions.user_id
-            WHERE users.user_id = ?`).bind(userId),
-
-        // batch[1]: item
-        c.env.DB.prepare(
-            `
-        SELECT
-            items.item_id,
-            items.feed_id,
-            items.title AS item_title,
-            items.description,
-            items.content_html,
-            items.content_html_scraped,
-            items.pub_date,
-            items.url AS item_url,
-            feeds.title AS feed_title,
-            feeds.feed_sqid
-        FROM items
-        JOIN feeds ON items.feed_id = feeds.feed_id
-        WHERE items.item_id = ?
-        ORDER BY items.pub_date DESC`,
-        ).bind(itemId),
-    ]);
-
-    if (!batch[1].results.length) return c.notFound();
-    const user = batch[0].results[0];
-    const hasSubscription = user.tier === SubscriptionTier.PRO;
+    const hasSubscription = c.get('USER_HAS_SUBSCRIPTION');
 
     if (!hasSubscription) {
         return c.html(
@@ -57,7 +20,27 @@ export async function handleItemReaderView(c: Context) {
         );
     }
 
-    const item = batch[1].results[0];
+    const item = await c.env.DB.prepare(`
+    SELECT
+        items.item_id,
+        items.feed_id,
+        items.title AS item_title,
+        items.description,
+        items.content_html,
+        items.content_html_scraped,
+        items.pub_date,
+        items.url AS item_url,
+        feeds.title AS feed_title,
+        feeds.feed_sqid
+    FROM items
+    JOIN feeds ON items.feed_id = feeds.feed_id
+    WHERE items.item_id = ?
+    ORDER BY items.pub_date DESC`)
+        .bind(itemId)
+        .first();
+
+    if (!item) return c.notFound();
+
     const date_format_opts: Intl.DateTimeFormatOptions = {
         year: 'numeric',
         month: 'short',
@@ -71,7 +54,6 @@ export async function handleItemReaderView(c: Context) {
     contentBlock = await absolutifyImageUrls(contentBlock, getRootUrl(item.item_url));
 
     const inner = `
-
     <article>
         <h1>${item.item_title}</h1>
         <p>
@@ -81,7 +63,6 @@ export async function handleItemReaderView(c: Context) {
         <hr style="margin:2em 0;">
         ${contentBlock}
     </article>
-
     `;
 
     return c.html(renderReaderView(`${item.item_title} | ${item.feed_title} | minifeed`, raw(inner)));

@@ -408,6 +408,7 @@ export default {
                 await enqueueRegenerateRelatedCacheForAllItems(env);
                 await regenerateListOfItemIds(env); // used for random feed
                 // TODO: remove links that are not in users' linkblogs
+                // TODO: remove sessions older than 1 year
                 break;
         }
     },

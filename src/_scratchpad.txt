@@ -92,3 +92,44 @@ npx wrangler d1 execute minifeed --command="ALTER TABLE items2 RENAME TO items;"
             background-color: #b1aaa0;
         }
 ```
+
+```
+app.get('/admin/migrateKV2DB', async (c: Context) => {
+    const allSessionsFromKV = await c.env.SESSIONS_KV.list();
+    let inner = '';
+    console.log(allSessionsFromKV);
+
+    for (const sessionKey of allSessionsFromKV.keys) {
+        const session = await c.env.SESSIONS_KV.get(sessionKey.name);
+        if (session != null && session !== 'null') {
+            const values = session.split(';');
+            const userId = Number.parseInt(values[0]);
+            // check if sessionKey.name is already in DB
+            const existing = await c.env.DB.prepare('SELECT * FROM sessions WHERE session_key = ?')
+                .bind(sessionKey.name)
+                .first();
+            if (existing) {
+                inner += `Session ${sessionKey.name} already exists in DB<br>`;
+                continue;
+            }
+
+            // check if user exists
+            const user = await c.env.DB.prepare('SELECT * FROM users WHERE user_id = ?').bind(userId).first();
+            if (!user) {
+                inner += `User ${userId} does not exist<br>`;
+                continue;
+            }
+
+            const inserting = await c.env.DB.prepare(
+                'INSERT INTO sessions (user_id, session_key) VALUES (?, ?) RETURNING *',
+            )
+                .bind(userId, sessionKey.name)
+                .first();
+            if (inserting) {
+                inner += `Inserted ${inserting.session_id} - ${inserting.session_key} - ${inserting.user_id}<br>`;
+            }
+        }
+    }
+    return c.html(inner);
+});
+```

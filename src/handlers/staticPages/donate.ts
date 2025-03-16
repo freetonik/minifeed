@@ -1,33 +1,20 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
 import { renderHTML } from '../../htmltools';
-import { SubscriptionTier } from '../../interface';
 import { renderSubscriptionBlock } from '../account/handleMyAccount';
 
 export async function handleDonate(c: Context) {
-    const user_id = c.get('USER_ID');
-    let user = undefined;
-    if (user_id) {
-        user = await c.env.DB.prepare(`
-            SELECT
-            users.created, username, status, email,
-            tier, expires
-
-            FROM users
-            LEFT JOIN user_subscriptions on users.user_id = user_subscriptions.user_id
-
-            WHERE users.user_id = ?`)
-            .bind(user_id)
-            .first();
-    }
+    // const user_id = c.get('USER_ID');
+    const userLoggedIn = c.get('USER_LOGGED_IN');
+    const userHasSubscription = c.get('USER_HAS_SUBSCRIPTION');
 
     let subscriptionInfoBlock = '';
 
-    if (user && user.tier !== SubscriptionTier.PRO) {
+    if (userLoggedIn && !userHasSubscription) {
         subscriptionInfoBlock = `
         <p class="util-mt-1">You can also become a paid member of Minifeed:
         ${renderSubscriptionBlock(false)}`;
-    } else if (!user) {
+    } else if (!userLoggedIn) {
         subscriptionInfoBlock = `
         <p>The best way to support this project is to <a href="/signup">sign up for a free account</a>, and later become a paid member to get some cool features.
         ${renderSubscriptionBlock(false, undefined, undefined, true)}
@@ -66,10 +53,9 @@ export async function handleDonate(c: Context) {
         If you live in Finland 🇫🇮, then it is illegal for me to collect donations from you (it requires a separate paid permit). You can support me by buying some of my courses or e-books:
 
         <ul>
-        <li><a href="https://codexpanse.com/courses/conscious-attention">Conscious Attention</a> for $5 USD</li>
-        <li><a href="https://codexpanse.com/courses/computer-science-for-the-busy-developer">Computer Science for The Busy Developer
-</a> for $14 USD</li>
-        <li><a href="https://codexpanse.com/courses/clojure">Clojure Basics</a> for $14 USD</li>
+        <li><a href="https://leanpub.com/conscious-attention/">Conscious Attention</a> for any price</li>
+        <li><a href="https://leanpub.com/foundations-of-clojure-programming/">Foundations of Clojure</a> for $19 USD</li>
+        <li><a href="https://codexpanse.com/courses/computer-science-for-the-busy-developer">Computer Science for The Busy Developer</a> for $14 USD</li>
         <li><a href="https://codexpanse.com/courses/emacs">The Fundamentals of Emacs</a> for $14 USD</li>
         </ul>
 
@@ -81,5 +67,5 @@ export async function handleDonate(c: Context) {
 
 
     `;
-    return c.html(renderHTML('Donate | minifeed', raw(donate), c.get('USER_LOGGED_IN')));
+    return c.html(renderHTML('Donate | minifeed', raw(donate), userLoggedIn));
 }

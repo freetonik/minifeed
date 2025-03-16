@@ -235,5 +235,4 @@ export async function generateRelatedFeedsFromRelatedItems(env: Bindings, feedId
             .bind(feedId, rfId)
             .run();
     }
-    console.log(relatedFeedsIds);
 }

@@ -117,8 +117,8 @@ export async function handleMyAccount(c: Context) {
 
             <button class="button" type="submit">Save Preferences</button>
         </form>
-    </div>
-`;
+    </div>`;
+
     let list_of_lists = '';
     const lists = await c.env.DB.prepare(
         `SELECT *
@@ -177,13 +177,12 @@ export async function handleVerifyEmail(c: Context) {
     }
 
     const userId = result.user_id;
-    const username = result.username;
     await c.env.DB.batch([
         c.env.DB.prepare('UPDATE users SET email_verified = 1 WHERE user_id = ?').bind(userId),
         c.env.DB.prepare('DELETE FROM email_verifications WHERE user_id = ?').bind(userId),
     ]);
 
-    return await createSessionSetCookieAndRedirect(c, userId, username, '/', true);
+    return await createSessionSetCookieAndRedirect(c, userId, '/', true);
 }
 
 export async function handleMyAccountPreferencesPOST(c: Context) {
@@ -235,7 +234,7 @@ export async function handleLogout(c: Context) {
     if (!sessionKey) {
         return c.redirect('/');
     }
-    await c.env.SESSIONS_KV.delete(sessionKey);
+    await c.env.DB.prepare('DELETE FROM sessions WHERE session_key = ?').bind(sessionKey).run();
     deleteCookie(c, 'minifeed_session');
     return c.redirect('/');
 }
@@ -447,7 +446,7 @@ export async function handleLoginPOST(c: Context) {
             );
         }
         try {
-            return await createSessionSetCookieAndRedirect(c, user.user_id, user.username);
+            return await createSessionSetCookieAndRedirect(c, user.user_id);
         } catch (err) {
             throw new Error('Something went horribly wrong.');
         }
@@ -561,16 +560,17 @@ async function send_password_reset_link(env: Bindings, email: string, password_r
     await sendEmail(env, email, 'Password reset request', emailBody);
 }
 
-async function createSessionSetCookieAndRedirect(
-    c: Context,
-    userId: number,
-    username: string,
-    redirectTo = '/',
-    firstLogin = false,
-) {
+async function createSessionSetCookieAndRedirect(c: Context, userId: number, redirectTo = '/', firstLogin = false) {
     const sessionKey = randomHash(32);
-    const kv_value = `${userId};${username}`;
-    await c.env.SESSIONS_KV.put(sessionKey, kv_value);
+
+    const sessionIdResult = await c.env.DB.prepare(
+        'INSERT INTO sessions (user_id, session_key) values (?, ?) RETURNING session_id',
+    )
+        .bind(userId, sessionKey)
+        .first();
+
+    if (!sessionIdResult.session_id) throw new Error('Could not create session');
+
     setCookie(c, 'minifeed_session', sessionKey, {
         path: '/',
         domain: c.env.ENVIRONMENT === 'dev' ? '.localhost' : '.minifeed.net',

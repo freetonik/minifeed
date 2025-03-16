@@ -1,12 +1,12 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
 import { renderHTML, renderLinkShort } from '../../htmltools';
-import { SubscriptionTier } from '../../interface';
 
 export async function handleLinkblog(c: Context) {
     const userId = c.get('USER_ID') || '0';
     const currentUsername = c.get('USERNAME');
     const userLoggedIn = c.get('USER_LOGGED_IN');
+    const hasSubscription = c.get('USER_HAS_SUBSCRIPTION');
     const username = c.req.param('username');
 
     const queryUrl = c.req.query('url') || '';
@@ -19,9 +19,8 @@ export async function handleLinkblog(c: Context) {
     const batch = await c.env.DB.batch([
         // target user batch[0]
         c.env.DB.prepare(`
-        SELECT users.user_id, users.username, tier
+        SELECT users.user_id, users.username
         FROM users
-        LEFT JOIN user_subscriptions on users.user_id = user_subscriptions.user_id
         WHERE users.username = ?`).bind(username),
 
         // follower stuff [1]
@@ -52,8 +51,6 @@ export async function handleLinkblog(c: Context) {
 
     // user not found
     if (!batch[0].results.length) return c.notFound();
-
-    const hasSubscription = batch[0].results[0].tier === SubscriptionTier.PRO;
 
     let inner = '';
 

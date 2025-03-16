@@ -9,17 +9,35 @@ const Stripe = require('stripe');
 export async function authCheckMiddleware(c: Context, next: () => Promise<void>) {
     const sessionKey = getCookie(c, 'minifeed_session');
     if (sessionKey) {
-        const kv_value = await c.env.SESSIONS_KV.get(sessionKey);
-        if (kv_value != null) {
-            const values = kv_value.split(';');
-            c.set('USER_ID', Number.parseInt(values[0]));
-            c.set('USERNAME', values[1]);
+        const sessionWithDetails = await c.env.DB.prepare(`
+            SELECT sessions.created, session_id, users.user_id, users.username, tier
+            FROM sessions
+            JOIN users ON sessions.user_id = users.user_id
+            LEFT JOIN user_subscriptions on users.user_id = user_subscriptions.user_id
+            WHERE session_key = ?
+            `)
+            .bind(sessionKey)
+            .first();
+
+        if (sessionWithDetails) {
+            c.set('USER_ID', sessionWithDetails.user_id);
+            c.set('USERNAME', sessionWithDetails.username);
             c.set('USER_LOGGED_IN', true);
-            c.set('USER_IS_ADMIN', values[0] === '1');
-            // TODO: upsert KV only when key is expiring soon
-            await c.env.SESSIONS_KV.put(sessionKey, kv_value, {
-                expirationTtl: 31536000, // 1 year
-            });
+            c.set('USER_IS_ADMIN', sessionWithDetails.user_id === 1);
+            c.set('USER_TIER', sessionWithDetails.tier || SubscriptionTier.FREE);
+            c.set('USER_HAS_SUBSCRIPTION', sessionWithDetails.tier === SubscriptionTier.PRO);
+
+            // if sessionWithDetails.created is older than 11 months, update created to today
+            const created = new Date(sessionWithDetails.created);
+            const elevenMonthsAgo = new Date(Date.now() - 11 * 30 * 24 * 60 * 60 * 1000);
+            if (created < elevenMonthsAgo) {
+                await c.env.DB.prepare(`
+                    UPDATE sessions
+                    SET created = ?
+                    WHERE session_id = ?`)
+                    .bind(new Date().toISOString(), sessionWithDetails.session_id)
+                    .run();
+            }
         } else {
             c.set('USER_LOGGED_IN', false);
         }
@@ -53,22 +71,9 @@ export async function stripeMiddleware(c: Context, next: () => Promise<void>) {
 }
 
 export async function paidSubscriptionRequiredMiddleware(c: Context, next: () => Promise<void>) {
-    // TODO:
-    // 1. if session info has subscription info, just go next
-    // 2. if not, check and modify the current session info
-
-    const user_id = c.get('USER_ID');
     const userLoggedIn = c.get('USER_LOGGED_IN');
-    const user = await c.env.DB.prepare(`
-        SELECT
-        tier
-        FROM users
-        LEFT JOIN user_subscriptions on users.user_id = user_subscriptions.user_id
-        WHERE users.user_id = ?`)
-        .bind(user_id)
-        .first();
+    const hasSubscription = c.get('USER_HAS_SUBSCRIPTION');
 
-    const hasSubscription = user.tier === SubscriptionTier.PRO;
     if (!hasSubscription) {
         return c.html(
             renderHTML(
