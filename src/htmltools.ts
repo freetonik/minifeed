@@ -7,7 +7,7 @@ export function renderHTML(
     inner: string,
     loggedIn = false,
     active = 'all',
-    searchQuery = '',
+    searchQuery = { query: '', personal: false },
     canonicalUrl = '',
     debugInfo = '',
 ) {
@@ -38,11 +38,47 @@ export function renderHTML(
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/htmx/2.0.3/htmx.min.js" integrity="sha512-dQu3OKLMpRu85mW24LA1CUZG67BgLPR8Px3mcxmpdyijgl1UpCM1RtJoQP6h8UkufSnaHVRTUx98EQT9fcKohw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     </head>
 
+    <style>
+    .search-container {
+        position: relative;
+        width: 100%;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-input {
+        padding: 0.25em 0.5em !important;
+        width: 100%;
+        font-size: inherit !important;
+        min-height: 0 !important;
+        background-color: var(--color-highlight);
+        transition: background-color 0.75s ease;
+    }
+
+    .checkbox-container {
+        position: absolute;
+        right: 8px;
+        display: flex;
+        align-items: center;
+        font-size: 0.9em;
+        user-select: none;
+    }
+
+    .checkbox-container input {
+        margin-right: 4px;
+    }
+</style>
+
     <body>
     <header>
         <form action="/search" method="GET" style="width:100%;margin-bottom:1.25em;">
-            <input class="search-input"
-            type="text" name="q" placeholder="search..." minlength="2" autocomplete="off" value="${searchQuery}">
+            <div class="search-container">
+                <input class="search-input" type="text" name="q" placeholder="search..." minlength="2" autocomplete="off" value="${searchQuery.query}">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="personal-search" name="personal" value="true" onchange="this.form.submit()" ${searchQuery.personal ? 'checked' : ''}>
+                    <label for="personal-search" style="margin-bottom:0;">my feeds</label>
+                </div>
+            </div>
         </form>
         <nav aria-label="Site navigation">
             <div>

@@ -7,6 +7,7 @@ import { gatherResponse } from '../../utils';
 // Handle /search endpoint
 export async function handleSearch(c: Context) {
     const q = c.req.query('q');
+    const personal = c.req.query('personal') || 'false';
     const scope = c.req.query('scope') || 'all';
 
     // if query only contains spaces
@@ -64,8 +65,26 @@ export async function handleSearch(c: Context) {
         },
     };
 
+    let personalFilter = '';
+    if (personal === 'true') {
+        const hasSubscription = c.get('USER_HAS_SUBSCRIPTION');
+        if (!hasSubscription) {
+            return renderSearchError(c, 'You need to have a paid subscription to search your personal feed', q);
+        }
+        const blogPostIds = await c.env.DB.prepare(
+            `SELECT subscriptions.feed_id
+            FROM subscriptions
+            WHERE subscriptions.user_id = ?
+    `,
+        )
+            .bind(c.get('USER_ID'))
+            .all();
+        const ids = blogPostIds.results.map((item) => item.feed_id);
+        personalFilter = `&filter_by=feed_id:[${ids.join(',')}]`;
+    }
+
     const response = await fetch(
-        `https://${c.env.TYPESENSE_CLUSTER}:443/multi_search?page=${page}&query_by=title,content`,
+        `https://${c.env.TYPESENSE_CLUSTER}:443/multi_search?page=${page}&query_by=title,content${personalFilter}`,
         init,
     );
     const results = await gatherResponse(response);
@@ -110,7 +129,12 @@ export async function handleSearch(c: Context) {
         inner += `<p><a href="/search?q=${q}&p=${page + 1}&scope=${scope}">More</a></p>`;
     }
 
-    return c.html(renderHTML(`${q} | minifeed`, raw(inner), c.get('USERNAME'), 'search', q));
+    return c.html(
+        renderHTML(`${q} | minifeed`, raw(inner), c.get('USERNAME'), 'search', {
+            query: q,
+            personal: personal === 'true',
+        }),
+    );
 }
 
 function renderSearchError(c: Context, description: string, q: string) {
