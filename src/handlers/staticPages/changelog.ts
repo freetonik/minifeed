@@ -1,10 +1,15 @@
 export const changelog = `
     <h2>Changelog</h2>
 
+    <h3>1.4.0 (30.03.2025)</h3>
+    <ul>
+        <li>New paid feature: personal search. Full-text search across your subscriptions.</li>
+    </ul>
+
     <h3>1.3.0 (23.02.2025)</h3>
     <ul>
-        <li>New feature: personal linkblogs and <a href="/links">global links feed</a>.</li>
-        <li>New feature: export blog listings in OPML format (for feed readers). See <a href="/blogs">blogs</a> and <a href="/blogs/by/subscribed">my subscriptions</a>, links at the bottom.</li>
+        <li>New paid feature: personal linkblogs and <a href="/links">global links feed</a>.</li>
+        <li>New paid feature: export blog listings in OPML format (for feed readers). See <a href="/blogs">blogs</a> and <a href="/blogs/by/subscribed">my subscriptions</a>, links at the bottom.</li>
     </ul>
 
     <h3>1.2.1 (15.02.2025)</h3>

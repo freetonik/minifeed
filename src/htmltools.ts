@@ -49,7 +49,7 @@ export function renderHTML(c: Context, title: string, inner: string, debugInfo =
                 <input class="search-input" type="text" name="q" placeholder="search..." minlength="2" autocomplete="off" value="${searchQuery}">
                 <div class="checkbox-container">
                     <input type="checkbox" id="personal-search" name="personal" value="true" onchange="if(this.form.querySelector('.search-input').value.trim()) this.form.submit()" ${searchPersonal ? 'checked' : ''} ${userSubscribed ? '' : 'disabled'} title="${userSubscribed ? 'Search only in my subscriptions' : 'This is a paid feature'}">
-                    <label for="personal-search" style="margin-bottom:0;" title="${userSubscribed ? 'Search only in my subscriptions' : 'This is a paid feature'}">my feeds</label>
+                    <label for="personal-search" style="margin-bottom:0;" title="${userSubscribed ? 'Search only in my subscriptions' : 'This is a paid feature'}">personal</label>
                 </div>
             </div>
         </form>
@@ -61,11 +61,11 @@ export function renderHTML(c: Context, title: string, inner: string, debugInfo =
                 </div>
 
                 <a href="/" class="${active === 'my' && loggedIn ? 'chapter bold active' : 'chapter'}">My feed</a>
-                <a href="/global" class="${active === 'global' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Global</a>
-                <a href="/blogs" class="${active === 'blogs' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Blogs</a>
-                <a href="/lists" class="${active === 'lists' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Lists</a>
-                <a href="/users" class="${active === 'users' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Users</a>
-                <a href="/links" class="${active === 'Links' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Links</a>
+                <a href="/global" class="${active === 'global' ? 'chapter bold active' : 'chapter'}">Global</a>
+                <a href="/blogs" class="${active === 'blogs' ? 'chapter bold active' : 'chapter'}">Blogs</a>
+                <a href="/lists" class="${active === 'lists' ? 'chapter bold active' : 'chapter'}">Lists</a>
+                <a href="/users" class="${active === 'users' ? 'chapter bold active' : 'chapter'}">Users</a>
+                <a href="/links" class="${active === 'Links' ? 'chapter bold active' : 'chapter'}">Links</a>
             </div>
             <div class="hide-on-narrow">${userBlock}</div>
         </nav>

@@ -24,7 +24,7 @@ export function renderSubscriptionBlock(
         <li>Reader view</li>
         <li>OPML export</li>
         <li>Weekly email digest (coming soon)</li>
-        <li>Full-text search of your favorites (coming soon)</li>
+        <li>Full-text search of your personal feed (coming soon)</li>
     </ul>`;
     let subscriptionBlockInner = '';
     if (hasSubscription) {
@@ -460,7 +460,8 @@ export async function handleSignupPOST(c: Context) {
 
     // CLOUDFLARE TURNSTILE
     const token = body['cf-turnstile-response']?.toString();
-    if (!token) {
+    const localEnv = c.env.ENVIRONMENT === 'dev';
+    if (!token && !localEnv) {
         return c.text('Missing captcha token', 400);
     }
 
@@ -471,14 +472,15 @@ export async function handleSignupPOST(c: Context) {
     formData.append('remoteip', ip);
 
     const url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
-    const result = await fetch(url, {
-        body: formData,
-        method: 'POST',
-    });
-
-    const outcome = await result.json();
-    if (!outcome.success) {
-        return c.text('Missing captcha token', 400);
+    if (!localEnv) {
+        const result = await fetch(url, {
+            body: formData,
+            method: 'POST',
+        });
+        const outcome = await result.json();
+        if (!outcome.success) {
+            return c.text('Missing captcha token', 400);
+        }
     }
 
     if (!checkUsername(username))
@@ -576,6 +578,9 @@ async function createSessionSetCookieAndRedirect(c: Context, userId: number, red
         httpOnly: true,
         maxAge: 34560000,
     });
+
+    c.set('USER_ID', userId);
+    c.set('USER_LOGGED_IN', true);
 
     if (firstLogin) {
         return c.html(
