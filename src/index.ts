@@ -108,6 +108,7 @@ import {
     adminRequiredMiddleware,
     authCheckMiddleware,
     authRequiredMiddleware,
+    basicContextMiddleware,
     paidSubscriptionRequiredMiddleware,
     stripeMiddleware,
 } from './middlewares';
@@ -128,21 +129,19 @@ const app = new Hono<{ Bindings: Bindings }>({ strict: false });
 
 // string[]
 app.use('*', csrf());
-
+app.use('*', basicContextMiddleware);
 app.use('*', authCheckMiddleware);
 
 app.get('/robots.txt', handleRobotsTxt);
 
 const handleNotFound = (c: Context) => {
     c.status(404);
-    return c.html(
-        renderHTML('404 | minifeed', raw(`<div class="flash">Page not found.</div>`), c.get('USER_LOGGED_IN')),
-    );
+    return c.html(renderHTML(c, '404 | minifeed', raw(`<div class="flash">Page not found.</div>`)));
 };
 
 const handleError = (err: Error, c: Context) => {
     c.status(422);
-    return c.html(renderHTML('Error | minifeed', raw(`<div class="flash">${err}</div>`), c.get('USER_LOGGED_IN')));
+    return c.html(renderHTML(c, 'Error | minifeed', raw(`<div class="flash">${err}</div>`)));
 };
 
 app.notFound(handleNotFound);
@@ -155,7 +154,7 @@ app.get('/', async (c: Context) => {
     const user = await c.env.DB.prepare('SELECT default_homepage_subsection FROM user_preferences WHERE user_id = ?')
         .bind(user_id)
         .first();
-    // if (!user) return handleMyAll(c);
+    c.set('ACTIVE_PAGE', 'my'); // basicContextMiddleware does not handle this logic
     switch (user?.default_homepage_subsection) {
         case HomePageSubsectionPreference.SUBSCRIPTIONS:
             return handleMySubscriptions(c);
@@ -288,14 +287,8 @@ app.delete(
     handleLinkblogDELETE,
 );
 
-app.get('/about', async (c: Context) => c.html(renderHTML('About | minifeed', raw(about), c.get('USER_LOGGED_IN'))));
-app.get('/about/changelog', async (c: Context) =>
-    c.html(renderHTML('Changelog | minifeed', raw(changelog), c.get('USER_LOGGED_IN'))),
-);
-
-app.get('/podcasts', (c: Context) => {
-    return c.html(renderHTML('Podcasts | minifeed', raw('Coming soon'), c.get('USER_LOGGED_IN'), 'podcasts'));
-});
+app.get('/about', async (c: Context) => c.html(renderHTML(c, 'About | minifeed', raw(about))));
+app.get('/about/changelog', async (c: Context) => c.html(renderHTML(c, 'Changelog | minifeed', raw(changelog))));
 
 // MAIN EXPORT
 export default {

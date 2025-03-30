@@ -44,14 +44,6 @@ export async function handleMyFavorites(c: Context) {
     list += '</div>';
 
     return c.html(
-        renderHTML(
-            'Favorites | minifeed',
-            raw(list),
-            c.get('USERNAME'),
-            'my',
-            '',
-            '',
-            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
-        ),
+        renderHTML(c, 'Favorites | minifeed', raw(list), `${meta.duration} ms., ${meta.rows_read} rows read`),
     );
 }

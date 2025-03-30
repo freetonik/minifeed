@@ -49,14 +49,6 @@ export async function handleMyFriendfeed(c: Context) {
     }
 
     return c.html(
-        renderHTML(
-            'Friendfeed | minifeed',
-            raw(list),
-            c.get('USERNAME'),
-            'my',
-            '',
-            '',
-            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
-        ),
+        renderHTML(c, 'Friendfeed | minifeed', raw(list), `${meta.duration} ms., ${meta.rows_read} rows read`),
     );
 }

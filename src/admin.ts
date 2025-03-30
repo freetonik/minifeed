@@ -279,7 +279,7 @@ export async function handleAdmin(c: Context) {
     </div>
     `;
 
-    return c.html(renderHTML('admin | minifeed', raw(list), true));
+    return c.html(renderHTML(c, 'admin | minifeed', raw(list)));
 }
 
 export async function handleDuplicateItems(c: Context) {
@@ -405,7 +405,7 @@ export async function handleDuplicateItems(c: Context) {
         }
     }
 
-    return c.html(renderHTML('admin | minifeed', raw(inner), true));
+    return c.html(renderHTML(c, 'admin | minifeed', raw(inner)));
 }
 
 export async function handleAdminUnvectorizedItems(c: Context) {
@@ -433,7 +433,7 @@ export async function handleAdminUnvectorizedItems(c: Context) {
     }
     list += '</ol>';
 
-    return c.html(renderHTML('admin | minifeed', raw(list), true));
+    return c.html(renderHTML(c, 'admin | minifeed', raw(list)));
 }
 
 export async function handleAdminUnindexedItems(c: Context) {
@@ -474,7 +474,7 @@ export async function handleAdminUnindexedItems(c: Context) {
         ${JSON.stringify(unIndexedItems)}
     `;
 
-    return c.html(renderHTML('admin | minifeed', raw(inner), true));
+    return c.html(renderHTML(c, 'admin | minifeed', raw(inner)));
 }
 
 export async function handleAdminUnindexedFeeds(c: Context) {
@@ -515,7 +515,7 @@ export async function handleAdminUnindexedFeeds(c: Context) {
         </form>
     `;
 
-    return c.html(renderHTML('admin | minifeed', raw(inner), true));
+    return c.html(renderHTML(c, 'admin | minifeed', raw(inner)));
 }
 
 export async function handleAdminItemsWithoutSqid(c: Context) {
@@ -537,7 +537,7 @@ export async function handleAdminItemsWithoutSqid(c: Context) {
     }
     list += '</ol>';
 
-    return c.html(renderHTML('admin | minifeed', raw(list), true));
+    return c.html(renderHTML(c, 'admin | minifeed', raw(list)));
 }
 
 export async function handleAdminItemsWithoutRelated(c: Context) {
@@ -568,7 +568,7 @@ export async function handleAdminItemsWithoutRelated(c: Context) {
     }
     list += '</ol>';
 
-    return c.html(renderHTML('admin | minifeed', raw(list), true));
+    return c.html(renderHTML(c, 'admin | minifeed', raw(list)));
 }
 
 async function processJsonlStream(response: Response) {

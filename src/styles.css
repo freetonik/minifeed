@@ -80,6 +80,10 @@ header nav {
     justify-content: space-between;
 }
 
+header nav a.chapter {
+    margin-right: 0.5em
+}
+
 header nav .active,
 header nav a.chapter:hover {
     border-bottom: 1px solid var(--color-text);
@@ -230,6 +234,7 @@ a.button-small,
     transition-duration: 0.1s;
 }
 
+.button.disabled,
 .button:disabled {
     color: var(--color-bg-button-disabled);
     border-color: var(--color-bg-button-disabled);
@@ -316,6 +321,35 @@ textarea {
     background-color: white;
     transition: background-color 0.4s ease;
     outline: none;
+}
+
+.search-container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.search-input {
+    padding: 0.25em 0.5em !important;
+    width: 100%;
+    font-size: inherit !important;
+    min-height: 0 !important;
+    background-color: var(--color-highlight);
+    transition: background-color 0.75s ease;
+}
+
+.checkbox-container {
+    position: absolute;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    font-size: 0.9em;
+    user-select: none;
+}
+
+.checkbox-container input {
+    margin-right: 4px;
 }
 
 textarea::placeholder {
@@ -539,6 +573,10 @@ a.box-aftergrid-element:hover {
     background-color: antiquewhite;
 }
 
+.hide-on-wide {
+    display: none;
+}
+
 /* USER PREFERENCES */
 
 .preferences-container {
@@ -549,10 +587,26 @@ a.box-aftergrid-element:hover {
     display: inline-block;
 }
 
-@media (max-width: 550px) {
+.navigation-container {
+    display: flex;
+}
+
+.logo-container {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--color-bg);
+    /* ↑ this ugly hack has to be fixed */
+}
+
+@media (max-width: 590px) {
     header .logo {
         display: block;
         margin-bottom: 1em;
+    }
+
+    .navigation-container {
+        width: 100%;
+        display: block;
     }
 
     nav.subsections {
@@ -569,6 +623,14 @@ a.box-aftergrid-element:hover {
 
     .item-metadata {
         font-size: small;
+    }
+
+    .hide-on-narrow {
+        display: none;
+    }
+
+    .hide-on-wide {
+        display: block;
     }
 }
 

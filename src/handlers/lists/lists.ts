@@ -24,5 +24,5 @@ export async function handleLists(c: Context) {
         `;
     }
 
-    return c.html(renderHTML('Lists | minifeed', raw(inner), c.get('USERNAME'), 'lists'));
+    return c.html(renderHTML(c, 'Lists | minifeed', raw(inner)));
 }

@@ -132,5 +132,5 @@ export async function handleLinkblog(c: Context) {
 
     inner = top_block + inner;
 
-    return c.html(renderHTML(`${username} | minifeed`, raw(inner), c.get('USER_LOGGED_IN'), 'links'));
+    return c.html(renderHTML(c, `${username} | minifeed`, raw(inner)));
 }

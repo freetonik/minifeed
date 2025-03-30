@@ -170,15 +170,10 @@ export async function handleMyAll(c: Context) {
 
     return c.html(
         renderHTML(
+            c,
             'My feed | minifeed',
             raw(inner),
-            c.get('USER_LOGGED_IN'),
-            'my',
-            '',
-            '',
-            c.get('USER_IS_ADMIN')
-                ? `${meta0.duration}+${meta1.duration} ms., ${meta0.rows_read}+${meta1.rows_read} rows read`
-                : '',
+            `${meta0.duration}+${meta1.duration} ms., ${meta0.rows_read}+${meta1.rows_read} rows read`,
         ),
     );
 }

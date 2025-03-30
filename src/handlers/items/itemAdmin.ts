@@ -14,9 +14,7 @@ export async function handleItemsAddItembyUrl(c: Context) {
 
     const blogTitle = blog.results[0].title;
 
-    return c.html(
-        renderHTML('Add new item', renderAddItemByURLForm('', '', '', blogTitle), c.get('USERNAME'), 'blogs'),
-    );
+    return c.html(renderHTML(c, 'Add new item', renderAddItemByURLForm('', '', '', blogTitle)));
 }
 
 export async function handleItemsDeletePOST(c: Context) {

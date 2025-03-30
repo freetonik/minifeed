@@ -40,11 +40,11 @@ export async function handleStripeCreateCheckoutSessionPOST(c: Context) {
 export async function handleBillingSuccess(c: Context) {
     return c.html(
         renderHTML(
+            c,
             'Billing | minifeed',
             raw(
                 `<div class="flash">❤️ Your subscription is now active! You can manage it in <a href="/account">your account</a>.</div>`,
             ),
-            c.get('USER_LOGGED_IN'),
         ),
     );
 }
@@ -52,9 +52,9 @@ export async function handleBillingSuccess(c: Context) {
 export async function handleBillingCancel(c: Context) {
     return c.html(
         renderHTML(
+            c,
             'Billing | minifeed',
             raw(`<div class="flash">Something went wrong, or you have changed your mind, maybe? It's ok...</div>`),
-            c.get('USER_LOGGED_IN'),
         ),
     );
 }

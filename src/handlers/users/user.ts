@@ -131,5 +131,5 @@ export async function handleUsersSingle(c: Context) {
 
     inner = top_block + inner;
 
-    return c.html(renderHTML(`${username} | minifeed`, raw(inner), c.get('USER_LOGGED_IN'), 'users'));
+    return c.html(renderHTML(c, `${username} | minifeed`, raw(inner)));
 }

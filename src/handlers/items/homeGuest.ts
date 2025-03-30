@@ -85,5 +85,5 @@ export async function handleHomeForGuest(c: Context) {
         </a>
         `;
 
-    return c.html(renderHTML('Minifeed', raw(guestInner), c.get('USER_LOGGED_IN'), 'my'));
+    return c.html(renderHTML(c, 'Minifeed', raw(guestInner)));
 }

@@ -41,15 +41,5 @@ export async function handleLinks(c: Context) {
 
     if (results.length > itemsPerPage) inner += `<a href="?p=${page + 1}">More...</a></p>`;
 
-    return c.html(
-        renderHTML(
-            'Links | minifeed',
-            raw(inner),
-            c.get('USER_LOGGED_IN'),
-            'links',
-            '',
-            '',
-            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
-        ),
-    );
+    return c.html(renderHTML(c, 'Links | minifeed', raw(inner), `${meta.duration} ms., ${meta.rows_read} rows read`));
 }

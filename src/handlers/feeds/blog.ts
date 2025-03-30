@@ -137,5 +137,5 @@ export async function handleBlog(c: Context) {
         debug_info = `${batch[0].meta.duration}+${batch[1].meta.duration} ms;,
             ${batch[0].meta.rows_read}+${batch[1].meta.rows_read} rows read`;
     }
-    return c.html(renderHTML(`${feedTitle} | minifeed`, raw(inner), userLoggedIn, 'blogs', '', '', debug_info));
+    return c.html(renderHTML(c, `${feedTitle} | minifeed`, raw(inner), debug_info));
 }
