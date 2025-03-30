@@ -11,11 +11,11 @@ export async function handleItemReaderView(c: Context) {
     if (!hasSubscription) {
         return c.html(
             renderHTML(
+                c,
                 'Subscription required | minifeed',
                 raw(
                     `<div class="flash">This feature requires a subscription. Go to <a href="/account">your account</a> to subscribe. </div>`,
                 ),
-                c.get('USER_LOGGED_IN'),
             ),
         );
     }

@@ -171,7 +171,7 @@ export async function handleItem(c: Context) {
             </button>
             </span>`;
         }
-        readerViewBlock = `<a class="button" href="/items/${itemSqid}/reader">≡ reader</a>`;
+        readerViewBlock = `<span title="${!userIsSubscribed ? 'This is a paid feature' : ''}"><a class="button ${!userIsSubscribed ? 'disabled' : ''}" href="/items/${itemSqid}/reader">≡ reader</a></span>`;
     } else {
         listsBlock = `<span id="favorite"> <button class="button" title="Log in to add to list" disabled>⛬ list</button> </span>`;
         favoriteBlock = `<span id="favorite"> <button class="button" title="Log in to favorite" disabled> ☆ favorite </button> </span>`;
@@ -227,12 +227,11 @@ export async function handleItem(c: Context) {
     ${otherItemsBlock}
     `;
 
-    let debug_info = '';
-    if (c.get('USER_IS_ADMIN')) {
-        debug_info = `
-            ${batch[0].meta.duration}+${batch[1].meta.duration}+${batch[2].meta.duration}+${batch[3].meta.duration} ms.;
-            ${batch[0].meta.rows_read}+${batch[1].meta.rows_read}+${batch[2].meta.rows_read}+${batch[3].meta.rows_read} rows read`;
+    const debug_info = `
+    ${batch[0].meta.duration}+${batch[1].meta.duration}+${batch[2].meta.duration}+${batch[3].meta.duration} ms.;
+    ${batch[0].meta.rows_read}+${batch[1].meta.rows_read}+${batch[2].meta.rows_read}+${batch[3].meta.rows_read} rows read`;
 
+    if (c.get('USER_IS_ADMIN')) {
         list += `
         <p style="text-align:center;"><a class="no-underline" href="#hidden">🦎</a></p>
         <div class="borderbox admin-control" id="hidden">
@@ -298,15 +297,6 @@ export async function handleItem(c: Context) {
         `;
     }
 
-    return c.html(
-        renderHTML(
-            `${item.item_title} | ${item.feed_title} | minifeed`,
-            raw(list),
-            c.get('USERNAME'),
-            'blogs',
-            '',
-            item.item_url,
-            debug_info,
-        ),
-    );
+    c.set('CANONICAL_URL', item.item_url);
+    return c.html(renderHTML(c, `${item.item_title} | ${item.feed_title} | minifeed`, raw(list), debug_info));
 }

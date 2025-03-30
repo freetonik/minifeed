@@ -20,5 +20,5 @@ export async function handleUsers(c: Context) {
             inner += `<div><strong><a href="/users/${user.username}">${user.username}</a></strong> (this is me)</div>`;
         else inner += `<div><a href="/users/${user.username}">${user.username}</a></div>`;
     }
-    return c.html(renderHTML('Users', raw(inner), c.get('USER_LOGGED_IN'), 'users'));
+    return c.html(renderHTML(c, 'Users', raw(inner)));
 }

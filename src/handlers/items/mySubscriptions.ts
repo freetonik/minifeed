@@ -100,14 +100,6 @@ export async function handleMySubscriptions(c: Context) {
         `;
     }
     return c.html(
-        renderHTML(
-            'Subscriptions | minifeed',
-            raw(inner),
-            c.get('USER_LOGGED_IN'),
-            'my',
-            '',
-            '',
-            c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
-        ),
+        renderHTML(c, 'Subscriptions | minifeed', raw(inner), `${meta.duration} ms., ${meta.rows_read} rows read`),
     );
 }

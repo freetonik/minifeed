@@ -47,7 +47,7 @@ export async function handleFeedsDelete(c: Context) {
 
 export async function handleBlogsNew(c: Context) {
     if (!c.get('USER_ID')) return c.redirect('/login');
-    return c.html(renderHTML('Add new blog', renderAddFeedForm(), c.get('USERNAME'), 'blogs'));
+    return c.html(renderHTML(c, 'Add new blog', renderAddFeedForm()));
 }
 
 export async function handleBlogsNewPOST(c: Context) {
@@ -59,7 +59,7 @@ export async function handleBlogsNewPOST(c: Context) {
         rssUrl = await addFeed(c.env, url, verified); // MAIN MEAT!
     } catch (e: unknown) {
         const errorMessage = (e as Error).toString();
-        return c.html(renderHTML('Add new blog', renderAddFeedForm(url, errorMessage), c.get('USERNAME'), 'blogs'));
+        return c.html(renderHTML(c, 'Add new blog', renderAddFeedForm(url, errorMessage)));
     }
 
     // Redirect

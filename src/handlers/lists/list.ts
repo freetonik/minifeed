@@ -47,5 +47,5 @@ export async function handleListsSingle(c: Context) {
         </p>`;
     }
 
-    return c.html(renderHTML(`${listEntry.title} list | minifeed`, raw(inner), c.get('USER_LOGGED_IN'), 'lists'));
+    return c.html(renderHTML(c, `${listEntry.title} list | minifeed`, raw(inner)));
 }

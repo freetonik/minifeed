@@ -71,19 +71,64 @@ export async function stripeMiddleware(c: Context, next: () => Promise<void>) {
 }
 
 export async function paidSubscriptionRequiredMiddleware(c: Context, next: () => Promise<void>) {
-    const userLoggedIn = c.get('USER_LOGGED_IN');
     const hasSubscription = c.get('USER_HAS_SUBSCRIPTION');
 
     if (!hasSubscription) {
         return c.html(
             renderHTML(
+                c,
                 'Paid feature | minifeed',
                 raw(`<div class="flash flash-blue">
                     This feature requires a paid subscription. Consider upgrading your account <a href="/account">here</a>.
                 </div>`),
-                userLoggedIn,
             ),
         );
+    }
+
+    await next();
+}
+
+export async function basicContextMiddleware(c: Context, next: () => Promise<void>) {
+    const pathname = c.req.path; // e.g. /items/123
+    const base = pathname.split('/')[1]; // e.g. items
+
+    switch (base) {
+        case 'all':
+        case 'subscriptions':
+        case 'favorites':
+        case 'friendfeed':
+            c.set('ACTIVE_PAGE', 'my');
+            break;
+
+        case 'global':
+            c.set('ACTIVE_PAGE', 'global');
+            break;
+
+        case 'blogs':
+        case 'items':
+            c.set('ACTIVE_PAGE', 'blogs');
+            break;
+
+        case 'lists':
+            c.set('ACTIVE_PAGE', 'lists');
+            break;
+
+        case 'users':
+            c.set('ACTIVE_PAGE', 'users');
+            break;
+
+        case 'links':
+        case 'linkblogs':
+            c.set('ACTIVE_PAGE', 'links');
+            break;
+
+        case 'account':
+            c.set('ACTIVE_PAGE', 'account');
+            break;
+
+        default:
+            //statements;
+            break;
     }
 
     await next();

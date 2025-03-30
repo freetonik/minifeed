@@ -67,5 +67,5 @@ export async function handleDonate(c: Context) {
 
 
     `;
-    return c.html(renderHTML('Donate | minifeed', raw(donate), userLoggedIn));
+    return c.html(renderHTML(c, 'Donate | minifeed', raw(donate)));
 }

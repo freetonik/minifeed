@@ -1,20 +1,21 @@
+import type { Context } from 'hono';
 import { html, raw } from 'hono/html';
 import { renderedCSS } from './css';
 import type { FeedSearchResult, ItemSearchResult } from './interface';
 
-export function renderHTML(
-    title: string,
-    inner: string,
-    loggedIn = false,
-    active = 'all',
-    searchQuery = { query: '', personal: false },
-    canonicalUrl = '',
-    debugInfo = '',
-) {
+export function renderHTML(c: Context, title: string, inner: string, debugInfo = '') {
+    const loggedIn = c.get('USER_LOGGED_IN') || false;
+    const userSubscribed = c.get('USER_HAS_SUBSCRIPTION') || false;
+    const searchQuery = c.get('SEARCH_QUERY') || '';
+    const searchPersonal = c.get('SEARCH_PERSONAL') || false;
+    const active = c.get('ACTIVE_PAGE') || 'all';
+    const canonicalUrl = c.get('CANONICAL_URL') || '';
+    const userIsAdmin = c.get('USER_IS_ADMIN') || false;
+
     const canonicalUrlBlock = canonicalUrl ? raw(`<link rel="canonical" href="${canonicalUrl}" />`) : '';
 
     const userBlock = loggedIn
-        ? raw(`<a href="/account">account</a>`)
+        ? raw(`<a class="${active === 'account' ? 'bold' : ''}" href="/account">account</a>`)
         : raw(
               `<span><a href="/login" class="bold">Log&nbsp;in</a> | <a class="bold" href="/signup">Sign&nbsp;up</a></span>`,
           );
@@ -29,71 +30,49 @@ export function renderHTML(
         <meta name="description" content="${title}">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="search" type="application/opensearchdescription+xml" title="Minifeed" href="/opensearch.xml" />
+
         ${canonicalUrlBlock}
 
-        <style>${renderedCSS}</style>
+        <style>
+        ${renderedCSS}
+        </style>
 
         <link rel="shortcut icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48cGF0aCBkPSJtMTIuNjcyLjY2OCAzLjA1OSA2LjE5NyA2LjgzOC45OTNhLjc1Ljc1IDAgMCAxIC40MTYgMS4yOGwtNC45NDggNC44MjMgMS4xNjggNi44MTJhLjc1Ljc1IDAgMCAxLTEuMDg4Ljc5TDEyIDE4LjM0N2wtNi4xMTYgMy4yMTZhLjc1Ljc1IDAgMCAxLTEuMDg4LS43OTFsMS4xNjgtNi44MTEtNC45NDgtNC44MjNhLjc0OS43NDkgMCAwIDEgLjQxNi0xLjI3OWw2LjgzOC0uOTk0TDExLjMyNy42NjhhLjc1Ljc1IDAgMCAxIDEuMzQ1IDBaIj48L3BhdGg+PC9zdmc+" />
 
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/htmx/2.0.3/htmx.min.js" integrity="sha512-dQu3OKLMpRu85mW24LA1CUZG67BgLPR8Px3mcxmpdyijgl1UpCM1RtJoQP6h8UkufSnaHVRTUx98EQT9fcKohw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     </head>
 
-    <style>
-    .search-container {
-        position: relative;
-        width: 100%;
-        display: flex;
-        align-items: center;
-    }
-
-    .search-input {
-        padding: 0.25em 0.5em !important;
-        width: 100%;
-        font-size: inherit !important;
-        min-height: 0 !important;
-        background-color: var(--color-highlight);
-        transition: background-color 0.75s ease;
-    }
-
-    .checkbox-container {
-        position: absolute;
-        right: 8px;
-        display: flex;
-        align-items: center;
-        font-size: 0.9em;
-        user-select: none;
-    }
-
-    .checkbox-container input {
-        margin-right: 4px;
-    }
-</style>
-
     <body>
     <header>
         <form action="/search" method="GET" style="width:100%;margin-bottom:1.25em;">
             <div class="search-container">
-                <input class="search-input" type="text" name="q" placeholder="search..." minlength="2" autocomplete="off" value="${searchQuery.query}">
+                <input class="search-input" type="text" name="q" placeholder="search..." minlength="2" autocomplete="off" value="${searchQuery}">
                 <div class="checkbox-container">
-                    <input type="checkbox" id="personal-search" name="personal" value="true" onchange="this.form.submit()" ${searchQuery.personal ? 'checked' : ''}>
-                    <label for="personal-search" style="margin-bottom:0;">my feeds</label>
+                    <input type="checkbox" id="personal-search" name="personal" value="true" onchange="if(this.form.querySelector('.search-input').value.trim()) this.form.submit()" ${searchPersonal ? 'checked' : ''} ${userSubscribed ? '' : 'disabled'} title="${userSubscribed ? 'Search only in my subscriptions' : 'This is a paid feature'}">
+                    <label for="personal-search" style="margin-bottom:0;" title="${userSubscribed ? 'Search only in my subscriptions' : 'This is a paid feature'}">my feeds</label>
                 </div>
             </div>
         </form>
         <nav aria-label="Site navigation">
-            <div>
-                <a href="/" class="logo"><span>⬤</span> <span class="bold" style="margin-left: 0.2em;margin-right:1.5em;">minifeed</span></a>
+            <div class="navigation-container">
+                <div class="logo-container">
+                    <a href="/" class="logo"><span>⬤</span> <span class="bold" style="margin-left: 0.2em;margin-right:1.5em;">minifeed</span></a>
+                    <div class="hide-on-wide">${userBlock}</div>
+                </div>
+
                 <a href="/" class="${active === 'my' && loggedIn ? 'chapter bold active' : 'chapter'}">My feed</a>
                 <a href="/global" class="${active === 'global' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Global</a>
                 <a href="/blogs" class="${active === 'blogs' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Blogs</a>
                 <a href="/lists" class="${active === 'lists' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Lists</a>
                 <a href="/users" class="${active === 'users' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Users</a>
-                <a href="/links" class="${active === 'links' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Links</a>
+                <a href="/links" class="${active === 'Links' ? 'chapter bold active' : 'chapter'}" style="margin-left: 0.5em">Links</a>
             </div>
-            ${userBlock}
+            <div class="hide-on-narrow">${userBlock}</div>
         </nav>
     </header>
+
     <main>${inner}</main>
+
     <footer>
         <p>
             Minifeed.net ::
@@ -103,7 +82,7 @@ export function renderHTML(
             <a href="https://status.minifeed.net/">status</a> /
             <a href="/feedback">feedback</a>
         </p>
-        <p> ${debugInfo} </p>
+        ${userIsAdmin ? debugInfo : ''}
     </footer>
     </body>
     </html>`;

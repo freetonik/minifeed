@@ -79,14 +79,6 @@ export async function handleGlobal(c: Context) {
     if (listingType !== 'random' && items.length > itemsPerPage) list += `<a href="?p=${page + 1}">More...</a></p>`;
 
     return c.html(
-        renderHTML(
-            'Global feed | minifeed',
-            raw(list),
-            c.get('USER_LOGGED_IN'),
-            'global',
-            '',
-            '',
-            c.get('USER_IS_ADMIN') ? `${metaInfo.duration} ms., ${metaInfo.rows_read} rows read` : '',
-        ),
+        renderHTML(c, 'Global feed | minifeed', raw(list), `${metaInfo.duration} ms., ${metaInfo.rows_read} rows read`),
     );
 }

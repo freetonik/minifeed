@@ -17,11 +17,13 @@ export const about = `
         <li>Add posts to favorites</li>
         <li>Create lists of posts</li>
         <li>Full-text search across all blogs</li>
+        <li>Full-text search in your subscriptions*</li>
+        <li>Reader view*</li>
+        <li>OPML export*</li>
+        <li>Personal link blogs*</li>
     </ol>
-    </p>
 
-    <p>
-    After the public launch, some features will be available to paid subscribers only. I plan to introduce a relatively affordable yearly subscription in order to cover the costs of development and hosting.
+    <i>* — paid features</i>
     </p>
 
     <h3>How are blogs collected?</h3>
@@ -50,32 +52,6 @@ export const about = `
         <li>Develop a way for users to discover new blogs based on their interests</li>
         <li>Keep the website minimal, lean, and fast</li>
         <li>Find a sustainable model such as paid subscriptions and/or donations</li>
-    </ol>
-    </p>
-
-    <p>
-    Planned features are:
-    <ol>
-        <li>Weekly email digest</li>
-        <li>Listen to articles (text-to-speech)</li>
-        <li>Full-text search of your favorites</li>
-        <li>Create your link blog</li>
-        <li>Reader view</li>
-        <li>OPML export</li>
-        <li>Private notes for posts</li>
-        <li>Automatic tagging and categorization of posts</li>
-        <li>Comments and discussions</li>
-    </ol>
-    </p>
-
-    <p>
-    Features I'm considering:
-    <ol>
-        <li>Downloadable personal HTML-archives of favorites</li>
-        <li>Upvotes or other ways to rank posts and blogs</li>
-        <li>Authors being able to "claim" their blog and gain additional controls and features</li>
-        <li>"Podcasts" and "YouTube channels" sections in addition to blogs</li>
-        <li>API for developers</li>
     </ol>
     </p>
 

@@ -69,7 +69,11 @@ export async function handleSearch(c: Context) {
     if (personal === 'true') {
         const hasSubscription = c.get('USER_HAS_SUBSCRIPTION');
         if (!hasSubscription) {
-            return renderSearchError(c, 'You need to have a paid subscription to search your personal feed', q);
+            return renderSearchError(
+                c,
+                'You need to have a paid subscription to search your personal feed. Go to <a href="/account">your account</a> to subscribe.',
+                q,
+            );
         }
         const blogPostIds = await c.env.DB.prepare(
             `SELECT subscriptions.feed_id
@@ -129,22 +133,12 @@ export async function handleSearch(c: Context) {
         inner += `<p><a href="/search?q=${q}&p=${page + 1}&scope=${scope}">More</a></p>`;
     }
 
-    return c.html(
-        renderHTML(`${q} | minifeed`, raw(inner), c.get('USERNAME'), 'search', {
-            query: q,
-            personal: personal === 'true',
-        }),
-    );
+    c.set('SEARCH_QUERY', q);
+    c.set('SEARCH_PERSONAL', personal === 'true');
+    return c.html(renderHTML(c, `${q} | minifeed`, raw(inner), c.get('USERNAME')));
 }
 
 function renderSearchError(c: Context, description: string, q: string) {
-    return c.html(
-        renderHTML(
-            'Search | minifeed',
-            raw(`<div class="flash flash-red">${description}</div>`),
-            c.get('USERNAME'),
-            'search',
-            q,
-        ),
-    );
+    c.set('SEARCH_QUERY', q);
+    return c.html(renderHTML(c, 'Search | minifeed', raw(`<div class="flash flash-red">${description}</div>`)));
 }

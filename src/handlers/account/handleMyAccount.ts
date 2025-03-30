@@ -24,7 +24,6 @@ export function renderSubscriptionBlock(
         <li>Reader view</li>
         <li>OPML export</li>
         <li>Weekly email digest (coming soon)</li>
-        <li>Listen to articles (coming soon)</li>
         <li>Full-text search of your favorites (coming soon)</li>
     </ul>`;
     let subscriptionBlockInner = '';
@@ -152,7 +151,7 @@ export async function handleMyAccount(c: Context) {
         <a class="button button-small" href="/logout">Log out</a>
     </p>`;
 
-    return c.html(renderHTML('My account | minifeed', raw(inner), username, ''));
+    return c.html(renderHTML(c, 'My account | minifeed', raw(inner)));
 }
 
 export async function handleVerifyEmail(c: Context) {
@@ -168,10 +167,9 @@ export async function handleVerifyEmail(c: Context) {
     if (!result) {
         return c.html(
             renderHTML(
+                c,
                 'Email verification | minifeed',
                 raw(`<div class="flash flash-red">Email verification code is invalid or has been used already.</div>`),
-                false,
-                '',
             ),
         );
     }
@@ -267,7 +265,7 @@ export async function handleLogin(c: Context) {
     </div>
 
     `;
-    return c.html(renderHTML('Log in | minifeed', raw(list), false));
+    return c.html(renderHTML(c, 'Log in | minifeed', raw(list)));
 }
 
 export async function handleResetPassword(c: Context) {
@@ -311,7 +309,7 @@ export async function handleResetPassword(c: Context) {
         `;
     }
 
-    return c.html(renderHTML('Reset password | minifeed', raw(inner), false));
+    return c.html(renderHTML(c, 'Reset password | minifeed', raw(inner)));
 }
 
 export async function handleResetPasswordPOST(c: Context) {
@@ -336,11 +334,11 @@ export async function handleResetPasswordPOST(c: Context) {
 
     return c.html(
         renderHTML(
+            c,
             'Password reset | minifeed',
             raw(`<div class="flash flash-blue">
                 If the email address you entered is associated with an account, you will receive an email with a link to reset your password.
             </div>`),
-            false,
         ),
     );
 }
@@ -379,7 +377,7 @@ export async function handleSetPasswordPOST(c: Context) {
         `<div class="flash flash-blue">Password reset successfully. <a href="/login">Log in now</a>.</div>`,
     );
 
-    return c.html(renderHTML('Reset password | minifeed', inner, false));
+    return c.html(renderHTML(c, 'Reset password | minifeed', inner));
 }
 
 export async function handleSignup(c: Context) {
@@ -414,7 +412,7 @@ export async function handleSignup(c: Context) {
 
     </div>
     `;
-    return c.html(renderHTML('Create account | minifeed', raw(inner), false));
+    return c.html(renderHTML(c, 'Create account | minifeed', raw(inner)));
 }
 
 export async function handleLoginPOST(c: Context) {
@@ -437,11 +435,11 @@ export async function handleLoginPOST(c: Context) {
         if (user.email_verified !== 1) {
             return c.html(
                 renderHTML(
+                    c,
                     'Almost there | minifeed',
                     raw(`<div class="flash flash-blue">
                     You have not verified your email yet. Please check your email (${user.email}) for the verification link.
                     </div>`),
-                    false,
                 ),
             );
         }
@@ -523,12 +521,12 @@ export async function handleSignupPOST(c: Context) {
         await send_email_verification_link(c.env, username, email, email_verification_code);
         return c.html(
             renderHTML(
+                c,
                 'Account created | minifeed',
                 raw(`<div class="flash flash-blue">
                     Huzzah! Check your email for a verification link.<br>
                     Please verify your email within 3 days. Otherwise, your account will be deleted. Sorry for this, we just have to keep bots out. But you're totally human!
                 </div>`),
-                false,
             ),
         );
     } catch (err) {
@@ -582,6 +580,7 @@ async function createSessionSetCookieAndRedirect(c: Context, userId: number, red
     if (firstLogin) {
         return c.html(
             renderHTML(
+                c,
                 'Account created | minifeed',
                 raw(`<div class="flash flash-blue">
                     Your account is now verified, and you are logged in. What next?
@@ -591,7 +590,6 @@ async function createSessionSetCookieAndRedirect(c: Context, userId: number, red
                     <li><a href="/feedback">Send any feedback</a> </li>
                     </ul>
                 </div>`),
-                true,
             ),
         );
     }

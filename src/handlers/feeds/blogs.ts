@@ -95,21 +95,14 @@ export async function handleBlogs(c: Context) {
     } // iterate over feeds
 
     let opmlLink = '';
-    if (listingType === 'subscribed')
+    if (listingType === 'subscribed' && c.get('USER_HAS_SUBSCRIPTION'))
         opmlLink = ` <a class="button util-ml-1" href="/blogs/by/subscribed/opml.xml">OPML export</a>`;
     else if (listingType === 'newest' || listingType === 'oldest' || listingType === 'alphabetical')
         opmlLink = ` <a class="button util-ml-1" href="/blogs/opml.xml">OPML export</a>`;
 
     inner += `<div style="margin-top:2em;text-align:center;"><a class="button" href="/suggest">+ suggest a blog</a>${opmlLink}</div>`;
-    const html = renderHTML(
-        'Blogs | minifeed',
-        raw(inner),
-        userLoggedIn,
-        'blogs',
-        '',
-        '',
-        c.get('USER_IS_ADMIN') ? `${meta.duration} ms., ${meta.rows_read} rows read` : '',
-    );
+
+    const html = renderHTML(c, 'Blogs | minifeed', raw(inner), `${meta.duration} ms., ${meta.rows_read} rows read`);
 
     if (!userLoggedIn && listingType !== 'random') await cacheResponse(cacheKeyPattern, html);
 
