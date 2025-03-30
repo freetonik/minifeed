@@ -23,8 +23,8 @@ export function renderSubscriptionBlock(
         <li>Create your link blog</li>
         <li>Reader view</li>
         <li>OPML export</li>
+        <li>Full-text search of your personal feed</li>
         <li>Weekly email digest (coming soon)</li>
-        <li>Full-text search of your personal feed (coming soon)</li>
     </ul>`;
     let subscriptionBlockInner = '';
     if (hasSubscription) {
