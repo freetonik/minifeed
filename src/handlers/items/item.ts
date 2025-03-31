@@ -10,16 +10,7 @@ export async function handleItem(c: Context) {
     const userLoggedIn = c.get('USER_LOGGED_IN');
 
     const batch = await c.env.DB.batch([
-        // batch[0]: subscription status of user to this feed
-        c.env.DB.prepare(
-            `
-        SELECT subscriptions.subscription_id
-        FROM subscriptions
-        JOIN items ON subscriptions.feed_id = items.feed_id
-        WHERE subscriptions.user_id = ? AND items.item_id = ?`,
-        ).bind(userId, itemId),
-
-        // batch[1]: item
+        // batch[0]: item with preferences
         c.env.DB.prepare(
             `
         SELECT
@@ -43,7 +34,7 @@ export async function handleItem(c: Context) {
         ORDER BY items.pub_date DESC`,
         ).bind(userId, userId, itemId),
 
-        // batch[1]: find other items from this feed
+        // batch[1]: other items from this feed
         c.env.DB.prepare(
             `
         WITH FeedInfo AS (
@@ -66,7 +57,7 @@ export async function handleItem(c: Context) {
         LIMIT 5`,
         ).bind(itemId, userId, itemId),
 
-        // batch[2]: find related items
+        // batch[2]: related items
         c.env.DB.prepare(`
             SELECT items.item_sqid, items.title, items.url, feeds.title AS feed_title, feeds.feed_sqid
             FROM related_items
@@ -75,13 +66,13 @@ export async function handleItem(c: Context) {
             WHERE related_items.item_id = ?`).bind(itemId),
     ]);
 
-    if (!batch[1].results.length) return c.notFound();
+    if (!batch[0].results.length) return c.notFound();
 
-    const userIsSubscribed = batch[0].results.length;
+    const userIsSubscribed = c.get('USER_HAS_SUBSCRIPTION');
     const userPrefersFullPost =
-        batch[1].results[0].prefers_full_blog_post !== null ? batch[1].results[0].prefers_full_blog_post : true;
+        batch[0].results[0].prefers_full_blog_post !== null ? batch[0].results[0].prefers_full_blog_post : true;
 
-    const item = batch[1].results[0];
+    const item = batch[0].results[0];
     const date_format_opts: Intl.DateTimeFormatOptions = {
         year: 'numeric',
         month: 'short',
@@ -171,6 +162,7 @@ export async function handleItem(c: Context) {
             </button>
             </span>`;
         }
+        console.log(userIsSubscribed);
         readerViewBlock = `<span title="${!userIsSubscribed ? 'This is a paid feature' : ''}"><a class="button ${!userIsSubscribed ? 'disabled' : ''}" href="/items/${itemSqid}/reader">≡ reader</a></span>`;
     } else {
         listsBlock = `<span id="favorite"> <button class="button" title="Log in to add to list" disabled>⛬ list</button> </span>`;
@@ -180,9 +172,9 @@ export async function handleItem(c: Context) {
     }
 
     let related_block = '';
-    if (batch[3].results.length) {
+    if (batch[2].results.length) {
         related_block += '<div class="related-items"><h4>Related</h4><div class="items fancy-gradient-bg">';
-        for (const i of batch[3].results) {
+        for (const i of batch[2].results) {
             related_block += renderItemShort(i.item_sqid, i.title, i.url, i.feed_title, i.feed_sqid);
         }
         related_block += '</div></div>';
@@ -191,7 +183,7 @@ export async function handleItem(c: Context) {
     let otherItemsBlock = '';
     if (batch[2].results.length) {
         otherItemsBlock += `<div class="related-items fancy-gradient-bg"><h4>More from <a href="/blogs/${item.feed_sqid}"">${item.feed_title}</a></h4><div class="items">`;
-        for (const i of batch[2].results) {
+        for (const i of batch[1].results) {
             const itemTitle = i.favorite_id ? `★ ${i.item_title}` : i.item_title;
             otherItemsBlock += renderItemShort(i.item_sqid, itemTitle, i.item_url, '', '', i.pub_date, i.description);
         }
@@ -228,8 +220,8 @@ export async function handleItem(c: Context) {
     `;
 
     const debug_info = `
-    ${batch[0].meta.duration}+${batch[1].meta.duration}+${batch[2].meta.duration}+${batch[3].meta.duration} ms.;
-    ${batch[0].meta.rows_read}+${batch[1].meta.rows_read}+${batch[2].meta.rows_read}+${batch[3].meta.rows_read} rows read`;
+    ${batch[0].meta.duration}+${batch[1].meta.duration}+${batch[2].meta.duration}} ms.;
+    ${batch[0].meta.rows_read}+${batch[1].meta.rows_read}+${batch[2].meta.rows_read}} rows read`;
 
     if (c.get('USER_IS_ADMIN')) {
         list += `
