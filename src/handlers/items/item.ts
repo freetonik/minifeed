@@ -105,17 +105,6 @@ export async function handleItem(c: Context) {
     let listsBlock = '';
     let readerViewBlock = '';
     if (userLoggedIn) {
-        listsBlock = `
-        <span id="lists">
-            <button class="button" hx-get="/items/${itemSqid}/lists"
-            class="button"
-            hx-target="#lists_section"
-            hx-swap="outerHTML">
-            ⛬ list
-            </button>
-        </span>
-        `;
-
         if (item.favorite_id) {
             favoriteBlock = `<span id="favorite">
             <button hx-post="/items/${itemSqid}/unfavorite"
@@ -162,10 +151,25 @@ export async function handleItem(c: Context) {
             </button>
             </span>`;
         }
-        console.log(userIsSubscribed);
+
         readerViewBlock = `<span title="${!userIsSubscribed ? 'This is a paid feature' : ''}"><a class="button ${!userIsSubscribed ? 'disabled' : ''}" href="/items/${itemSqid}/reader">≡ reader</a></span>`;
+
+        if (userIsSubscribed) {
+            listsBlock = `
+            <span id="lists">
+                <button class="button" hx-get="/items/${itemSqid}/lists"
+                class="button"
+                hx-target="#lists_section"
+                hx-swap="outerHTML">
+                ⛬ list
+                </button>
+            </span>
+            `;
+        } else {
+            listsBlock = `<span title="This is a paid feature"> <button class="button" title="This is a paid feature" disabled>⛬ list</button> </span> `;
+        }
     } else {
-        listsBlock = `<span id="favorite"> <button class="button" title="Log in to add to list" disabled>⛬ list</button> </span>`;
+        listsBlock = `<span id="lists"> <button class="button" title="Log in to add to list" disabled>⛬ list</button> </span>`;
         favoriteBlock = `<span id="favorite"> <button class="button" title="Log in to favorite" disabled> ☆ favorite </button> </span>`;
         subscriptionBlock = `<span id="subscription"> <button class="button" disabled title="Login to subscribe"> <span>subscribe</span> </button> </span>`;
         readerViewBlock = `<span id="reader-view"> <button class="button" title="Login to view in reader view" disabled>≡ reader</button> </span>`;

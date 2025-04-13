@@ -26,7 +26,7 @@ HTTP 200
 GET http://localhost:8181/about/changelog
 HTTP 200
 
-GET http://localhost:8181/feedback
+GET http://localhost:8181/support
 HTTP 200
 [Asserts]
 xpath "//script" exists

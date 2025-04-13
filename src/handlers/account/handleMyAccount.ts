@@ -7,61 +7,36 @@ import { renderHTML } from '../../htmltools';
 import { HomePageSubsectionPreference, SubscriptionTier } from '../../interface';
 import type { Bindings } from './../../bindings';
 
-export function renderSubscriptionBlock(
-    hasSubscription: boolean,
-    userTier?: SubscriptionTier,
-    userExpires?: string,
-    guest = false,
-) {
+function renderSubscriptionBlock(hasSubscription: boolean, userExpires?: string) {
     const date_format_opts: Intl.DateTimeFormatOptions = {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
     };
-    const features = `
-    <ul>
-        <li>Create your link blog</li>
-        <li>Reader view</li>
-        <li>OPML export</li>
-        <li>Full-text search of your personal feed</li>
-        <li>Weekly email digest (coming soon)</li>
-    </ul>`;
+
     let subscriptionBlockInner = '';
     if (hasSubscription) {
-        const status = userTier === SubscriptionTier.PRO ? 'Active' : 'Inactive';
         const subscriptionExpires = userExpires
             ? new Date(userExpires).toLocaleString('en-UK', date_format_opts)
             : 'N/A';
         subscriptionBlockInner = `
-        Subscription status: ${status}<br>
-        Subscription expires: ${subscriptionExpires}
-        <br><br>
-        Features:
-        ${features}
+
+        Subscription renews: ${subscriptionExpires}
+        <br>
+        Features: <a href="/upgrade">check out the pricing</a>
 
         <form class="util-mt-1" method="POST" action="/account/billing/customer-portal">
         <button class="button" type="submit">📒 Manage billing</button>
         </form>
         `;
     } else {
-        let button = '';
-        if (guest) {
-            button = `
-            <div>
-                <a href='/signup' class="util-mt-1 button success">⚡ Sign up for free and upgrade later</a>
-            </div>`;
-        } else {
-            button = `
-            <form class="util-mt-1" action="/account/billing/create-checkout-session" method="POST">
-                <button class="button success" type="submit" id="checkout-button">⚡ Subscribe</button>
-            </form>`;
-        }
         subscriptionBlockInner = `
             <strong>
                 Support the development of Minifeed and get access to new features. $39 (€39) per year.
             </strong>
-            ${features}
-            ${button}
+            <div>
+                <a href='/upgrade' class="util-mt-1 button success">⚡ Check out paid features</a>
+            </div>
     `;
     }
     return `<div class="borderbox fancy-gradient-bg"> ${subscriptionBlockInner} </div>`;
@@ -85,7 +60,7 @@ export async function handleMyAccount(c: Context) {
     const email = user.email;
     const username = user.username;
     const hasSubscription = user.tier === SubscriptionTier.PRO;
-    const subscriptionBlock = renderSubscriptionBlock(hasSubscription, user.tier, user.expires);
+    const subscriptionBlock = renderSubscriptionBlock(hasSubscription, user.expires);
 
     const prefersFullBlogPost = user.prefers_full_blog_post !== null ? user.prefers_full_blog_post : true;
     const preferredHomepageSubsection = user.default_homepage_subsection || 'all';
@@ -138,8 +113,7 @@ export async function handleMyAccount(c: Context) {
     const inner = `
     <h1>My account</h1>
     <p>
-        Username: ${username}<br>
-        Profile: <a href="/users/${username}">${username}</a><br>
+        Username: <a href="/users/${username}">${username}</a><br>
         Email: <code>${email}</code><br>
 
     </p>
@@ -592,7 +566,7 @@ async function createSessionSetCookieAndRedirect(c: Context, userId: number, red
                     <ul>
                     <li>Browse <a href="/blogs">blogs</a>, <a href="/lists">lists</a>, and <a href="/users">users</a> to subscribe to</li>
                     <li>Try searching for stuff (top of the page)</li>
-                    <li><a href="/feedback">Send any feedback</a> </li>
+                    <li><a href="/support">Need support? Have feedback?</a> </li>
                     </ul>
                 </div>`),
             ),

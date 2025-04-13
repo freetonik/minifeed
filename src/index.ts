@@ -91,7 +91,9 @@ import { handleSearch } from './handlers/search/search';
 import { about } from './handlers/staticPages/about';
 import { changelog } from './handlers/staticPages/changelog';
 import { handleDonate } from './handlers/staticPages/donate';
-import { handleFeedback, handleSuggestBlog } from './handlers/staticPages/feedback';
+import { handleSuggestBlog, handleSupport } from './handlers/staticPages/feedback';
+
+import { handleUpgrade } from './handlers/staticPages/upgrade';
 import { handleUsersSingle } from './handlers/users/user';
 import { handleUsersFollowPOST, handleUsersUnfollowPOST } from './handlers/users/userFollowPartials';
 import { handleUsers } from './handlers/users/users';
@@ -231,8 +233,9 @@ app.post('/admin/items/:item_sqid/regen-related-items', handleRegenerateRelatedI
 // NORMAL ROUTES
 app.get('/search', handleSearch);
 app.get('/global/:listingType?', handleGlobal);
-app.get('/feedback', handleFeedback);
+app.get('/support', handleSupport);
 app.get('/donate', handleDonate);
+app.get('/upgrade', handleUpgrade);
 app.get('/suggest', handleSuggestBlog);
 app.get('/opensearch.xml', handleOpensearchXML);
 app.get('/favicon.ico', handleFavicon);
@@ -258,17 +261,42 @@ app.post('/feeds/:feed_sqid/unsubscribe', authRequiredMiddleware, handleFeedsUns
 app.get('/items/:item_sqid', handleItem);
 app.get('/items/:item_sqid/reader', authRequiredMiddleware, handleItemReaderView);
 app.get('/items/:item_sqid/lists', authRequiredMiddleware, handleItemsLists);
-app.get('/items/:item_sqid/lists/new', authRequiredMiddleware, handleItemsListsNewForm);
-app.post('/items/:item_sqid/lists', authRequiredMiddleware, handleItemsListsNewPOST);
-app.post('/items/:item_sqid/lists/:list_sqid/add', authRequiredMiddleware, handleItemsListsAddPOST);
-app.post('/items/:item_sqid/lists/:list_sqid/remove', authRequiredMiddleware, handleItemsListsRemovePOST);
+app.get(
+    '/items/:item_sqid/lists/new',
+    authRequiredMiddleware,
+    paidSubscriptionRequiredMiddleware,
+    handleItemsListsNewForm,
+);
+app.post(
+    '/items/:item_sqid/lists',
+    authRequiredMiddleware,
+    paidSubscriptionRequiredMiddleware,
+    handleItemsListsNewPOST,
+);
+app.post(
+    '/items/:item_sqid/lists/:list_sqid/add',
+    authRequiredMiddleware,
+    paidSubscriptionRequiredMiddleware,
+    handleItemsListsAddPOST,
+);
+app.post(
+    '/items/:item_sqid/lists/:list_sqid/remove',
+    authRequiredMiddleware,
+    paidSubscriptionRequiredMiddleware,
+    handleItemsListsRemovePOST,
+);
 
 app.post('/items/:item_sqid/favorite', authRequiredMiddleware, handleItemsAddToFavorites);
 app.post('/items/:item_sqid/unfavorite', authRequiredMiddleware, handleItemsRemoveFromFavorites);
 
 app.get('/lists', handleLists);
 app.get('/lists/:list_sqid', handleListsSingle);
-app.post('/lists/:list_sqid/delete', authRequiredMiddleware, handleListsSingleDeletePOST);
+app.post(
+    '/lists/:list_sqid/delete',
+    authRequiredMiddleware,
+    paidSubscriptionRequiredMiddleware,
+    handleListsSingleDeletePOST,
+);
 
 app.get('/users', handleUsers);
 app.get('/users/:username', handleUsersSingle);

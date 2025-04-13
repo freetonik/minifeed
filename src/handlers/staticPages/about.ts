@@ -5,25 +5,7 @@ export const about = `
     <strong>Minifeed</strong> is a curated blog directory, reader, and search engine.
     The goal is to collect blogs written by real humans, make them discoverable and searchable.
     Minifeed is created and maintained by <a href="https://rakhim.org">Rakhim</a>.
-    Reach me via <a href="/feedback">contact form</a> or on <a href="https://bsky.app/profile/rakhim.org">Bluesky</a>.
-    </p>
-
-    <p>
-    Features:
-    <ol>
-        <li>Subscribe to blogs to see their posts in your feed</li>
-        <li>Follow other users to see their subscriptions in your feed</li>
-        <li>Discover blogs and posts related to your interests</li>
-        <li>Add posts to favorites</li>
-        <li>Create lists of posts</li>
-        <li>Full-text search across all blogs</li>
-        <li>Full-text search in your subscriptions*</li>
-        <li>Reader view*</li>
-        <li>OPML export*</li>
-        <li>Personal link blogs*</li>
-    </ol>
-
-    <i>* — paid features</i>
+    Reach me via <a href="/support">contact form</a> or on <a href="https://bsky.app/profile/rakhim.org">Bluesky</a>.
     </p>
 
     <h3>How are blogs collected?</h3>
@@ -39,8 +21,13 @@ export const about = `
         <li>Must have a valid RSS feed.</li>
         <li>Personal blogs are preferred.</li>
         <li>Must not be purely a "micro-blog", i.e. must have some content other than tweet-sized status updates or links.</li>
-        <li>Corporate blogs are generally not allowed. Exceptions are made for blogs from small teams and solo developers who write primarily about their own work, technology, or experiences. However, if the blog becomes dominated by marketing or sales material, it is removed.</li>
+        <li>Company blogs from small teams and solo developers who write primarily about their own work, technology, or experiences. If the blog becomes dominated by marketing or sales material, it will be removed.</li>
     </ol>
+    </p>
+
+    <h3>How to submit a new blog?</h3>
+    <p>
+    Use <a href="/suggest">this form</a> to submit a new blog.
     </p>
 
     <h3>What are the plans for the future?</h3>
@@ -57,7 +44,7 @@ export const about = `
 
     <h3>How do I know Minifeed will stay afloat?</h3>
     <p>
-    I have been building and using Minifeed since December 2023 (see <a href="/about/changelog">changelog</a>). Today, the registrations are open, and there is an optional paid subscription. I will actively work on Minifeed at least until the end of 2025. In December 2025 I will make a public announcement choosing between one of 3 options:
+    I have been building and using Minifeed since December 2023 (see <a href="/about/changelog">changelog</a>). Today, the registrations are open, and there is an optional <a href="/upgrade">paid subscription</a>. I will actively work on Minifeed at least until the end of 2025. In December 2025 I will make a public announcement choosing between one of 3 options:
     <ol>
         <li>Given enough interest and support from users, continue to develop and maintain Minifeed for the long term.</li>
         <li>Given little, but not enough interest, run it for as long as the money lasts.</li>
@@ -72,11 +59,12 @@ export const about = `
 
     <h3>How can I support Minifeed?</h3>
     <p>
-    Check out the <a href="/donate">donations page</a> for ways to support Minifeed.
+    The best way to support this project is to become a paid member. <a href="/upgrade">Check out the pricing</a> to see what cool features you get.
+    You can also <a href="/donate">donate</a> any amount.
     </p>
 
     <h3>How do I contact you?</h3>
     <p>
-    You can contact me via <a href="/feedback">feedback</a>.
+    You can contact me via <a href="/support">feedback & support form</a>.
     </p>
 `;

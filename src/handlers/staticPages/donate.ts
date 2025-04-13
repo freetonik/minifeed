@@ -1,7 +1,6 @@
 import type { Context } from 'hono';
 import { raw } from 'hono/html';
 import { renderHTML } from '../../htmltools';
-import { renderSubscriptionBlock } from '../account/handleMyAccount';
 
 export async function handleDonate(c: Context) {
     // const user_id = c.get('USER_ID');
@@ -10,22 +9,22 @@ export async function handleDonate(c: Context) {
 
     let subscriptionInfoBlock = '';
 
-    if (userLoggedIn && !userHasSubscription) {
+    if (userLoggedIn && !!userHasSubscription) {
         subscriptionInfoBlock = `
-        <p class="util-mt-1">You can also become a paid member of Minifeed:
-        ${renderSubscriptionBlock(false)}`;
+        The best way to support this project is to become a paid member.
+        <a href="/upgrade">Check out the pricing</a> to see what cool features you get.`;
     } else if (!userLoggedIn) {
         subscriptionInfoBlock = `
-        <p>The best way to support this project is to <a href="/signup">sign up for a free account</a>, and later become a paid member to get some cool features.
-        ${renderSubscriptionBlock(false, undefined, undefined, true)}
-        </p>`;
+        The best way to support this project is to <a href="/signup">sign up for a free account</a>, and later become a paid member to get some cool features.
+        <a href="/upgrade">Check out the pricing</a> to see what you get with a paid account.`;
     }
 
     const donate = `
     <h2>Support the development of Minifeed</h2>
 
-    <p>Minifeed is built and maintained by one person (it's me, Rakhim 😬).</p>
+    <p>Minifeed is built and maintained by one person (it's me, Rakhim 😬).
     ${subscriptionInfoBlock}
+    </p>
 
     <p>
         You can become a Github sponsor:
@@ -33,7 +32,7 @@ export async function handleDonate(c: Context) {
     </p>
 
     <p>
-        Or donate via PayPal:
+        Donate via PayPal:
         <form action="https://www.paypal.com/donate" method="post" target="_top">
         <input type="hidden" name="hosted_button_id" value="ZFUSYXP3FJ8PS" />
         <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
@@ -42,7 +41,7 @@ export async function handleDonate(c: Context) {
     </p>
 
     <p>
-        Or become a Patron on Patreon:
+        Via Patreon:
     </p>
 
     <p style="min-height: 2em;">
@@ -50,7 +49,7 @@ export async function handleDonate(c: Context) {
     </p>
 
     <p>
-        If you live in Finland 🇫🇮, then it is illegal for me to collect donations from you (it requires a separate paid permit). You can support me by buying some of my courses or e-books:
+        Alternatively, you can support me by buying some of my courses or e-books:
 
         <ul>
         <li><a href="https://leanpub.com/conscious-attention/">Conscious Attention</a> for any price</li>
@@ -62,7 +61,7 @@ export async function handleDonate(c: Context) {
     </p>
 
     <p>
-    Thank you for your support!
+    Thank you!
     </p>
 
 
