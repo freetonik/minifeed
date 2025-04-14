@@ -35,14 +35,15 @@ npx wrangler d1 execute minifeed --local --command="DELETE FROM d1_migrations WH
 `SELECT * FROM sqlite_schema WHERE name='favorites'`
 `PRAGMA foreign_key_list('favorites');`
 
-### Sessions
+### DB visualization
+
+Export schema:
 
 ```
-npx wrangler kv key list --binding SESSIONS_KV --local
-npx wrangler kv key get "319dcbbb68883cda" --binding SESSIONS_KV --text --local
+npx wrangler d1 export minifeed --local --output=./db.sql --no-data
 ```
 
-
+Can be used with e.g. https://www.drawdb.app/
 
 ### Deployment
 
