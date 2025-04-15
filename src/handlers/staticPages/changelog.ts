@@ -1,6 +1,12 @@
 export const changelog = `
     <h2>Changelog</h2>
 
+    <h3>1.4.1 (13.04.2025)</h3>
+    <ul>
+        <li>Small improvements to typography and responsive layout.</li>
+        <li>Clearer and easier to understand <a href="/upgrade">pricing page</a>.</li>
+    </ul>
+
     <h3>1.4.0 (30.03.2025)</h3>
     <ul>
         <li>New paid feature: personal search. Full-text search across your subscriptions.</li>

@@ -13,9 +13,10 @@ export function renderHTML(c: Context, title: string, inner: string, debugInfo =
     const userIsAdmin = c.get('USER_IS_ADMIN') || false;
 
     const canonicalUrlBlock = canonicalUrl ? raw(`<link rel="canonical" href="${canonicalUrl}" />`) : '';
+    const upgradeLinkBlock = userSubscribed ? '' : raw(`<a href="/upgrade" class="upgrade">upgrade</a>`);
 
     const userBlock = loggedIn
-        ? raw(`<a class="${active === 'account' ? 'bold' : ''}" href="/account">account</a>`)
+        ? raw(`<a class="${active === 'account' ? 'bold' : ''}" href="/account">account</a>${upgradeLinkBlock}`)
         : raw(
               `<span><a href="/login" class="bold">Log&nbsp;in</a> | <a class="bold" href="/signup">Sign&nbsp;up</a></span>`,
           );
@@ -65,9 +66,8 @@ export function renderHTML(c: Context, title: string, inner: string, debugInfo =
                 <a href="/blogs" class="${active === 'blogs' ? 'chapter bold active' : 'chapter'}">Blogs</a>
                 <a href="/lists" class="${active === 'lists' ? 'chapter bold active' : 'chapter'}">Lists</a>
                 <a href="/users" class="${active === 'users' ? 'chapter bold active' : 'chapter'}">Users</a>
-                <a href="/links" class="${active === 'Links' ? 'chapter bold active' : 'chapter'}">Links</a>
             </div>
-            <div class="hide-on-narrow">${userBlock}</div>
+            <div class="hide-on-narrow navigation-container">${userBlock}</div>
         </nav>
     </header>
 
@@ -77,10 +77,11 @@ export function renderHTML(c: Context, title: string, inner: string, debugInfo =
         <p>
             Minifeed.net ::
             <a href="/about">about</a> /
-            <a href="/donate">donate</a> /
+            <a href="/upgrade">pricing</a> /
             <a href="/about/changelog">changelog</a> /
             <a href="https://status.minifeed.net/">status</a> /
-            <a href="/feedback">feedback</a>
+            <a href="/donate">donate</a> /
+            <a href="/support">support</a>
         </p>
         ${userIsAdmin ? debugInfo : ''}
     </footer>
@@ -506,6 +507,6 @@ export function renderGuestFlash() {
     return `<div class="flash">
     <strong>Minifeed</strong> is a curated blog reader and search engine.
     We collect humans-written blogs to make them discoverable and searchable.
-    Sign up to subscribe to blogs, follow people, save favorites, and create lists.
+    <strong><a href="signup">Sign up</a></strong> to subscribe to blogs, follow people, and save favorites.
     </div>`;
 }

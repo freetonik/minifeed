@@ -81,12 +81,22 @@ header nav {
 }
 
 header nav a.chapter {
-    margin-right: 0.5em
+    margin-right: 0.65em
 }
 
 header nav .active,
 header nav a.chapter:hover {
     border-bottom: 1px solid var(--color-text);
+}
+
+header nav .upgrade {
+    background-color: var(--color-green);
+    color: white;
+    padding: 0 0.5em;
+    border-radius: 3px;
+    font-weight: bold;
+    font-variant: all-small-caps;
+    margin-left: 0.5rem;
 }
 
 
@@ -599,9 +609,12 @@ a.box-aftergrid-element:hover {
 }
 
 @media (max-width: 590px) {
+    header .logo-container {
+        margin-bottom: 1em;
+    }
+
     header .logo {
         display: block;
-        margin-bottom: 1em;
     }
 
     .navigation-container {
@@ -630,7 +643,7 @@ a.box-aftergrid-element:hover {
     }
 
     .hide-on-wide {
-        display: block;
+        display: flex;
     }
 }
 

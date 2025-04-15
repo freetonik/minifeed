@@ -5,7 +5,7 @@ import { SubscriptionTier } from './interface';
 
 export async function handleStripeCreateCheckoutSessionPOST(c: Context) {
     const rootUrl = c.env.ENVIRONMENT === 'dev' ? 'http://localhost:8181' : 'https://minifeed.net';
-    const priceId = c.env.ENVIRONMENT === 'dev' ? 'price_1QRcf4KC5WacZa26QtsqLKH9' : 'price_1QYnPcKC5WacZa262IMq0DLn';
+    const priceId = c.env.ENVIRONMENT === 'dev' ? 'price_1R9pucKC5WacZa26gpbziU6Q' : 'price_1QYnPcKC5WacZa262IMq0DLn';
     const user_id = c.get('USER_ID');
     const stripe = c.get('stripe');
 
@@ -59,31 +59,35 @@ export async function handleBillingCancel(c: Context) {
     );
 }
 
-async function fulfillCheckout(c: Context, sessionId: string) {
-    const stripe = c.get('stripe');
-
+async function fulfillCheckout(c: Context, customerEmail: string, customerId: string) {
     console.log({
         message: 'Fulfilling Checkout Session',
-        sessionId,
+        userEmail: customerEmail,
+        customerId,
     });
 
-    const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId, {
-        expand: ['line_items'],
-    });
-
-    const customerEmail = checkoutSession.customer_details.email;
-    const userId = checkoutSession.metadata.user_id;
-    const customerId = checkoutSession.customer;
-
-    if (checkoutSession.payment_status !== 'unpaid') {
-        await upgradeUser(c, userId, customerId, SubscriptionTier.PRO, 12);
+    const userRecord = await c.env.DB.prepare(`
+        SELECT user_id
+        FROM users
+        WHERE email = ?`)
+        .bind(customerEmail)
+        .first();
+    if (!userRecord) {
         console.log({
-            message: 'Checkout Session fulfilled successfully',
-            sessionId,
-            userId,
-            userEmail: customerEmail,
+            message: 'User not found',
+            customerEmail,
+            customerId,
         });
+        return;
     }
+    const userId = userRecord.user_id;
+
+    await upgradeOrRenewUserSubscription(c, userId, customerId, SubscriptionTier.PRO, 12);
+    console.log({
+        message: 'Checkout Session fulfilled successfully',
+        userId,
+        userEmail: customerEmail,
+    });
 }
 
 export async function handleStripeWebhook(c: Context) {
@@ -98,8 +102,8 @@ export async function handleStripeWebhook(c: Context) {
         }
         const body = await c.req.text();
         const event = await stripe.webhooks.constructEventAsync(body, sig, endpointSecret);
-        if (event.type === 'checkout.session.completed') {
-            await fulfillCheckout(c, event.data.object.id);
+        if (event.type === 'invoice.payment_succeeded') {
+            await fulfillCheckout(c, event.data.object.customer_email, event.data.object.customer);
         }
 
         return c.text('', 200);
@@ -131,7 +135,13 @@ export async function handleStripeCustomerPortalPOST(c: Context) {
     return c.redirect(session.url, 303);
 }
 
-const upgradeUser = async (c: Context, user_id: number, customerId: string, tier: SubscriptionTier, months: number) => {
+const upgradeOrRenewUserSubscription = async (
+    c: Context,
+    userId: number,
+    customerId: string,
+    tier: SubscriptionTier,
+    months: number,
+) => {
     const until = new Date();
     until.setMonth(until.getMonth() + months);
 
@@ -140,6 +150,6 @@ const upgradeUser = async (c: Context, user_id: number, customerId: string, tier
         INTO user_subscriptions
         (tier, expires, user_id, customer_id)
         VALUES (?, ?, ?, ?)`)
-        .bind(tier, until.toISOString(), user_id, customerId)
+        .bind(tier, until.toISOString(), userId, customerId)
         .run();
 };
