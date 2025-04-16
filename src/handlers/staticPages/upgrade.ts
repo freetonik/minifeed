@@ -145,5 +145,5 @@ export async function handleUpgrade(c: Context) {
 </div>
 
     `;
-    return c.html(renderHTML(c, 'Donate | minifeed', raw(inner)));
+    return c.html(renderHTML(c, 'Upgrade | minifeed', raw(inner)));
 }
