@@ -6,5 +6,6 @@ CREATE TABLE IF NOT EXISTS related_feeds (
 	feed_id INTEGER,
     related_feed_id INTEGER,
 	FOREIGN KEY(feed_id) REFERENCES feeds(feed_id) ON DELETE CASCADE,
-    FOREIGN KEY(related_feed_id) REFERENCES feeds(feed_id) ON DELETE CASCADE
+    FOREIGN KEY(related_feed_id) REFERENCES feeds(feed_id) ON DELETE CASCADE,
+    UNIQUE(feed_id, related_feed_id)
 );

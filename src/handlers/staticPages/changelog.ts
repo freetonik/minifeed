@@ -1,6 +1,11 @@
 export const changelog = `
     <h2>Changelog</h2>
 
+    <h3>1.4.2 (20.04.2025)</h3>
+    <ul>
+        <li>Linkblog feature removed: nobody wants it.</li>
+    </ul>
+
     <h3>1.4.1 (13.04.2025)</h3>
     <ul>
         <li>Small improvements to typography and responsive layout.</li>

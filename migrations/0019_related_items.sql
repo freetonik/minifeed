@@ -6,5 +6,7 @@ CREATE TABLE IF NOT EXISTS related_items (
 	item_id INTEGER,
     related_item_id INTEGER,
 	FOREIGN KEY(item_id) REFERENCES items(item_id) ON DELETE CASCADE,
-    FOREIGN KEY(related_item_id) REFERENCES items(item_id) ON DELETE CASCADE
+    FOREIGN KEY(related_item_id) REFERENCES items(item_id) ON DELETE CASCADE,
+    UNIQUE(item_id, related_item_id)
 );
+
