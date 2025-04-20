@@ -14,6 +14,7 @@ export function renderHTML(c: Context, title: string, inner: string, debugInfo =
 
     const canonicalUrlBlock = canonicalUrl ? raw(`<link rel="canonical" href="${canonicalUrl}" />`) : '';
     const upgradeLinkBlock = userSubscribed ? '' : raw(`<a href="/upgrade" class="upgrade">upgrade</a>`);
+    const debugInfoBlock = debugInfo ? raw(`<div class="debug-info">${debugInfo}</div>`) : '';
 
     const userBlock = loggedIn
         ? raw(`<a class="${active === 'account' ? 'bold' : ''}" href="/account">account</a>${upgradeLinkBlock}`)
@@ -74,17 +75,36 @@ export function renderHTML(c: Context, title: string, inner: string, debugInfo =
     <main>${inner}</main>
 
     <footer>
-        <p>
-            Minifeed.net ::
-            <a href="/about">about</a> /
-            <a href="/upgrade">pricing</a> /
-            <a href="/about/changelog">changelog</a> /
-            <a href="https://status.minifeed.net/">status</a> /
-            <a href="/donate">donate</a> /
-            <a href="/support">support</a>
+    <div class="footer-links">
+        <ul class="list-unstyled util-mt-0">
+        <li><a href="/about">about</a> </li>
+        <li><a href="/upgrade">pricing</a> </li>
+        <li><a href="/about/changelog">changelog</a> </li>
+        <li><a href="https://status.minifeed.net/">status</a> </li>
+        <li><a href="/donate">donate</a> </li>
+        <li><a href="/support">support</a></li>
+        </ul>
+    </div>
+    <div class="footer-newsletter">
+        <p class="util-mt-0">
+            <strong>Our newsletter</strong>: cool blogs and posts from the editor + new feature updates. <a href="https://buttondown.com/minifeed/archive/">Read&nbsp;archive</a>.
         </p>
-        ${userIsAdmin ? debugInfo : ''}
+        <form
+            action="https://buttondown.com/api/emails/embed-subscribe/minifeed"
+            method="post"
+            target="popupwindow"
+            onsubmit="window.open('https://buttondown.com/minifeed', 'popupwindow')"
+            class="embeddable-buttondown-form"
+        >
+            <div style="margin-bottom:0.5em;">
+                <input type="email" name="email" id="bd-email" placeholder="your@email.com" />
+            </div>
+            <input class="button" type="submit" value="Subscribe" />
+        </form>
+    </div>
+
     </footer>
+    ${userIsAdmin ? debugInfoBlock : ''}
     </body>
     </html>`;
 }
