@@ -307,39 +307,6 @@ export function renderItemShort(
     `;
 }
 
-export function renderLinkShort(
-    title: string,
-    url: string,
-    description: string,
-    pub_date: string,
-    itemId?: number,
-    username?: string,
-) {
-    const postDate = new Date(pub_date).toLocaleDateString('en-UK', dateFormatOptions);
-    const feedLink = url.substring(0, 64);
-
-    const divClass = description ? 'item-short' : 'item-tiny';
-    const summaryContent = description ? `<p class="item-summary">${description}</p>` : '';
-
-    let deleteBlock = '';
-    if (username && itemId) {
-        deleteBlock = `| <a hx-delete="/linkblogs/${username}/${itemId}" class="no-color no-underline cursor-pointer" hx-target="#item-${itemId}" >delete</a>`;
-    }
-    return `
-    <div id="item-${itemId}" class="${divClass}">
-        <a href="${url}" class="bold no-color no-underline">${title}</a> <br>
-        <div class="muted">
-            <small>
-                <span style="user-select: all;">${feedLink}</span> |
-                <span>${postDate}</span>
-                ${deleteBlock}
-            </small>
-        </div>
-        ${summaryContent}
-    </div>
-    `;
-}
-
 export function renderItemSearchResult(searchResult: ItemSearchResult) {
     const item = searchResult.document;
     const postDate = new Date(item.pub_date).toLocaleDateString('en-UK', dateFormatOptions);
@@ -485,20 +452,6 @@ export function renderBlogsSubsections(active = 'newest', userLoggedIn = true) {
         <a href="/blogs/by/random" class="no-color no-underline ${active === 'random' ? 'active bold' : ''}">random</a>
         <a ${userLoggedIn ? 'href="/blogs/by/subscribed"' : ''} class="no-color no-underline ${active === 'subscribed' ? 'active bold' : ''}
         ${!userLoggedIn ? 'disabled' : ''} ">subscribed</a>
-    </nav>
-    `;
-}
-
-export function renderLinksSubsections(active = 'newest', username = '') {
-    let myLink = '';
-    if (username) {
-        myLink = `<a href="/linkblogs/${username}" class="no-color no-underline">my linkblog → </a>`;
-    }
-    return `
-    <nav class="subsections">
-        <a href="/links" class="no-color no-underline ${active === 'newest' ? 'active bold' : ''}">newest</a>
-        <a href="/links/oldest" class="no-color no-underline ${active === 'oldest' ? 'active bold' : ''}">oldest</a>
-        ${myLink}
     </nav>
     `;
 }

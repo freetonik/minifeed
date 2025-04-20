@@ -117,11 +117,6 @@ export async function basicContextMiddleware(c: Context, next: () => Promise<voi
             c.set('ACTIVE_PAGE', 'users');
             break;
 
-        case 'links':
-        case 'linkblogs':
-            c.set('ACTIVE_PAGE', 'links');
-            break;
-
         case 'account':
             c.set('ACTIVE_PAGE', 'account');
             break;
