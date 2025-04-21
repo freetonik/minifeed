@@ -5,6 +5,7 @@ import isEmail from 'validator/lib/isEmail';
 import { sendEmail } from '../../email';
 import { renderHTML } from '../../htmltools';
 import { HomePageSubsectionPreference, SubscriptionTier } from '../../interface';
+import { newsletterSubscribe } from '../../newsletter';
 import type { Bindings } from './../../bindings';
 
 function renderSubscriptionBlock(hasSubscription: boolean, userExpires?: string) {
@@ -153,6 +154,13 @@ export async function handleVerifyEmail(c: Context) {
         c.env.DB.prepare('UPDATE users SET email_verified = 1 WHERE user_id = ?').bind(userId),
         c.env.DB.prepare('DELETE FROM email_verifications WHERE user_id = ?').bind(userId),
     ]);
+
+    const userWantedToSubscribeToNewsletter = await c.env.UTILITY_LISTS_KV.get(`user_${userId}_newsletter_subscribed`);
+    if (userWantedToSubscribeToNewsletter) {
+        console.log('User wanted to subscribe to newsletter');
+        await newsletterSubscribe(c.env, result.email);
+        await c.env.UTILITY_LISTS_KV.delete(`user_${userId}_newsletter_subscribed`);
+    }
 
     return await createSessionSetCookieAndRedirect(c, userId, '/', true);
 }
@@ -359,7 +367,7 @@ export async function handleSignup(c: Context) {
 
     const inner = `
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-    <div style="max-width:25em;margin:auto;">
+    <div style="max-width:30em;margin:auto;">
 
     <div class="borderbox fancy-gradient-bg">
         <h2 style="margin-top:0;">Create account</h2>
@@ -380,6 +388,11 @@ export async function handleSignup(c: Context) {
         </div>
 
         <div class="util-mb-1 cf-turnstile" data-sitekey="0x4AAAAAAA36sJM6uC8FfZ--"></div>
+        <div class="util-mb-1 large-checkbox-container">
+            <input type="checkbox" id="newsletter" name="newsletter" value="yes" />
+            <label for="newsletter">Receive our newsletter: editor's picks & feature updates</label>
+        </div>
+
 
         <input class="button" type="submit" value="Create account">
     </form>
@@ -431,6 +444,7 @@ export async function handleSignupPOST(c: Context) {
     const username = body.username.toString();
     const password = body.password.toString();
     const email = body.email.toString().toLowerCase();
+    const newsletter = body.newsletter === 'yes';
 
     // CLOUDFLARE TURNSTILE
     const token = body['cf-turnstile-response']?.toString();
@@ -495,6 +509,8 @@ export async function handleSignupPOST(c: Context) {
             .run();
 
         await send_email_verification_link(c.env, username, email, email_verification_code);
+        if (newsletter) await c.env.UTILITY_LISTS_KV.put(`user_${userId}_newsletter_subscribed`, 'true');
+
         return c.html(
             renderHTML(
                 c,
