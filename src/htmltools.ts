@@ -105,6 +105,7 @@ export function renderHTML(c: Context, title: string, inner: string, debugInfo =
 
     </footer>
     ${userIsAdmin ? debugInfoBlock : ''}
+    <script defer src="https://analytics.hypergraph.fi/script.js" data-website-id="a40cccf3-f14c-4a57-a7e9-b3cc31501630"></script>
     </body>
     </html>`;
 }
