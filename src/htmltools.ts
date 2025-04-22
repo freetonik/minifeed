@@ -87,7 +87,7 @@ export function renderHTML(c: Context, title: string, inner: string, debugInfo =
     </div>
     <div class="footer-newsletter">
         <p class="util-mt-0">
-            <strong>Our newsletter</strong>: cool blogs and posts from the editor + new feature updates. <a href="https://buttondown.com/minifeed/archive/">Read&nbsp;archive</a>.
+            <strong>Our newsletter</strong>: cool blogs and posts from the editor + new feature updates. <a href="https://news.minifeed.net/">Read&nbsp;archive</a>.
         </p>
         <form
             action="https://buttondown.com/api/emails/embed-subscribe/minifeed"
