@@ -19,8 +19,8 @@ export function renderHTML(c: Context, title: string, inner: string, debugInfo =
     const userBlock = loggedIn
         ? raw(`<a class="${active === 'account' ? 'bold' : ''}" href="/account">account</a>${upgradeLinkBlock}`)
         : raw(
-              `<span><a href="/login" class="bold">Log&nbsp;in</a> | <a class="bold" href="/signup">Sign&nbsp;up</a></span>`,
-          );
+            `<span><a href="/login" class="bold">Log&nbsp;in</a> | <a class="bold" href="/signup">Sign&nbsp;up</a></span>`,
+        );
 
     return html`
     <!DOCTYPE html>
@@ -392,6 +392,7 @@ export function renderAddFeedForm(url = '', flash = '') {
         <div style="margin-bottom:1em;">
           <label for="url">Blog URL (or direct RSS URL):</label>
           <input
+            class="button"
             type="url"
             id="url"
             name="url"
