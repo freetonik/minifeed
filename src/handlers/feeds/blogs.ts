@@ -11,7 +11,7 @@ export async function handleBlogs(c: Context) {
     const cacheKeyPattern = `https://minifeed-cache/blogs/by/${listingType}`;
 
     let ordering = 'feeds.created DESC';
-    let filtering = '';
+    let filtering = 'WHERE verified = 1';
 
     // Caching for guests
     if (!userLoggedIn && listingType !== 'random') {
@@ -30,7 +30,7 @@ export async function handleBlogs(c: Context) {
     } else return c.notFound();
 
     const { results, meta } = await c.env.DB.prepare(`
-        SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, subscriptions.subscription_id, items_top_cache.content
+        SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, subscriptions.subscription_id, items_top_cache.content, verified
         FROM feeds
         LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
         LEFT JOIN subscriptions on feeds.feed_id = subscriptions.feed_id AND subscriptions.user_id = ?

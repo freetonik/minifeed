@@ -5,16 +5,17 @@ import { renderGuestFlash, renderHTML, renderItemShort } from '../../htmltools';
 export async function handleHomeForGuest(c: Context) {
     const batch = await c.env.DB.batch([
         c.env.DB.prepare(`
-            SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, items_top_cache.content from feeds
+            SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, items_top_cache.content, feeds.verified from feeds
             LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
+            WHERE feed.verified = 1
             ORDER BY RANDOM()
             LIMIT 6`),
 
         c.env.DB.prepare(`
-            SELECT items.item_id, items.item_sqid, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title, feeds.feed_sqid, items.description
+            SELECT items.item_id, items.item_sqid, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title, feeds.feed_sqid, items.description, feeds.verified
             FROM items
             JOIN feeds ON items.feed_id = feeds.feed_id
-            WHERE items.item_sqid IS NOT 0
+            WHERE items.item_sqid IS NOT 0 AND feeds.verified = 1
             ORDER BY items.pub_date DESC
             LIMIT 10`),
     ]);

@@ -219,8 +219,6 @@ app.post('/admin/feeds/rebuild_cache', handleFeedsGlobalCacheRebuild);
 
 app.get('/admin/blogs/:feed_sqid/new', handleItemsAddItembyUrl);
 app.post('/admin/blogs/:feed_sqid/new', handleItemsAddItemByUrlPOST);
-app.get('/admin/blogs/new', handleBlogsNew);
-app.post('/admin/blogs/new', handleBlogsNewPOST);
 
 app.post('/admin/items/:item_sqid/delete', handleItemsDeletePOST);
 app.post('/admin/items/:item_sqid/refresh', handleItemRefresh);
@@ -250,6 +248,9 @@ app.get('/blogs/:feed_sqid', handleBlog);
 app.get('/blogs', handleBlogs);
 app.get('/blogs/by/:listingType?', handleBlogs);
 app.get('/blogs/by/subscribed/opml.xml', authRequiredMiddleware, handleOPMLSubscribed);
+
+app.get('/blogs/new', authRequiredMiddleware, paidSubscriptionRequiredMiddleware, handleBlogsNew);
+app.post('/blogs/new', authRequiredMiddleware, paidSubscriptionRequiredMiddleware, handleBlogsNewPOST);
 
 app.post('/feeds/:feed_sqid/subscribe', authRequiredMiddleware, handleFeedsSubscribe);
 app.post('/feeds/:feed_sqid/unsubscribe', authRequiredMiddleware, handleFeedsUnsubscribe);

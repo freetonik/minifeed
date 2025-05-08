@@ -10,7 +10,7 @@ import {
     enqueueUpdateFeed,
 } from '../../queue';
 import { deleteFeedFromIndex } from '../../search';
-import { feedIdToSqid, feedSqidToId, getFeedIdByRSSUrl } from '../../utils';
+import { feedIdToSqid, feedSqidToId, getFeedIdByRSSUrl, subscribeUserToFeed } from '../../utils';
 
 export async function handleFeedsDelete(c: Context) {
     const feedId: number = feedSqidToId(c.req.param('feed_sqid'));
@@ -46,16 +46,16 @@ export async function handleFeedsDelete(c: Context) {
 }
 
 export async function handleBlogsNew(c: Context) {
-    if (!c.get('USER_ID')) return c.redirect('/login');
     return c.html(renderHTML(c, 'Add new blog', renderAddFeedForm()));
 }
 
 export async function handleBlogsNewPOST(c: Context) {
     const body = await c.req.parseBody();
     const url = body.url.toString();
+    const verified = !!c.get('USER_IS_ADMIN');
+
     let rssUrl: string | undefined;
     try {
-        const verified = !!c.get('USER_IS_ADMIN');
         rssUrl = await addFeed(c.env, url, verified); // MAIN MEAT!
     } catch (e: unknown) {
         const errorMessage = (e as Error).toString();
@@ -65,6 +65,7 @@ export async function handleBlogsNewPOST(c: Context) {
     // Redirect
     if (rssUrl) {
         const feedId = await getFeedIdByRSSUrl(c, rssUrl);
+        if (!verified) await subscribeUserToFeed(c.env, c.get('USER_ID'), feedId);
         const sqid = feedIdToSqid(feedId);
         return c.redirect(`/blogs/${sqid}`, 301);
     }
