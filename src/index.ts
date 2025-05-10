@@ -244,13 +244,14 @@ app.post('/signup', handleSignupPOST);
 app.get('/logout', authRequiredMiddleware, handleLogout);
 
 app.get('/blogs/opml.xml', handleOPMLGlobal);
+app.get('/blogs/new', authRequiredMiddleware, paidSubscriptionRequiredMiddleware, handleBlogsNew);
+app.post('/blogs/new', authRequiredMiddleware, paidSubscriptionRequiredMiddleware, handleBlogsNewPOST);
 app.get('/blogs/:feed_sqid', handleBlog);
 app.get('/blogs', handleBlogs);
 app.get('/blogs/by/:listingType?', handleBlogs);
 app.get('/blogs/by/subscribed/opml.xml', authRequiredMiddleware, handleOPMLSubscribed);
 
-app.get('/blogs/new', authRequiredMiddleware, paidSubscriptionRequiredMiddleware, handleBlogsNew);
-app.post('/blogs/new', authRequiredMiddleware, paidSubscriptionRequiredMiddleware, handleBlogsNewPOST);
+
 
 app.post('/feeds/:feed_sqid/subscribe', authRequiredMiddleware, handleFeedsSubscribe);
 app.post('/feeds/:feed_sqid/unsubscribe', authRequiredMiddleware, handleFeedsUnsubscribe);

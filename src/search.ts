@@ -109,9 +109,10 @@ export async function updateItemIndex(env: Bindings, itemId: number, textContent
         feed_title: string;
         feed_id: number;
         feed_sqid: string;
+        verified: boolean;
     };
     const { results: items } = await env.DB.prepare(
-        `SELECT items.title, items.item_sqid, feeds.type, items.content_html, items.description, items.content_html_scraped, items.url, items.pub_date, feeds.title as feed_title, items.feed_id, feeds.feed_sqid
+        `SELECT items.title, items.item_sqid, feeds.type, items.content_html, items.description, items.content_html_scraped, items.url, items.pub_date, feeds.title as feed_title, items.feed_id, feeds.feed_sqid, feeds.verified
         FROM items
         JOIN feeds ON feeds.feed_id = items.feed_id
         WHERE item_id = ?`,
@@ -135,6 +136,7 @@ export async function updateItemIndex(env: Bindings, itemId: number, textContent
         title: item.title,
         content: collapseWhitespace(stripASCIIFormatting(content)),
         type: item.type,
+        verified: Number(item.verified) === 1,
         // non-searchable fields
         item_sqid: item.item_sqid,
         url: item.url,
@@ -149,7 +151,7 @@ export async function updateItemIndex(env: Bindings, itemId: number, textContent
 
 export async function updateFeedIndex(env: Bindings, feedId: number) {
     const feed = await env.DB.prepare(
-        `SELECT title, type, url, description, rss_url, feed_id, feed_sqid
+        `SELECT title, type, url, description, rss_url, feed_id, feed_sqid, verified
         FROM feeds
         WHERE feed_id = ?`,
     )
@@ -179,6 +181,7 @@ export async function updateFeedIndex(env: Bindings, feedId: number) {
         type: feed.type,
         content: feedContent,
         feed_id: feed.feed_id,
+        verified: Number(feed.verified) === 1,
         // non-searchable fields
         feed_sqid: feed.feed_sqid,
         url: feed.url,

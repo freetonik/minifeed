@@ -4,6 +4,7 @@ import robotsParser from 'robots-parser';
 import { getRssUrlsFromHtmlBody } from 'rss-url-finder';
 import Sqids from 'sqids';
 import { detectAll } from 'tinyld';
+import { Bindings } from './bindings';
 import type { FeedRow, MFFeedEntry } from './interface';
 
 function idToSqid(id: number, length: number): string {
@@ -73,11 +74,11 @@ export async function getFeedIdByRSSUrl(c: Context, rssUrl: string) {
     return results[0].feed_id;
 }
 
-export async function subscribeUserToFeed(c: Context, userId: string, feedId: number) {
-    const { results } = await c.env.DB.prepare('SELECT * FROM subscriptions WHERE user_id = ? AND feed_id = ?').bind(userId, feedId).all();
+export async function subscribeUserToFeed(env: Bindings, userId: string, feedId: number) {
+    const { results } = await env.DB.prepare('SELECT * FROM subscriptions WHERE user_id = ? AND feed_id = ?').bind(userId, feedId).all();
     if (results.length > 0) return false; // already subscribed
 
-    await c.env.DB.prepare('INSERT INTO subscriptions (user_id, feed_id) VALUES (?, ?)').bind(userId, feedId).run();
+    await env.DB.prepare('INSERT INTO subscriptions (user_id, feed_id) VALUES (?, ?)').bind(userId, feedId).run();
     return true;
 }
 

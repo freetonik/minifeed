@@ -388,11 +388,10 @@ export function renderAddFeedForm(url = '', flash = '') {
     return raw(`
     <h1>Add new blog</h1>
     ${flashBlock}
-      <form action="/admin/blogs/new" method="POST">
+      <form action="/blogs/new" method="POST">
         <div style="margin-bottom:1em;">
           <label for="url">Blog URL (or direct RSS URL):</label>
           <input
-            class="button"
             type="url"
             id="url"
             name="url"
@@ -400,7 +399,7 @@ export function renderAddFeedForm(url = '', flash = '') {
             style="width: 100%;"
           /><br />
         </div>
-        <input type="submit" value="Add blog" />
+        <input class="button" type="submit" value="Add blog" />
       </form>
   `);
 }
