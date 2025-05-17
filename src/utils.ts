@@ -4,6 +4,7 @@ import robotsParser from 'robots-parser';
 import { getRssUrlsFromHtmlBody } from 'rss-url-finder';
 import Sqids from 'sqids';
 import { detectAll } from 'tinyld';
+import { Bindings } from './bindings';
 import type { FeedRow, MFFeedEntry } from './interface';
 
 function idToSqid(id: number, length: number): string {
@@ -52,7 +53,7 @@ export async function getRSSLinkFromUrl(url: string) {
     if (!pageContent.length) throw new Error(`Empty content at url: ${url}`);
 
     // the content of the page is HTML, try to find RSS link
-    if (pageContent.includes('<html') || pageContent.includes('<!DOCTYPE html>')) {
+    if (pageContent.includes('<html') || pageContent.includes('<!DOCTYPE html')) {
         const rssUrlObj = getRssUrlsFromHtmlBody(pageContent);
         if (!rssUrlObj.length || !rssUrlObj[0].url) throw new Error(`Cannot find RSS link in HTML of URL: ${url}`);
         let foundRSSLink = rssUrlObj[0].url;
@@ -71,6 +72,14 @@ export async function getRSSLinkFromUrl(url: string) {
 export async function getFeedIdByRSSUrl(c: Context, rssUrl: string) {
     const { results } = await c.env.DB.prepare('SELECT feed_id FROM feeds where rss_url = ?').bind(rssUrl).all();
     return results[0].feed_id;
+}
+
+export async function subscribeUserToFeed(env: Bindings, userId: string, feedId: number) {
+    const { results } = await env.DB.prepare('SELECT * FROM subscriptions WHERE user_id = ? AND feed_id = ?').bind(userId, feedId).all();
+    if (results.length > 0) return false; // already subscribed
+
+    await env.DB.prepare('INSERT INTO subscriptions (user_id, feed_id) VALUES (?, ?)').bind(userId, feedId).run();
+    return true;
 }
 
 /**

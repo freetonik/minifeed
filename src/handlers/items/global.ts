@@ -19,11 +19,11 @@ export async function handleGlobal(c: Context) {
     if (listingType === 'oldest' || listingType === 'newest') {
         const { results, meta } = await c.env.DB.prepare(
             `
-            SELECT items.item_id, items.item_sqid, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description
+            SELECT items.item_id, items.item_sqid, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description, feeds.verified
             FROM items
             JOIN feeds ON items.feed_id = feeds.feed_id
             LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
-            WHERE items.item_sqid IS NOT 0
+            WHERE items.item_sqid IS NOT 0 AND feeds.verified = 1
             ORDER BY ${ordering}
             LIMIT ? OFFSET ?`,
         )

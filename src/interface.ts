@@ -91,6 +91,7 @@ export type ItemSearchDocument = {
     feed_id: number;
     feed_sqid: string;
     feed_title: string;
+    verified: boolean;
 };
 
 export type FeedSearchDocument = {
@@ -99,6 +100,7 @@ export type FeedSearchDocument = {
     type: string;
     content: string;
     feed_id: number;
+    verified: boolean;
     // non-searchable fields
     feed_sqid: string;
     url: string;

@@ -6,12 +6,13 @@ import { renderBlogsSubsections, renderGuestFlash, renderHTML } from '../../html
 export async function handleBlogs(c: Context) {
     const userId = c.get('USER_ID') || -1;
     const userLoggedIn = c.get('USER_LOGGED_IN');
+    const userHasSubscription = c.get('USER_HAS_SUBSCRIPTION');
 
     const listingType = c.req.param('listingType') || 'newest';
     const cacheKeyPattern = `https://minifeed-cache/blogs/by/${listingType}`;
 
     let ordering = 'feeds.created DESC';
-    let filtering = '';
+    let filtering = 'WHERE verified = 1';
 
     // Caching for guests
     if (!userLoggedIn && listingType !== 'random') {
@@ -30,7 +31,7 @@ export async function handleBlogs(c: Context) {
     } else return c.notFound();
 
     const { results, meta } = await c.env.DB.prepare(`
-        SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, subscriptions.subscription_id, items_top_cache.content
+        SELECT feeds.feed_id, feeds.feed_sqid, feeds.title, feeds.url, feeds.rss_url, feeds.description, subscriptions.subscription_id, items_top_cache.content, verified
         FROM feeds
         LEFT JOIN items_top_cache on feeds.feed_id = items_top_cache.feed_id
         LEFT JOIN subscriptions on feeds.feed_id = subscriptions.feed_id AND subscriptions.user_id = ?
@@ -42,6 +43,9 @@ export async function handleBlogs(c: Context) {
     let inner = '';
     if (!userLoggedIn) inner += renderGuestFlash();
     inner += renderBlogsSubsections(listingType, userLoggedIn);
+
+    if (userHasSubscription) inner += `<div class="util-mb-2"><a class="button" href="/blogs/new">+ add new blog</a></div>`
+
 
     for (const feed of results) {
         const subscriptionAction = feed.subscription_id ? 'unsubscribe' : 'subscribe';
@@ -100,7 +104,7 @@ export async function handleBlogs(c: Context) {
     else if (listingType === 'newest' || listingType === 'oldest' || listingType === 'alphabetical')
         opmlLink = ` <a class="button util-ml-1" href="/blogs/opml.xml">OPML export</a>`;
 
-    inner += `<div style="margin-top:2em;text-align:center;"><a class="button" href="/suggest">+ suggest a blog</a>${opmlLink}</div>`;
+    inner += `<div><a class="button" href="/suggest">+ suggest a blog</a>${opmlLink}</div>`;
 
     const html = renderHTML(c, 'Blogs | minifeed', raw(inner), `${meta.duration} ms., ${meta.rows_read} rows read`);
 

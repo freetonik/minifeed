@@ -23,7 +23,7 @@ export async function handleSearch(c: Context) {
     const page = Number(c.req.query('p')) || 1;
 
     const searchDocuments: {
-        searches: Array<{ collection: string; q: string; per_page: number; num_typos?: number }>;
+        searches: Array<{ collection: string; q: string; per_page: number; num_typos?: number, filter_by?: string }>;
     } = {
         searches: [],
     };
@@ -32,12 +32,14 @@ export async function handleSearch(c: Context) {
         searchDocuments.searches.push(
             {
                 collection: c.env.TYPESENSE_FEEDS_COLLECTION,
+                filter_by: (personal === 'true') ? '' : 'verified:!=false',
                 q: q,
                 per_page: 5,
                 num_typos: 0,
             },
             {
                 collection: c.env.TYPESENSE_ITEMS_COLLECTION,
+                filter_by: (personal === 'true') ? '' : 'verified:!=false',
                 q: q,
                 per_page: itemsPerPage,
             },
@@ -45,12 +47,14 @@ export async function handleSearch(c: Context) {
     } else if (scope === 'blogs') {
         searchDocuments.searches.push({
             collection: c.env.TYPESENSE_FEEDS_COLLECTION,
+            filter_by: (personal === 'true') ? '' : 'verified:!=false',
             q: q,
             per_page: 5,
         });
     } else if (scope === 'posts') {
         searchDocuments.searches.push({
             collection: c.env.TYPESENSE_ITEMS_COLLECTION,
+            filter_by: personal ? '' : 'verified:!=false',
             q: q,
             per_page: itemsPerPage,
         });

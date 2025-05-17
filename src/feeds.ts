@@ -38,7 +38,7 @@ export async function addFeed(env: Bindings, url: string, verified = false) {
     // if url === rssUrl that means the submitted URL was RSS URL, so retrieve site URL from RSS; otherwise use submitted URL as site URL
     const attemptedSiteUrl = r.link && r.link.length > 0 ? r.link : getRootUrl(url);
     const siteUrl = url === RSSUrl ? attemptedSiteUrl : url;
-    const verified_as_int = verified ? 1 : 0;
+    const verifiedAsInt = verified ? 1 : 0;
     let feedTitle = r.title;
     if (!feedTitle || feedTitle.trim().length === 0) {
         const siteUrlHost = new URL(siteUrl).host;
@@ -49,7 +49,7 @@ export async function addFeed(env: Bindings, url: string, verified = false) {
         const dbQueryResult = await env.DB.prepare(
             'INSERT INTO feeds (title, type, url, rss_url, verified) values (?, ?, ?, ?, ?)',
         )
-            .bind(feedTitle, 'blog', siteUrl, RSSUrl, verified_as_int)
+            .bind(feedTitle, 'blog', siteUrl, RSSUrl, verifiedAsInt)
             .all();
         if (dbQueryResult.success === true) {
             // set feed_sqid
