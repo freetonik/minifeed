@@ -14,7 +14,8 @@ export function renderHTML(c: Context, title: string, inner: string, debugInfo =
 
     const canonicalUrlBlock = canonicalUrl ? raw(`<link rel="canonical" href="${canonicalUrl}" />`) : '';
     const upgradeLinkBlock = userSubscribed ? '' : raw(`<a href="/upgrade" class="upgrade">upgrade</a>`);
-    const debugInfoBlock = debugInfo ? raw(`<div class="debug-info">${debugInfo}</div>`) : '';
+    const debugInfoBlock = (userIsAdmin && debugInfo) ? raw(`<div class="debug-info">${debugInfo}</div>`) : '';
+    const analyticsBlock = userIsAdmin ? '' : raw('<script defer src="https://analytics.hypergraph.fi/script.js" data-website-id="a40cccf3-f14c-4a57-a7e9-b3cc31501630"></script>');
 
     const userBlock = loggedIn
         ? raw(`<a class="${active === 'account' ? 'bold' : ''}" href="/account">account</a>${upgradeLinkBlock}`)
@@ -104,8 +105,9 @@ export function renderHTML(c: Context, title: string, inner: string, debugInfo =
     </div>
 
     </footer>
-    ${userIsAdmin ? debugInfoBlock : ''}
-    <script defer src="https://analytics.hypergraph.fi/script.js" data-website-id="a40cccf3-f14c-4a57-a7e9-b3cc31501630"></script>
+    ${debugInfoBlock}
+    ${analyticsBlock}
+
     </body>
     </html>`;
 }
