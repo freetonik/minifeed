@@ -473,7 +473,7 @@ export async function handleSignupPOST(c: Context) {
 
     if (!checkUsername(username))
         throw new Error(
-            'Invalid username. Please, use only letters, numbers, and underscores. Minimum 3 characters, maximum 16 characters.',
+            'Invalid username. Please, use only letters, numbers, and underscores. Minimum 3 characters, maximum 32 characters.',
         );
     if (password.length < 8) throw new Error('Password too short. Minimum 8 characters.');
     if (!isEmail(email)) throw new Error('Invalid email');
@@ -642,5 +642,5 @@ export async function verifyPassword(hash: string, salt: string, passwordAttempt
 }
 
 function checkUsername(username: string) {
-    return /^[a-zA-Z0-9_]{3,16}$/.test(username);
+    return /^[a-zA-Z0-9_]{3,32}$/.test(username);
 }
