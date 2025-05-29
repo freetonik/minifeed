@@ -1,5 +1,4 @@
 import type { Context } from 'hono';
-import { decode } from 'html-entities';
 import robotsParser from 'robots-parser';
 import { getRssUrlsFromHtmlBody } from 'rss-url-finder';
 import Sqids from 'sqids';
@@ -85,13 +84,13 @@ export async function subscribeUserToFeed(env: Bindings, userId: string, feedId:
 /**
  * Returns the text value of the given input.
  * If the input is an object, it checks for properties like '_text', '#text', '_cdata', or '$t' to extract the text value.
- * If the input is a string, it trims and decodes the string before returning.
+ * If the input is a string, it trims the string before returning.
  * @param val - The input value.
  * @returns The text value of the input.
  */
 export function getText(val: any) {
     const txt = isObject(val) ? val._text || val['#text'] || val._cdata || val.$t : val;
-    return txt ? decode(String(txt).trim()) : '';
+    return txt ? String(txt).trim() : '';
 }
 function ob2Str(val: any) {
     return {}.toString.call(val);

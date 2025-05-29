@@ -1,10 +1,13 @@
+import { FeedData } from '@extractus/feed-extractor';
 import type { Context } from 'hono';
 import type { Bindings } from '../../bindings';
+import { extractRSS } from '../../feed_extractor';
 import { renderAddItemByURLForm, renderHTML } from '../../htmltools';
+import { MFFeedEntry } from '../../interface';
 import { addItem, deleteItem, scrapeIndexVectorizeItem } from '../../items';
 import { scrapeURLIntoObject } from '../../scrape';
 import { dbGetItem } from '../../sqlutils';
-import { feedSqidToId, itemSqidToId } from '../../utils';
+import { extractItemUrl, feedSqidToId, getText, itemSqidToId, stripNonLinguisticElements, truncate } from '../../utils';
 
 export async function handleItemsAddItembyUrl(c: Context) {
     const feedSqid = c.req.param('feed_sqid');
@@ -70,6 +73,51 @@ export async function handleItemsAddItemByUrlPOST(c: Context) {
 export async function handleItemRefresh(c: Context) {
     const itemSqid = c.req.param('item_sqid');
     const itemId = itemSqidToId(itemSqid);
+    const item = await c.env.DB.prepare('SELECT items.url, items.title, rss_url, feeds.feed_id from ITEMS JOIN feeds ON feeds.feed_id = items.feed_id WHERE item_id=?').bind(itemId).all();
+    if (item.results.length === 0) return c.html('Item not found');
+
+    const itemURL = item.results[0].url;
+    const feedRSSUrl = item.results[0].rss_url;
+    const feedId = item.results[0].feed_id;
+    const r: FeedData = await extractRSS(feedRSSUrl); // fetch RSS content
+    let theEntry = undefined;
+    for (const entry of r.entries || []) {
+        const entryUrl = extractItemUrl(entry as MFFeedEntry, feedRSSUrl);
+        if (entryUrl === itemURL) {
+            theEntry = entry;
+            break;
+        }
+    }
+
+    if (theEntry) {
+        let itemTitle = item.results[0].title;
+        if (theEntry?.title) itemTitle = theEntry.title;
+
+        const itemDescriptionWithoutSemanticElements = await stripNonLinguisticElements(item.description || '');
+        const itemDescription = truncate(itemDescriptionWithoutSemanticElements, 350);
+
+
+        const itemContentHTML =
+            getText(theEntry.content_from_content) ||
+            getText(theEntry.content_from_content_encoded) ||
+            getText(theEntry.content_from_description) ||
+            getText(theEntry.content_from_content_html) ||
+            '';
+
+        await c.env.DB.prepare(
+            'UPDATE items set title = ?, description = ?, content_html = ? WHERE item_id = ?',
+        )
+            .bind(itemTitle, itemDescription, itemContentHTML, itemId)
+            .run();
+
+        console.log({
+            message: 'Updated item from RSS',
+            itemId,
+            feedId,
+            feedRSSUrl,
+        });
+    }
+
     await scrapeIndexVectorizeItem(c.env, itemId);
     return c.html('Enqueued...');
 }
