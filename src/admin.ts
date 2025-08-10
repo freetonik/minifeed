@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import { raw } from 'hono/html';
 import type { Bindings } from './bindings';
 import { renderHTML } from './htmltools';
-import { deleteItem } from './items';
+import { deleteItem, generateMissingItemSqids } from './items';
 import { getCollection } from './search';
 import { feedSqidToId, findObjsUniqueToListOne, groupObjectsByProperty } from './utils';
 
@@ -140,7 +140,7 @@ export async function handleAdmin(c: Context) {
         <tr>
             <td>Items without SQID</td>
             <td>${items_without_sqid.results[0]['count(item_id)']}
-            <a href="/admin/items_without_sqid">[list]</a>
+            <a href="/admin/items_without_sqid">[list]</a> | <a href="/admin/items_without_sqid/generate">[generate]</a>
             </td>
         </tr>
 
@@ -280,6 +280,11 @@ export async function handleAdmin(c: Context) {
     `;
 
     return c.html(renderHTML(c, 'admin | minifeed', raw(list)));
+}
+
+export async function handleGenerateMissingItemSqids(c: Context) {
+    const itemIds = await generateMissingItemSqids(c.env);
+    return c.json({ itemIds });
 }
 
 export async function handleDuplicateItems(c: Context) {

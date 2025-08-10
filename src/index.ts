@@ -12,6 +12,7 @@ import {
     handleDeleteDuplicatesByTitle,
     handleDeleteDuplicatesByUrl,
     handleDuplicateItems,
+    handleGenerateMissingItemSqids,
 } from './admin';
 import { handleGenerateRelated, handleVectorize, vectorizeAndStoreItem } from './ai';
 import type { Bindings } from './bindings';
@@ -201,6 +202,7 @@ app.get('/admin/unindexed_items', handleAdminUnindexedItems);
 app.get('/admin/unindexed_feeds', handleAdminUnindexedFeeds);
 
 app.get('/admin/items_without_sqid', handleAdminItemsWithoutSqid);
+app.get('/admin/items_without_sqid/generate', handleGenerateMissingItemSqids);
 app.get('/admin/items_without_related', handleAdminItemsWithoutRelated);
 app.get('/admin/vectorize', handleVectorize);
 app.get('/admin/generate_related/:type', handleGenerateRelated);

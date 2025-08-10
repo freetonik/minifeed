@@ -218,4 +218,5 @@ export async function generateMissingItemSqids(env: Bindings) {
             itemSqid,
         });
     }
+    return items.results.map((item) => item.item_id);
 }
