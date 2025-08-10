@@ -205,3 +205,17 @@ export async function regenerateListOfItemIds(env: Bindings) {
     await env.UTILITY_LISTS_KV.put('all_item_ids', JSON.stringify(itemIds));
     return itemIds;
 }
+
+export async function generateMissingItemSqids(env: Bindings) {
+    const items = await env.DB.prepare('SELECT item_id FROM Items WHERE item_sqid = 0 LIMIT 1000').all();
+    for (const item of items.results) {
+        const itemId = item.item_id as number;
+        const itemSqid = itemIdToSqid(itemId);
+        await env.DB.prepare('UPDATE Items SET item_sqid = ? WHERE item_id = ?').bind(itemSqid, itemId).run();
+        console.log({
+            message: 'Updated item sqid',
+            itemId,
+            itemSqid,
+        });
+    }
+}

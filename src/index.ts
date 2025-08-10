@@ -97,6 +97,7 @@ import { deleteUnverifiedAccounts } from './handlers/users/usersDeletion';
 import { renderHTML } from './htmltools';
 import { HomePageSubsectionPreference, type MFQueueMessage } from './interface';
 import {
+    generateMissingItemSqids,
     refreshItemsMissingRelated,
     refreshItemsMissingVector,
     regenerateListOfItemIds,
@@ -407,6 +408,7 @@ export default {
                 await enqueueUpdateAllFeeds(env);
                 await refreshItemsMissingRelated(env);
                 await refreshItemsMissingVector(env);
+                await generateMissingItemSqids(env);
                 break;
             case '45 0 * * *':
                 // Every night at 00:45
