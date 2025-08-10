@@ -153,13 +153,14 @@ export async function regenerateRelatedForItem(env: Bindings, itemId: number) {
             topK: 10,
             filter: { feed_id: { $ne: `${item?.feed_id}` } },
         });
-        for (const match of matchesOtherBlogs.matches) relatedItemIds.push(match.id);
-
-        // check if items exist in db
-        for (const itemId of relatedItemIds) {
-            const existingItem = await env.DB.prepare('SELECT item_id FROM items WHERE item_id = ?').bind(itemId).run();
-            if (existingItem.results.length === 0) {
-                relatedItemIds.splice(relatedItemIds.indexOf(itemId), 1);
+        // ensure relatedItemIds contains unique values only
+        for (const match of matchesOtherBlogs.matches) {
+            if (relatedItemIds.indexOf(match.id) === -1) {
+                // check if items exist in db
+                const existingItem = await env.DB.prepare('SELECT item_id FROM items WHERE item_id = ?').bind(itemId).run();
+                if (existingItem.results.length !== 0) {
+                    relatedItemIds.push(match.id);
+                }
             }
         }
     }
