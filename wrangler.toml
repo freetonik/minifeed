@@ -81,6 +81,7 @@ max_batch_size = 1    # optional: defaults to 10
 [triggers]
 crons = [
     "0 * * * *",
+    "30 * * * *",
     "0 */2 * * *",
     "45 0 * * *"
 ]

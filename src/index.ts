@@ -405,8 +405,12 @@ export default {
     async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
         switch (event.cron) {
             case '0 * * * *':
-                // Every hour
-                await enqueueUpdateAllFeeds(env);
+                // Every hour at 00 minutes
+                await enqueueUpdateAllFeeds(env, 500, 0);
+                break;
+            case '30 * * * *':
+                // Every hour at 30 minutes
+                await enqueueUpdateAllFeeds(env, 1000, 500); // TODO: make a more robust scheduling solution
                 break;
             case '0 */2 * * *':
                 // Every 2 hours
