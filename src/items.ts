@@ -170,7 +170,7 @@ export async function refreshItemsMissingRelated(env: Bindings) {
         FROM items_vector_relation
         LEFT JOIN related_items on items_vector_relation.item_id = related_items.item_id
         JOIN items on items.item_id = items_vector_relation.item_id
-        WHERE related_items.item_id IS NULL LIMIT 1000
+        WHERE related_items.item_id IS NULL LIMIT 100
         `).all();
     for (const item of items.results) {
         console.log({
@@ -186,7 +186,7 @@ export async function refreshItemsMissingVector(env: Bindings) {
     const items = await env.DB.prepare(`
         SELECT item_id, item_sqid
         FROM items
-        WHERE item_id NOT IN (SELECT item_id FROM items_vector_relation) LIMIT 1000
+        WHERE item_id NOT IN (SELECT item_id FROM items_vector_relation) LIMIT 100
         `).all();
     for (const item of items.results) {
         console.log({
@@ -207,7 +207,7 @@ export async function regenerateListOfItemIds(env: Bindings) {
 }
 
 export async function generateMissingItemSqids(env: Bindings) {
-    const items = await env.DB.prepare('SELECT item_id FROM Items WHERE item_sqid = 0 LIMIT 1000').all();
+    const items = await env.DB.prepare('SELECT item_id FROM Items WHERE item_sqid = 0 LIMIT 100').all();
     for (const item of items.results) {
         const itemId = item.item_id as number;
         const itemSqid = itemIdToSqid(itemId);

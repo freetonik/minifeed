@@ -406,8 +406,11 @@ export default {
         switch (event.cron) {
             case '0 * * * *':
                 // Every hour
-                await generateInitialRelatedFeeds(env);
                 await enqueueUpdateAllFeeds(env);
+                break;
+            case '0 */2 * * *':
+                // Every 2 hours
+                await generateInitialRelatedFeeds(env);
                 await refreshItemsMissingRelated(env);
                 await refreshItemsMissingVector(env);
                 await generateMissingItemSqids(env);

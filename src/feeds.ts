@@ -176,7 +176,7 @@ export async function generateInitialRelatedFeeds(env: Bindings) {
         SELECT f.feed_id
         FROM feeds f
         LEFT JOIN related_feeds rf ON f.feed_id = rf.feed_id
-        WHERE rf.id IS NULL;
+        WHERE rf.id IS NULL LIMIT 100;
         `).all();
     for (const feed of feeds.results) {
         await enqueueRegenerateRelatedFeedsCache(env, feed.feed_id as number);

@@ -57,13 +57,13 @@ export async function enqueueRegenerateRelatedCache(env: Bindings, item_id: numb
 export async function enqueueRegenerateRelatedCacheForAllItems(env: Bindings) {
     const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
     const { results: items } = await env.DB.prepare(
-        'SELECT related_items.item_id FROM related_items WHERE created < ? LIMIT 1000',
+        'SELECT related_items.item_id FROM related_items WHERE created < ? LIMIT 100',
     )
         .bind(twoWeeksAgo.toISOString())
         .all();
 
     console.log({
-        message: 'Starting enqueuing regenerate related cache for up to 1000 items',
+        message: 'Starting enqueuing regenerate related cache for up to 100 items',
     });
 
     for (const item of items) {
