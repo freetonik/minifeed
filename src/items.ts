@@ -1,4 +1,5 @@
 import type { FeedEntry } from '@extractus/feed-extractor';
+import { processJsonlStream } from './admin';
 import type { Bindings } from './bindings';
 import { regenerateTopItemsCacheForFeed } from './feeds';
 import type { ItemRow } from './interface';
@@ -7,6 +8,7 @@ import { scrapeURLIntoObject } from './scrape';
 import { deleteItemFromIndex } from './search';
 import {
     extractItemUrl,
+    findObjsUniqueToListOne,
     getItemPubDate,
     getText,
     itemIdToSqid,
@@ -219,4 +221,42 @@ export async function generateMissingItemSqids(env: Bindings) {
         });
     }
     return items.results.map((item) => item.item_id);
+}
+
+export async function indexMissingItems(env: Bindings) {
+    const allItemIdsEntries = await env.DB.prepare(
+        'SELECT item_id, item_sqid, items.feed_id, feeds.feed_sqid FROM Items JOIN feeds on items.feed_id = feeds.feed_id ',
+    ).all();
+    const allDBItems = [];
+    for (const item of allItemIdsEntries.results) {
+        allDBItems.push({
+            feed_id: item.feed_id,
+            feed_sqid: item.feed_sqid,
+            id: String(item.item_id),
+            item_sqid: item.item_sqid,
+        });
+    }
+
+    const response = await fetch(
+        `https://${env.TYPESENSE_CLUSTER}:443/collections/${env.TYPESENSE_ITEMS_COLLECTION}/documents/export?exclude_fields=content,feed_title,pub_date,url,type,title`,
+        {
+            method: 'GET',
+            headers: { 'X-TYPESENSE-API-KEY': env.TYPESENSE_API_KEY },
+        },
+    );
+
+    const allIndexedItems = await processJsonlStream(response);
+    const unIndexedItems = findObjsUniqueToListOne(allDBItems, allIndexedItems);
+    if (unIndexedItems.length > 200) {
+        unIndexedItems.length = 200;
+    }
+    for (const item of unIndexedItems) {
+        console.log({
+            message: 'Enqueuing indexing item',
+            itemId: item.id,
+            feedId: item.feed_id,
+            feedSqid: item.feed_sqid,
+        });
+        await enqueueItemIndex(env, Number(item.id));
+    }
 }

@@ -99,6 +99,7 @@ import { renderHTML } from './htmltools';
 import { HomePageSubsectionPreference, type MFQueueMessage } from './interface';
 import {
     generateMissingItemSqids,
+    indexMissingItems,
     refreshItemsMissingRelated,
     refreshItemsMissingVector,
     regenerateListOfItemIds,
@@ -411,6 +412,9 @@ export default {
             case '30 * * * *':
                 // Every hour at 30 minutes
                 await enqueueUpdateAllFeeds(env, 1000, 500); // TODO: make a more robust scheduling solution
+                break;
+            case '45 * * * *':
+                await indexMissingItems(env);
                 break;
             case '0 */2 * * *':
                 // Every 2 hours

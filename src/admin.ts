@@ -576,7 +576,7 @@ export async function handleAdminItemsWithoutRelated(c: Context) {
     return c.html(renderHTML(c, 'admin | minifeed', raw(list)));
 }
 
-async function processJsonlStream(response: Response) {
+export async function processJsonlStream(response: Response) {
     if (!response.body) return;
     const decoder = new TextDecoderStream();
     const reader = response.body.pipeThrough(decoder).getReader();
