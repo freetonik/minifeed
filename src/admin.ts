@@ -4,7 +4,7 @@ import type { Bindings } from './bindings';
 import { renderHTML } from './htmltools';
 import { deleteItem, generateMissingItemSqids } from './items';
 import { getCollection } from './search';
-import { feedSqidToId, findObjsUniqueToListOne, groupObjectsByProperty } from './utils';
+import { feedSqidToId, findObjsUniqueToListOne, groupObjectsByProperty, processJsonlStream } from './utils';
 
 export async function handleAdmin(c: Context) {
     let list = '';
@@ -574,41 +574,6 @@ export async function handleAdminItemsWithoutRelated(c: Context) {
     list += '</ol>';
 
     return c.html(renderHTML(c, 'admin | minifeed', raw(list)));
-}
-
-export async function processJsonlStream(response: Response) {
-    if (!response.body) return;
-    const decoder = new TextDecoderStream();
-    const reader = response.body.pipeThrough(decoder).getReader();
-
-    const items = [];
-    let buffer = '';
-
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-            // Process any remaining data in buffer
-            if (buffer.trim()) {
-                items.push(JSON.parse(buffer.trim()));
-            }
-            break;
-        }
-
-        // Append new chunk to buffer
-        buffer += value;
-
-        // Split by newlines and process complete lines
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || ''; // Keep the last incomplete line in buffer
-
-        for (const line of lines) {
-            if (line.trim()) {
-                items.push(JSON.parse(line));
-            }
-        }
-    }
-
-    return items;
 }
 
 async function getDupicatesPerFeedByProp(env: Bindings, feedId: number, prop: string, orderBy = 'pub_date DESC') {

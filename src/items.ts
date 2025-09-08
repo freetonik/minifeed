@@ -1,5 +1,4 @@
 import type { FeedEntry } from '@extractus/feed-extractor';
-import { processJsonlStream } from './admin';
 import type { Bindings } from './bindings';
 import { regenerateTopItemsCacheForFeed } from './feeds';
 import type { ItemRow } from './interface';
@@ -12,6 +11,7 @@ import {
     getItemPubDate,
     getText,
     itemIdToSqid,
+    processJsonlStream,
     stripNonLinguisticElements,
     stripTags,
     truncate,

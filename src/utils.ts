@@ -535,3 +535,38 @@ function escapeStrForXML(str: string) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&apos;');
 }
+
+export async function processJsonlStream(response: Response) {
+    if (!response.body) return;
+    const decoder = new TextDecoderStream();
+    const reader = response.body.pipeThrough(decoder).getReader();
+
+    const items = [];
+    let buffer = '';
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+            // Process any remaining data in buffer
+            if (buffer.trim()) {
+                items.push(JSON.parse(buffer.trim()));
+            }
+            break;
+        }
+
+        // Append new chunk to buffer
+        buffer += value;
+
+        // Split by newlines and process complete lines
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep the last incomplete line in buffer
+
+        for (const line of lines) {
+            if (line.trim()) {
+                items.push(JSON.parse(line));
+            }
+        }
+    }
+
+    return items;
+}
