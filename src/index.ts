@@ -314,91 +314,85 @@ export default {
 
     async queue(batch: MessageBatch<MFQueueMessage>, env: Bindings) {
         // consumer of queues FEED_UPDATE_QUEUE, ITEM_VECTORIZE_QUEUE
+        type HandlerType =
+            | 'feed_update'
+            | 'item_index'
+            | 'item_scrape'
+            | 'feed_items_index'
+            | 'feed_index'
+            | 'feed_update_top_items_cache'
+            | 'feed_regenerate_related'
+            | 'item_regenerate_related'
+            | 'item_vectorize_store';
+
+        const handlers: Record<HandlerType, (message: MFQueueMessage) => Promise<void>> = {
+            feed_update: async (message: MFQueueMessage) => {
+                if (!message.feed_id) throw new Error('Missing feed_id');
+                await updateFeed(env, message.feed_id);
+            },
+
+            item_index: async (message: MFQueueMessage) => {
+                if (!message.item_id) throw new Error('Missing item_id');
+                await updateItemIndex(env, message.item_id);
+            },
+
+            item_scrape: async (message: MFQueueMessage) => {
+                if (!message.item_id) throw new Error('Missing item_id');
+                await scrapeIndexVectorizeItem(env, message.item_id);
+            },
+
+            feed_items_index: async (message: MFQueueMessage) => {
+                if (!message.feed_id) throw new Error('Missing feed_id');
+                await updateFeedItemsIndex(env, message.feed_id);
+            },
+
+            feed_index: async (message: MFQueueMessage) => {
+                if (!message.feed_id) throw new Error('Missing feed_id');
+                await updateFeedIndex(env, message.feed_id);
+            },
+
+            feed_update_top_items_cache: async (message: MFQueueMessage) => {
+                if (!message.feed_id) throw new Error('Missing feed_id');
+                await regenerateTopItemsCacheForFeed(env, message.feed_id);
+            },
+
+            feed_regenerate_related: async (message: MFQueueMessage) => {
+                if (!message.feed_id) throw new Error('Missing feed_id');
+                await generateRelatedFeedsFromRelatedItems(env, message.feed_id);
+            },
+
+            item_regenerate_related: async (message: MFQueueMessage) => {
+                if (!message.item_id) throw new Error('Missing item_id');
+                await regenerateRelatedForItem(env, message.item_id);
+            },
+
+            item_vectorize_store: async (message: MFQueueMessage) => {
+                if (!message.item_id) throw new Error('Missing item_id');
+                await vectorizeAndStoreItem(env, message.item_id);
+            },
+        };
+
         for (const message of batch.messages) {
-            switch (message.body.type) {
-                case 'feed_update':
-                    if (message.body.feed_id) {
-                        try {
-                            await updateFeed(env, message.body.feed_id);
-                        } catch (e: unknown) {
-                            console.log(
-                                `Error updating feed ${message.body.feed_id}: ${e instanceof Error ? e.message : String(e)}`,
-                            );
-                        }
+            const type = message.body.type as HandlerType;
+            const handler = handlers[type];
+
+            if (!handler) {
+                console.error(`Unknown queue message type: ${message.body.type}`);
+                continue;
+            }
+
+            try {
+                await handler(message.body);
+            } catch (error) {
+                console.error(
+                    `Queue handler failed for ${message.body.type}:`,
+                    {
+                        type: message.body.type,
+                        feed_id: message.body.feed_id,
+                        item_id: message.body.item_id,
+                        error: error instanceof Error ? error.message : String(error)
                     }
-                    break;
-
-                case 'item_index':
-                    if (message.body.item_id) {
-                        try {
-                            await updateItemIndex(env, message.body.item_id);
-                        } catch (e: unknown) {
-                            console.log(
-                                `Error indexing item ${message.body.item_id}: ${e instanceof Error ? e.message : String(e)}`,
-                            );
-                        }
-                    }
-                    break;
-
-                case 'item_scrape':
-                    if (message.body.item_id) await scrapeIndexVectorizeItem(env, message.body.item_id);
-                    break;
-
-                case 'feed_items_index':
-                    if (message.body.feed_id) {
-                        try {
-                            await updateFeedItemsIndex(env, message.body.feed_id);
-                        } catch (e: unknown) {
-                            console.log(
-                                `Error indexing feed ${message.body.feed_id}: ${e instanceof Error ? e.message : String(e)}`,
-                            );
-                        }
-                    }
-                    break;
-
-                case 'feed_index':
-                    if (message.body.feed_id) {
-                        try {
-                            await updateFeedIndex(env, message.body.feed_id);
-                        } catch (e: unknown) {
-                            console.log(
-                                `Error indexing feed ${message.body.feed_id}: ${e instanceof Error ? e.message : String(e)}`,
-                            );
-                        }
-                    }
-                    break;
-
-                case 'feed_update_top_items_cache':
-                    if (message.body.feed_id) {
-                        try {
-                            await regenerateTopItemsCacheForFeed(env, message.body.feed_id);
-                        } catch (e: unknown) {
-                            console.log(
-                                `Error regenerating top items cache for feed ${message.body.feed_id}: ${e instanceof Error ? e.message : String(e)}`,
-                            );
-                        }
-                    }
-                    break;
-
-                case 'feed_regenerate_related':
-                    if (message.body.feed_id) await generateRelatedFeedsFromRelatedItems(env, message.body.feed_id);
-                    break;
-
-                case 'item_regenerate_related':
-                    if (message.body.item_id) await regenerateRelatedForItem(env, message.body.item_id);
-                    break;
-
-                case 'item_vectorize_store':
-                    if (message.body.item_id) {
-                        try {
-                            await vectorizeAndStoreItem(env, message.body.item_id);
-                        } catch (e: unknown) {
-                            console.log(
-                                `Error vectorizing and storing item ${message.body.item_id}: ${e instanceof Error ? e.message : String(e)}`,
-                            );
-                        }
-                    }
-                    break;
+                );
             }
         }
     },
