@@ -15,22 +15,41 @@ export async function handleGlobal(c: Context) {
     else if (listingType === 'random') ordering = 'RANDOM()';
 
     let items = [];
+    let favItemIds = []
     let metaInfo = {};
     if (listingType === 'oldest' || listingType === 'newest') {
         const { results, meta } = await c.env.DB.prepare(
             `
-            SELECT items.item_id, items.item_sqid, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title, feeds.feed_sqid, favorite_id, items.description, feeds.verified
+            SELECT items.item_id, items.item_sqid, items.pub_date, items.title AS item_title, items.url AS item_url, feeds.feed_id, feeds.title AS feed_title, feeds.feed_sqid, items.description, feeds.verified
             FROM items
             JOIN feeds ON items.feed_id = feeds.feed_id
-            LEFT JOIN favorites ON items.item_id = favorites.item_id AND favorites.user_id = ?
             WHERE items.item_sqid IS NOT 0 AND feeds.verified = 1
             ORDER BY ${ordering}
             LIMIT ? OFFSET ?`,
         )
-            .bind(userId, itemsPerPage + 1, offset)
+            .bind(itemsPerPage + 1, offset)
             .run();
         items = results;
         metaInfo = meta;
+
+        // if user logged in, get all his favorites if any from items
+        if (c.get('USER_LOGGED_IN')) {
+            const itemIds = items.map(item => item.item_id);
+            const { results, meta } = await c.env.DB.prepare(
+                `
+                SELECT favorites.item_id
+                FROM favorites
+                WHERE favorites.user_id = ?
+                AND
+                favorites.item_id IN (${itemIds.map(() => '?').join(',')})`
+            ).bind(userId, ...itemIds).run();
+            favItemIds = results.map(i => i.item_id);
+            metaInfo.duration += meta.duration;
+            metaInfo.rows_read += meta.rows_read;
+        }
+
+
+
     } else if (listingType === 'random') {
         // get ids from UTILITY_LISTS_KV
         let itemIds = await c.env.UTILITY_LISTS_KV.get('all_item_ids', 'json');
@@ -63,6 +82,7 @@ export async function handleGlobal(c: Context) {
 
     for (let i = 0; i < items.length - 1; i++) {
         const item = items[i];
+        if (favItemIds.includes(item.item_id)) item.favorite_id = 1;
         const itemTitle = item.favorite_id ? `★ ${item.item_title}` : item.item_title;
 
         list += renderItemShort(

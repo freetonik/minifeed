@@ -55,3 +55,11 @@ npx wrangler d1 execute minifeed --local --command="SELECT * FROM Items"
 
 npx wrangler d1 execute minifeed --command="SELECT COUNT(item_id) FROM Items"
 ```
+
+### Useful commands
+
+List of indexes:
+
+```
+SELECT name, type, sql FROM sqlite_schema WHERE type IN ('index');
+```
