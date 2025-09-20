@@ -1,6 +1,11 @@
 export const changelog = `
     <h2>Changelog</h2>
 
+    <h3>1.5.0 (20.09.2025)</h3>
+    <ul>
+        <li>Improve the mechanism of finding RSS links on pages.</li>
+    </ul>
+
     <h3>1.5.0 (17.05.2025)</h3>
     <ul>
         <li>Paid members can now add their own RSS feeds.</li>

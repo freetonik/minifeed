@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 import robotsParser from 'robots-parser';
-import { getRssUrlsFromHtmlBody } from 'rss-url-finder';
+import { getRssUrlsFromUrl } from 'rss-url-finder';
 import Sqids from 'sqids';
 import { detectAll } from 'tinyld';
 import { Bindings } from './bindings';
@@ -53,7 +53,8 @@ export async function getRSSLinkFromUrl(url: string) {
 
     // the content of the page is HTML, try to find RSS link
     if (pageContent.includes('<html') || pageContent.includes('<!DOCTYPE html')) {
-        const rssUrlObj = getRssUrlsFromHtmlBody(pageContent);
+        // const rssUrlObj = getRssUrlsFromHtmlBody(pageContent);
+        const rssUrlObj = await getRssUrlsFromUrl(url);
         if (!rssUrlObj.length || !rssUrlObj[0].url) throw new Error(`Cannot find RSS link in HTML of URL: ${url}`);
         let foundRSSLink = rssUrlObj[0].url;
         // the found rss link may be relative or absolute; handle both cases here
