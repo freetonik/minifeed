@@ -44,6 +44,11 @@ export async function handleBlogs(c: Context) {
     if (!userLoggedIn) inner += renderGuestFlash();
     inner += renderBlogsSubsections(listingType, userLoggedIn);
 
+    const itemCount = await c.env.UTILITY_LISTS_KV.get('items_count');
+
+    if (itemCount)
+        inner += `<div class="util-mb-1">${results.length} blogs and ${itemCount} posts. Updated hourly. </div>`
+
     if (userHasSubscription) inner += `<div class="util-mb-2"><a class="button" href="/blogs/new">+ add new blog</a></div>`
 
 

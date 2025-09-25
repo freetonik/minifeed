@@ -205,6 +205,9 @@ export async function regenerateListOfItemIds(env: Bindings) {
     const items = await env.DB.prepare('SELECT item_id FROM items WHERE item_sqid != 0').all();
     const itemIds = items.results.map((item) => item.item_id);
     await env.UTILITY_LISTS_KV.put('all_item_ids', JSON.stringify(itemIds));
+
+    const itemCount = await env.DB.prepare('SELECT count(*) FROM items').first();
+    await env.UTILITY_LISTS_KV.put('items_count', itemCount['count(*)']);
     return itemIds;
 }
 
