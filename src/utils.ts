@@ -3,7 +3,7 @@ import robotsParser from 'robots-parser';
 import { getRssUrlsFromUrl } from 'rss-url-finder';
 import Sqids from 'sqids';
 import { detectAll } from 'tinyld';
-import { Bindings } from './bindings';
+import type { Bindings } from './bindings';
 import type { FeedRow, MFFeedEntry } from './interface';
 
 function idToSqid(id: number, length: number): string {
