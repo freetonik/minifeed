@@ -2,8 +2,7 @@
     "scripts": {
         "dev": "wrangler dev src/index.ts --host localhost.dev --port 8181 --test-scheduled",
         "dev-remote": "wrangler dev src/index.ts --remote",
-        "deploy": "wrangler deploy --minify src/index.ts",
-        "watch-css": "node watcher.js"
+        "deploy": "wrangler deploy --minify src/index.ts"
     },
     "dependencies": {
         "@aws-sdk/client-ses": "^3.668.0",
