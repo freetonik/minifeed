@@ -5,6 +5,7 @@ compatibility_date = "2024-09-23"
 workers_dev = false
 route = { pattern = "minifeed.net", custom_domain = true }
 main = "src/index.ts"
+assets = { directory = "./public/" }
 
 [placement]
 mode = "smart"
